@@ -1,33 +1,34 @@
-static lemma lemma_vacuous_statement_about_a_sequence(intseq:seq<int>, j:int)
+lemma lemma_seq_slice_start(intseq:seq<int>, j:int)
     requires 0<=j<|intseq|;
     ensures intseq[0..j]==intseq[..j];
 {
 }
 
-static lemma lemma_painful_statement_about_a_sequence(intseq:seq<int>)
+/*
+lemma lemma_painful_statement_about_a_sequence(intseq:seq<int>)
     ensures intseq==intseq[..|intseq|];
 {
 }
 
-static lemma lemma_obvious_statement_about_a_sequence(boolseq:seq<bool>, j:int)
+lemma lemma_obvious_statement_about_a_sequence(boolseq:seq<bool>, j:int)
     requires 0<=j<|boolseq|-1;
     ensures boolseq[1..][j] == boolseq[j+1];
 {
 }
 
-static lemma lemma_obvious_statement_about_a_sequence_int(intseq:seq<int>, j:int)
+lemma lemma_obvious_statement_about_a_sequence_int(intseq:seq<int>, j:int)
     requires 0<=j<|intseq|-1;
     ensures intseq[1..][j] == intseq[j+1];
 {
 }
 
-static lemma lemma_straightforward_statement_about_a_sequence(intseq:seq<int>, j:int)
+lemma lemma_straightforward_statement_about_a_sequence(intseq:seq<int>, j:int)
     requires 0<=j<|intseq|;
     ensures intseq[..j] + intseq[j..] == intseq;
 {
 }
 
-static lemma lemma_sequence_reduction(s:seq<int>, b:nat)
+lemma lemma_sequence_reduction(s:seq<int>, b:nat)
     requires 0<b<|s|;
     ensures s[0..b][0..b-1] == s[0..b-1];
 {
@@ -63,3 +64,4 @@ static lemma lemma_seq_suffix(s: seq<int>, prefix_length: int, index: int)
     ensures s[index] == s[prefix_length..][index - prefix_length];
 {
 }
+*/
