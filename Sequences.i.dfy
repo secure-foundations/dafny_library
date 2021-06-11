@@ -1,16 +1,89 @@
 // Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
 // SPDX-License-Identifier: BSD-2-Clause
 
-//include "SequencesLite.s.dfy"
-//include "Option.s.dfy"
-//include "../Lang/NativeTypes.s.dfy"
-//include "mathematics.i.dfy"
+module Mathematics {
 
+	function min(a: int, b: int) : int
+	{
+		if a < b
+			then a
+		else
+			b
+	}
+
+	function max(a: int, b: int) : int
+	{
+		if a < b
+			then b
+		else
+			a
+	}
+
+  function Set<T>(ms: multiset<T>) : set<T>
+  {
+    set x : T | x in ms
+  }
+
+  function ISet<T>(ms: set<T>) : iset<T>
+  {
+    iset x : T | x in ms
+  }
+
+  lemma PosMulPosIsPos(x: int, y: int)
+    requires 0 < x
+    requires 0 < y
+    ensures 0 < x * y
+  {
+  }
+  
+  lemma DivCeilLT(x: int, d: int)
+    requires 1 < d
+    requires 1 < x
+    ensures (x + d - 1) / d < x
+  {
+    PosMulPosIsPos(d-1, x-1);
+    calc <= {
+      0; <
+      (d-1) * (x-1);
+    }
+  }
+
+  lemma PosMulPreservesOrder(x: nat, y: nat, m: nat)
+    requires x <= y
+    ensures x * m <= y * m
+  {
+  }
+}
+module {:extern} Options {
+  datatype Option<V> = None | Some(value:V)
+
+  function MapOption<V0, V1>(opt: Option<V0>, f: V0 ~> V1) : (result: Option<V1>)
+  requires opt.Some? ==> f.requires(opt.value)
+  ensures opt.Some? <==> result.Some?
+  ensures result.Some? ==> result.value == f(opt.value)
+  reads if opt.Some? then f.reads(opt.value) else {}
+  {
+    match opt {
+      case Some(v) => Some(f(v))
+      case None => None
+    }
+  }
+
+  function FlatMapOption<V0, V1>(opt: Option<V0>, f: V0 ~> Option<V1>) : (result: Option<V1>)
+  requires opt.Some? ==> f.requires(opt.value)
+  ensures opt.Some? && f(opt.value).Some? ==> result.Some?
+  ensures opt.Some? && f(opt.value).Some? ==> result.value == f(opt.value).value
+  reads if opt.Some? then f.reads(opt.value) else {}
+  {
+    match opt {
+      case Some(v) => f(v)
+      case None => None
+    }
+  }
+} // module
 module Sequences {
-  //import opened SequencesLite
-  //import opened Options
-  //import opened NativeTypes
-  //import Math = Mathematics
+  import opened Options
+  import Math = Mathematics
 
   lemma lemma_seq_equality<E>(a: seq<E>, b: seq<E>)
   // proves that sequence a and b are equal
@@ -28,7 +101,6 @@ module Sequences {
   }
 
   function FirstOpt<E>(run: seq<E>) : Option<E>
-  // ???
   {
     if |run| == 0 then None else Some(run[0])
   }
@@ -168,15 +240,15 @@ module Sequences {
     apply(f, run)
   }
 
-  function Filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
-  // ???
+  function filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
+  // uses a selection function to select elements from the sequence
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| <= |run|
     ensures forall i: nat :: i < |result| && f.requires(result[i]) ==> f(result[i])
     reads f.reads
   {
     if |run| == 0 then []
-    else ((if f(run[0]) then [run[0]] else []) + Filter(f, run[1..]))
+    else ((if f(run[0]) then [run[0]] else []) + filter(f, run[1..]))
   }
   
   function fold_left<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
@@ -204,7 +276,7 @@ module Sequences {
   ensures forall i | 0 <= i < pos :: remove(s, pos)[i] == s[i]
   ensures forall i | pos <= i < |s| - 1 :: remove(s, pos)[i] == s[i+1]
   {
-    s[.. pos] + s[pos + 1 ..]
+    s[.. pos] + s[pos + 1 ..] 
   }
 
   function {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
@@ -228,7 +300,7 @@ module Sequences {
     s[..pos] + [a] + s[pos..]
   }
 
-  method Insert<A>(s: seq<A>, a: A, pos: uint64) returns (res: seq<A>)
+  method Insert<A>(s: seq<A>, a: A, pos: int) returns (res: seq<A>)
   // inserts a value into a specified index of the sequence and returns the new sequence
   requires 0 <= pos as int <= |s|;
   ensures res == insert(s, a, pos as int); //calls the function
@@ -236,7 +308,7 @@ module Sequences {
     return s[..pos] + [a] + s[pos..];
   }
 
-  lemma InsertMultiset<A>(s: seq<A>, a: A, pos: int)
+  lemma lemma_insert_multiset<A>(s: seq<A>, a: A, pos: int)
   // shows that the inserted element is now included in the multiset
     requires 0 <= pos <= |s|;
     ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
@@ -258,7 +330,7 @@ module Sequences {
     s[..pos] + [a, b] + s[pos+1..]
   }
 
-  method Replace_1_with_2<A>(s: seq<A>, a: A, b: A, pos: uint64) returns (res:seq<A>)
+  method Replace_1_with_2<A>(s: seq<A>, a: A, b: A, pos: int) returns (res:seq<A>)
   // replaces value at a specified index with 2 values
   requires 0 <= pos as int < |s|;
   requires pos < 0xffff_ffff_ffff_ffff
@@ -287,80 +359,81 @@ module Sequences {
     a + b
   }
 
-  function {:opaque} concat3<A>(a: seq<A>, b: A, c: seq<A>) : seq<A>
+  function {:opaque} concat_3<A>(a: seq<A>, b: A, c: seq<A>) : seq<A>
   // concatenates 2 sequences with one value in between 
-  ensures |concat3(a,b,c)| == |a| + |c| + 1
-  ensures forall i :: 0 <= i < |a| ==> a[i] == concat3(a,b,c)[i];
-  ensures concat3(a,b,c)[|a|] == b;
-  ensures forall i :: 0 <= i < |c| ==> c[i] == concat3(a,b,c)[|a| + 1 + i];
+  // should I make b into a sequence, and the user can choose for it be be used as a singleton???
+  ensures |concat_3(a,b,c)| == |a| + |c| + 1
+  ensures forall i :: 0 <= i < |a| ==> a[i] == concat_3(a,b,c)[i];
+  ensures concat_3(a,b,c)[|a|] == b;
+  ensures forall i :: 0 <= i < |c| ==> c[i] == concat_3(a,b,c)[|a| + 1 + i];
   {
     a + [b] + c
   }
 
-  function {:opaque} concatSeq<A>(a: seq<seq<A>>) : seq<A>
+  function method {:opaque} concat_seq<A>(a: seq<seq<A>>) : seq<A>
   // turns a sequence of sequences into a single sequence and returns the result
   {
-    if |a| == 0 then [] else concatSeq(drop_last(a)) + last(a)
+    if |a| == 0 then [] else concat_seq(drop_last(a)) + last(a)
   }
 
-  lemma concatSeqAdditive<A>(a: seq<seq<A>>, b: seq<seq<A>>)
+  lemma lemma_concat_seq_addition<A>(a: seq<seq<A>>, b: seq<seq<A>>)
   // proves sequence addition
-  ensures concatSeq(a + b) == concatSeq(a) + concatSeq(b)
+  ensures concat_seq(a + b) == concat_seq(a) + concat_seq(b)
   {
     if b == [] {
       calc {
-        concatSeq(a + b);
+        concat_seq(a + b);
         { assert a + b == a; }
-        concatSeq(a);
+        concat_seq(a);
         {
-          reveal_concatSeq();
-          assert concatSeq(b) == [];
+          reveal_concat_seq();
+          assert concat_seq(b) == [];
         }
-        concatSeq(a) + concatSeq(b);
+        concat_seq(a) + concat_seq(b);
       }
     } else {
       calc {
-        concatSeq(a + b);
-        { reveal_concatSeq(); }
-        concatSeq(drop_last(a + b)) + last(a + b);
+        concat_seq(a + b);
+        { reveal_concat_seq(); }
+        concat_seq(drop_last(a + b)) + last(a + b);
         {
           assert drop_last(a + b) == a + drop_last(b);
           assert last(a + b) == last(b);
         }
-        concatSeq(a + drop_last(b)) + last(b);
+        concat_seq(a + drop_last(b)) + last(b);
         {
-          concatSeqAdditive(a, drop_last(b));
+          lemma_concat_seq_addition(a, drop_last(b));
         }
-        concatSeq(a) + concatSeq(drop_last(b)) + last(b);
-        { reveal_concatSeq(); }
-        concatSeq(a) + concatSeq(b);
+        concat_seq(a) + concat_seq(drop_last(b)) + last(b);
+        { reveal_concat_seq(); }
+        concat_seq(a) + concat_seq(b);
       }
     }
   }
 
-  lemma lemma_concatSeqLen_ge_elemLen<A>(a: seq<seq<A>>, i: int)
+  lemma lemma_concat_seq_length_ge_single_element_length<A>(a: seq<seq<A>>, i: int)
   /* the concatenated sequence's length is greater than or equal to 
   each individual inner sequence's length */
   requires 0 <= i < |a|
-  ensures |concatSeq(a)| >= |a[i]|
+  ensures |concat_seq(a)| >= |a[i]|
   {
-    reveal_concatSeq();
+    reveal_concat_seq();
     if i < |a| - 1 {
-      lemma_concatSeqLen_ge_elemLen(a[..|a|-1], i);
+      lemma_concat_seq_length_ge_single_element_length(a[..|a|-1], i);
     }
   }
 
-  lemma lemma_concatSeqLen_le_mul<A>(a: seq<seq<A>>, t: int)
+  lemma lemma_concat_seq_length_le_mul<A>(a: seq<seq<A>>, t: int)
   /* the length of concatenating sequence in a sequence together will be no longer 
   than the length of the original sequence of sequences multiplied by the length of 
   the longest sequence */
   requires forall i | 0 <= i < |a| :: |a[i]| <= t
-  ensures |concatSeq(a)| <= |a| * t
+  ensures |concat_seq(a)| <= |a| * t
   {
-    reveal_concatSeq();
+    reveal_concat_seq();
     if |a| == 0 {
     } else {
-      lemma_concatSeqLen_le_mul(a[..|a|-1], t);
+      lemma_concat_seq_length_le_mul(a[..|a|-1], t);
     }
   }
 
@@ -406,7 +479,7 @@ module Sequences {
 
   // This is a workaround since Dafny right now doesn't support
   // s[i := t] when i is a native type integer.
-  function method {:opaque} SeqIndexUpdate<T>(s: seq<T>, i: uint64, t: T) : seq<T>
+  function method {:opaque} SeqIndexUpdate<T>(s: seq<T>, i: int, t: T) : seq<T>
   requires i as int + 1 < 0x1_0000_0000_0000_0000
   requires 0 <= i as int < |s|
   ensures SeqIndexUpdate(s, i, t) == s[i as int := t]
@@ -414,246 +487,248 @@ module Sequences {
     s[..i] + [t] + s[i+1..]
   }
 
-  function {:opaque} Zip<A,B>(a: seq<A>, b: seq<B>) : seq<(A,B)>
+  function {:opaque} zip<A,B>(a: seq<A>, b: seq<B>) : seq<(A,B)>
   /* takes two sequences, a and b, and combines then to form one sequence in which
   each position contains an ordered pair from a and b */
 
     requires |a| == |b|
-    ensures |Zip(a, b)| == |a|
-    ensures forall i :: 0 <= i < |Zip(a, b)| ==> Zip(a, b)[i] == (a[i], b[i])
+    ensures |zip(a, b)| == |a|
+    ensures forall i :: 0 <= i < |zip(a, b)| ==> zip(a, b)[i] == (a[i], b[i])
   {
     if |a| == 0 then []
-    else Zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
+    else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
-  function {:opaque} Unzip<A,B>(z: seq<(A, B)>) : (seq<A>, seq<B>)
+  function {:opaque} unzip<A,B>(z: seq<(A, B)>) : (seq<A>, seq<B>)
   // unzips a sequence that contains ordered pairs into 2 seperate sequences
-    ensures |Unzip(z).0| == |Unzip(z).1| == |z|
-    ensures forall i :: 0 <= i < |z| ==> (Unzip(z).0[i], Unzip(z).1[i]) == z[i]
+    ensures |unzip(z).0| == |unzip(z).1| == |z|
+    ensures forall i :: 0 <= i < |z| ==> (unzip(z).0[i], unzip(z).1[i]) == z[i]
   {
     if |z| == 0 then ([], [])
     else
-      var (a, b) := Unzip(drop_last(z));
+      var (a, b) := unzip(drop_last(z));
       (a + [last(z).0], b + [last(z).1])
   }
 
-  lemma ZipOfUnzip<A,B>(s: seq<(A,B)>)
+  lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
   // if a sequence is unzipped and then zipped, it forms the original sequence
-    ensures Zip(Unzip(s).0, Unzip(s).1) == s
+    ensures zip(unzip(s).0, unzip(s).1) == s
   {
   }
   
-  lemma UnzipOfZip<A,B>(sa: seq<A>, sb: seq<B>)
+  lemma lemma_unzip_of_zip<A,B>(sa: seq<A>, sb: seq<B>)
   // if a zipped sequence is unzipped, this results in two seperate sequences
     requires |sa| == |sb|
-    ensures Unzip(Zip(sa, sb)).0 == sa
-    ensures Unzip(Zip(sa, sb)).1 == sb
+    ensures unzip(zip(sa, sb)).0 == sa
+    ensures unzip(zip(sa, sb)).1 == sb
   {
   }
   
-  function {:opaque} FlattenShape<A>(seqs: seq<seq<A>>) : (shape: seq<nat>)
+  function {:opaque} flatten_shape<A>(seqs: seq<seq<A>>) : (shape: seq<nat>)
   /* receives a sequence of sequences. Returns a sequence in which the ith element corresponds 
   to the length of the sequence at the ith position*/
     ensures |shape| == |seqs|
     ensures forall i :: 0 <= i < |shape| ==> shape[i] == |seqs[i]|
   {
     if |seqs| == 0 then []
-    else FlattenShape(drop_last(seqs)) + [|last(seqs)|]
+    else flatten_shape(drop_last(seqs)) + [|last(seqs)|]
   }
 
-  lemma FlattenShapeAdditive<A>(seqs1: seq<seq<A>>, seqs2: seq<seq<A>>)
+  lemma lemma_flatten_shape_addition<A>(seqs1: seq<seq<A>>, seqs2: seq<seq<A>>)
   /* concatenating two sequences and then flattening their shape retults in the same
   result as flattenning each sequence first and then concatenating */
-    ensures FlattenShape(seqs1 + seqs2) == FlattenShape(seqs1) + FlattenShape(seqs2)
+    ensures flatten_shape(seqs1 + seqs2) == flatten_shape(seqs1) + flatten_shape(seqs2)
   {
   }
   
-  function {:opaque} FlattenLength(shape: seq<nat>) : nat
+  function {:opaque} flatten_length(shape: seq<nat>) : nat
   /* returns a number that results from adding up each all 
   of the elements in the sequence's shape */
-    ensures |shape| == 0 ==> FlattenLength(shape) == 0
+    ensures |shape| == 0 ==> flatten_length(shape) == 0
   {
     if |shape| == 0 then 0
-    else FlattenLength(drop_last(shape)) + last(shape)
+    else flatten_length(drop_last(shape)) + last(shape)
   }
 
 
-  lemma {:induction true} FlattenLengthAdditive(shape1: seq<nat>, shape2: seq<nat>)
+  lemma {:induction true} lemma_flatten_length_addition(shape1: seq<nat>, shape2: seq<nat>)
   /* concatenating two "shape" sequences together and then flattening their length is 
   the same as flattening each shape's length and then adding the resulting numbers */
-    ensures FlattenLength(shape1 + shape2) == FlattenLength(shape1) + FlattenLength(shape2)
+    ensures flatten_length(shape1 + shape2) == flatten_length(shape1) + flatten_length(shape2)
   {
     if |shape2| == 0 {
       assert shape1 + shape2 == shape1;
     } else {
-      reveal_FlattenLength();
+      reveal_flatten_length();
       assert shape1 + shape2 == (shape1 + drop_last(shape2)) + [last(shape2)];
     }
   }
   
-  lemma FlattenLengthSubSeq(shape: seq<nat>, from: nat, to: nat)
+  lemma lemma_flatten_length_subseq(shape: seq<nat>, from: nat, to: nat)
   /* the flattened length of any subsequence of the shape is less than 
   the flattened length of the whole shape */
     requires from <= to <= |shape|
-    ensures FlattenLength(shape[from..to]) <= FlattenLength(shape)
+    ensures flatten_length(shape[from..to]) <= flatten_length(shape)
   {
     assert shape == shape[..from] + shape[from..to] + shape[to..];
-    FlattenLengthAdditive(shape[..from] + shape[from..to], shape[to..]);
-    FlattenLengthAdditive(shape[..from], shape[from..to]);
+    lemma_flatten_length_addition(shape[..from] + shape[from..to], shape[to..]);
+    lemma_flatten_length_addition(shape[..from], shape[from..to]);
   }
 
-  function {:opaque} Flatten<A>(seqs: seq<seq<A>>) : seq<A>
+  function {:opaque} flatten<A>(seqs: seq<seq<A>>) : seq<A>
   /* the flattened sequence's length will be equal to flattenening the shape 
   and then flattening the length; returns a sequence that combines all sequences of 
   the sequence */
-    ensures |Flatten(seqs)| == FlattenLength(FlattenShape(seqs))
-    ensures |seqs| == 0 ==> |Flatten(seqs)| == 0
+    ensures |flatten(seqs)| == flatten_length(FlattenShape(seqs))
+    ensures |seqs| == 0 ==> |flatten(seqs)| == 0
   {
-    reveal_FlattenShape();
-    reveal_FlattenLength();
+    reveal_flatten_shape();
+    reveal_flatten_length();
     if |seqs| == 0 then []
-    else Flatten(drop_last(seqs)) + last(seqs)
+    else flatten(drop_last(seqs)) + last(seqs)
   }
 
-  lemma FlattenSingleton<A>(s: seq<A>)
+  lemma lemma_flatten_singleton<A>(s: seq<A>)
   // flattening a singleton of sequences will simply result in the original sequence
-    ensures Flatten([ s ]) == s
+    ensures flatten([ s ]) == s
   {
-    reveal_Flatten();
+    reveal_flatten();
   }
   
-  lemma FlattenAdditive<A>(seqs1: seq<seq<A>>, seqs2: seq<seq<A>>)
+  lemma lemma_flatten_addition<A>(seqs1: seq<seq<A>>, seqs2: seq<seq<A>>)
   /* concatenating two sequences and then flattening them has the same result 
   as flattening each sequence seperately and then concatenating afterwards */
-    ensures Flatten(seqs1 + seqs2) == Flatten(seqs1) + Flatten(seqs2)
+    ensures flatten(seqs1 + seqs2) == flatten(seqs1) + flatten(seqs2)
     decreases |seqs2|
   {
     if |seqs2| == 0 {
       assert seqs1 + seqs2 == seqs1;
     } else if |seqs2| == 1 {
-      reveal_Flatten();
+      reveal_flatten();
     } else {
       calc {
-        Flatten(seqs1 + seqs2);
+        flatten(seqs1 + seqs2);
         { assert seqs1 + seqs2 == seqs1 + drop_last(seqs2) + [ last(seqs2) ]; }
-        Flatten(seqs1 + drop_last(seqs2) + [ last(seqs2) ]);
-        { FlattenAdditive(seqs1 + drop_last(seqs2), [ last(seqs2) ]); }
-        Flatten(seqs1 + drop_last(seqs2)) + Flatten([ last(seqs2) ]);
-        { FlattenAdditive(seqs1, drop_last(seqs2)); }
-        Flatten(seqs1) + Flatten(drop_last(seqs2)) + Flatten([ last(seqs2) ]);
-        { FlattenAdditive(drop_last(seqs2), [ last(seqs2) ]); }
-        Flatten(seqs1) + Flatten(drop_last(seqs2) + [ last(seqs2) ]);
+        flatten(seqs1 + drop_last(seqs2) + [ last(seqs2) ]);
+        { lemma_flatten_addition(seqs1 + drop_last(seqs2), [ last(seqs2) ]); }
+        flatten(seqs1 + drop_last(seqs2)) + flatten([ last(seqs2) ]);
+        { lemma_flatten_addition(seqs1, drop_last(seqs2)); }
+        flatten(seqs1) + flatten(drop_last(seqs2)) + flatten([ last(seqs2) ]);
+        { lemma_flatten_addition(drop_last(seqs2), [ last(seqs2) ]); }
+        flatten(seqs1) + flatten(drop_last(seqs2) + [ last(seqs2) ]);
         { assert seqs2 == drop_last(seqs2) + [ last(seqs2) ]; }
-        Flatten(seqs1) + Flatten(seqs2);
+        flatten(seqs1) + flatten(seqs2);
       }
     }
   }
   
-  function FlattenIndex(shape: seq<nat>, i: nat, j: nat) : nat
-  /* returns the summation of the flattened length of a subsequence
-  plus ___j???  */
+  function flatten_index(shape: seq<nat>, i: nat, j: nat) : nat
+  /* returns the index of the flattened sequence  */
     requires i < |shape|
     requires j < shape[i]
   {
-    FlattenLength(shape[..i]) + j
+    flatten_length(shape[..i]) + j
   }
 
-  function UnflattenIndex(shape: seq<nat>, i: nat) : (nat, nat)
-  /* ??? */
-    requires i < FlattenLength(shape)
+  function unflatten_index(shape: seq<nat>, i: nat) : (nat, nat)
+  /* returns the index of the unflattened sequence */
+    requires i < flatten_length(shape)
   {
-    reveal_FlattenLength();
-    if i < FlattenLength(drop_last(shape)) then UnflattenIndex(drop_last(shape), i)
-    else (|shape|-1, i - FlattenLength(drop_last(shape)))
+    reveal_flatten_length();
+    if i < flatten_length(drop_last(shape)) then unflatten_index(drop_last(shape), i)
+    else (|shape|-1, i - flatten_length(drop_last(shape)))
   }
 
-  lemma FlattenIndexInBounds(shape: seq<nat>, i: nat, j: nat)
+  lemma lemma_flatten_index_in_bounds(shape: seq<nat>, i: nat, j: nat)
+  /* the index in a flattened sequence is less than the flattened length
+  of the entire sequence */
     requires i < |shape|
     requires j < shape[i]
-    ensures FlattenIndex(shape, i, j) < FlattenLength(shape)
+    ensures flatten_index(shape, i, j) < flatten_length(shape)
   {
-    reveal_FlattenLength();
+    reveal_flatten_length();
     if i == |shape|-1 {
     } else {
-      FlattenIndexInBounds(drop_last(shape), i, j);
+      lemma_flatten_index_in_bounds(drop_last(shape), i, j);
       assert drop_last(shape)[..i] == shape[..i];
     }
   }
   
-  lemma {:induction true} UnflattenIndexInBounds(shape: seq<nat>, i: nat)
-    requires i < FlattenLength(shape)
-    ensures UnflattenIndex(shape, i).0 < |shape|
-    ensures UnflattenIndex(shape, i).1 < shape[UnflattenIndex(shape, i).0]
+  lemma {:induction true} lemma_unflatten_index_in_bounds(shape: seq<nat>, i: nat)
+  /*  */
+    requires i < flatten_length(shape)
+    ensures unflatten_index(shape, i).0 < |shape|
+    ensures unflatten_index(shape, i).1 < shape[unflatten_index(shape, i).0]
   {
-    var shapeidx := UnflattenIndex(shape, i).0;
+    var shapeidx := unflatten_index(shape, i).0;
   }
 
-  lemma {:induction true} FlattenUnflattenIdentity(shape: seq<nat>, i: nat)
-    requires i < FlattenLength(shape)
-    ensures UnflattenIndex(shape, i).0 < |shape|
-    ensures UnflattenIndex(shape, i).1 < shape[UnflattenIndex(shape, i).0]
-    ensures i == FlattenIndex(shape, UnflattenIndex(shape, i).0, UnflattenIndex(shape, i).1)
+  lemma {:induction true} lemma_flatten_unflatten_indentity(shape: seq<nat>, i: nat)
+    requires i < flatten_length(shape)
+    ensures unflatten_index(shape, i).0 < |shape|
+    ensures unflatten_index(shape, i).1 < shape[unflatten_index(shape, i).0]
+    ensures i == flatten_index(shape, unflatten_index(shape, i).0, unflatten_index(shape, i).1)
   {
-    UnflattenIndexInBounds(shape, i);
-    var (shapeidx, shapeoff) := UnflattenIndex(shape, i);
+    lemma_unflatten_index_in_bounds(shape, i);
+    var (shapeidx, shapeoff) := unflatten_index(shape, i);
     if shapeidx == |shape|-1 {
     } else {
-      FlattenUnflattenIdentity(drop_last(shape), i);
+      lemma_flatten_unflatten_indentity(drop_last(shape), i);
       assert drop_last(shape)[..shapeidx] == shape[..shapeidx];
     }
   }
   
-  lemma UnflattenFlattenIdentity(shape: seq<nat>, i: nat, j: nat)
+  lemma lemma_unflatten_flatten_identity(shape: seq<nat>, i: nat, j: nat)
     requires i < |shape|
     requires j < shape[i]
-    ensures FlattenIndex(shape, i, j) < FlattenLength(shape)
-    ensures (i, j) == UnflattenIndex(shape, FlattenIndex(shape, i, j))
+    ensures flatten_index(shape, i, j) < flatten_length(shape)
+    ensures (i, j) == unflatten_index(shape, flatten_index(shape, i, j))
   {
-    FlattenIndexInBounds(shape, i, j);
+    lemma_flatten_index_in_bounds(shape, i, j);
     if i == |shape| - 1 {
     } else {
-      UnflattenFlattenIdentity(drop_last(shape), i, j);
+      lemma_unflatten_flatten_identity(drop_last(shape), i, j);
       assert drop_last(shape)[..i] == shape[..i];
     }
   }
   
-  lemma {:induction true} UnflattenIndexOrdering(shape: seq<nat>, i: nat, j: nat)
-    requires i < j < FlattenLength(shape)
-    ensures UnflattenIndex(shape, i).0 <= UnflattenIndex(shape, j).0
-    ensures UnflattenIndex(shape, i).0 == UnflattenIndex(shape, j).0 ==> UnflattenIndex(shape, i).1 < UnflattenIndex(shape, j).1
+  lemma {:induction true} lemma_unflatten_index_ordering(shape: seq<nat>, i: nat, j: nat)
+    requires i < j < flatten_length(shape)
+    ensures unflatten_index(shape, i).0 <= unflatten_index(shape, j).0
+    ensures unflatten_index(shape, i).0 == unflatten_index(shape, j).0 ==> unflatten_index(shape, i).1 < unflatten_index(shape, j).1
   {
-    FlattenUnflattenIdentity(shape, i);
+    lemma_flatten_unflatten_indentity(shape, i);
   }
 
-  lemma FlattenIndexIsCorrect<A>(seqs: seq<seq<A>>, i: nat, j: nat)
+  lemma lemma_flatten_index_is_correct<A>(seqs: seq<seq<A>>, i: nat, j: nat)
     requires i < |seqs|
     requires j < |seqs[i]|
-    ensures FlattenIndex(FlattenShape(seqs), i, j) < |Flatten(seqs)|
-    ensures Flatten(seqs)[FlattenIndex(FlattenShape(seqs), i, j)] == seqs[i][j]
+    ensures flatten_index(FlattenShape(seqs), i, j) < |flatten(seqs)|
+    ensures flatten(seqs)[flatten_index(FlattenShape(seqs), i, j)] == seqs[i][j]
   {
-    reveal_Flatten();
-    FlattenIndexInBounds(FlattenShape(seqs), i, j);
+    reveal_flatten();
+    lemma_flatten_index_in_bounds(FlattenShape(seqs), i, j);
     if i == |seqs|-1 {
     } else {
-      FlattenIndexIsCorrect(drop_last(seqs), i, j);
+      lemma_flatten_index_is_correct(drop_last(seqs), i, j);
       assert drop_last(FlattenShape(seqs))[..i] == FlattenShape(seqs)[..i];
     }
   }
 
-  lemma {:induction true} {:timeLimitMultiplier 3} UnflattenIndexIsCorrect<A>(seqs: seq<seq<A>>, i: nat)
-    requires i < FlattenLength(FlattenShape(seqs))
-    ensures UnflattenIndex(FlattenShape(seqs), i).0 < |seqs|
-    ensures UnflattenIndex(FlattenShape(seqs), i).1 < |seqs[UnflattenIndex(FlattenShape(seqs), i).0]|
-    ensures Flatten(seqs)[i] == seqs[UnflattenIndex(FlattenShape(seqs), i).0][UnflattenIndex(FlattenShape(seqs), i).1]
+  lemma {:induction true} {:timeLimitMultiplier 3} lemma_unflatten_index_is_correct<A>(seqs: seq<seq<A>>, i: nat)
+    requires i < flatten_length(FlattenShape(seqs))
+    ensures unflatten_index(FlattenShape(seqs), i).0 < |seqs|
+    ensures unflatten_index(FlattenShape(seqs), i).1 < |seqs[unflatten_index(FlattenShape(seqs), i).0]|
+    ensures flatten(seqs)[i] == seqs[unflatten_index(FlattenShape(seqs), i).0][unflatten_index(FlattenShape(seqs), i).1]
   {
     var shape := FlattenShape(seqs);
-    UnflattenIndexInBounds(shape, i);
-    reveal_Flatten();
+    lemma_unflatten_index_in_bounds(shape, i);
+    reveal_flatten();
   }
 
-  lemma CardinalityOfSetsOfSequenceIndices<T>(q:seq<T>, t:set<int>)
+  lemma lemma_cardinality_of_set_and_sequence<T>(q:seq<T>, t:set<int>)
   /* proves that the cardinality of the set is the same as the cardinality 
-  of the set, given that the set is the same size as the sequence*/
+  of the sequence, given that the set is the same size as the sequence*/
     requires t == set i | 0 <= i < |q|
     ensures |t| == |q|
   {
@@ -663,7 +738,7 @@ module Sequences {
       calc {
         |q|;
         |sq| + 1;
-          { CardinalityOfSetsOfSequenceIndices(sq, st); }
+          { lemma_cardinality_of_set_and_sequence(sq, st); }
         |st| + 1;
           { assert t == st + {|sq|}; }
         |t|;
@@ -671,42 +746,43 @@ module Sequences {
     }
   }
 
-  function {:opaque} seqMax(s: seq<int>): int
+  function {:opaque} seq_max(s: seq<int>): int
   // returns the maximum integer value in the sequence
     requires 0 < |s|
-    ensures forall k :: k in s ==> seqMax(s) >= k
-    ensures seqMax(s) in s
+    ensures forall k :: k in s ==> seq_max(s) >= k
+    ensures seq_max(s) in s
   {
     assert s == drop_last(s) + [last(s)];
     if |s| == 1
     then s[0]
-    else Math.max(seqMax(drop_last(s)), last(s))
+    else Math.max(seq_max(drop_last(s)), last(s))
   }
 
-  lemma SeqMaxCorrespondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
-  /* ??? */
+  lemma lemma_seq_max_correspondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
+  /* the maximum value in sequence 1 is greater than or equal to the maximum
+  value of sequence 2 */
     requires 0 < |s1|
     requires 0 < |s2|
     requires |wit| == |s2|
     requires forall j:nat :: j < |wit| ==> wit[j] < |s1|
     requires forall i :: 0 <= i < |s2| ==> s2[i] <= s1[wit[i]]
-    ensures seqMax(s2) <= seqMax(s1)
+    ensures seq_max(s2) <= seq_max(s1)
   {
-    if seqMax(s2) > seqMax(s1) {
-      var idx :| 0 <= idx < |s2| && s2[idx] == seqMax(s2);
+    if seq_max(s2) > seq_max(s1) {
+      var idx :| 0 <= idx < |s2| && s2[idx] == seq_max(s2);
       assert s1[wit[idx]] in s1;  // trigger
       assert false;
     }
   }
 
-  lemma SubseqMax(s: seq<int>, from: nat, to: nat)
+  lemma lemma_subseq_max(s: seq<int>, from: nat, to: nat)
   /* the maximum element in any subsequence will not be 
   greater than the maximum element in the full sequence */
     requires 0 <= from < to <= |s|
-    ensures seqMax(s[from .. to]) <= seqMax(s)
+    ensures seq_max(s[from .. to]) <= seq_max(s)
   {
     var subseq := s[from .. to];
-    SeqMaxCorrespondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
+    lemma_seq_max_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
   }
 
   lemma lemma_seq_suffix_slice<T>(s: seq<T>, i: int, j: int, k: int)
