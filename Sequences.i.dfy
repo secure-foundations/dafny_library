@@ -148,7 +148,7 @@ module Sequences {
   }
   
   function Apply<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
-  // ????
+  // applies a transformation function on the sequence
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| == |run|
     ensures forall i :: 0 <= i < |run| ==> result[i] == f(run[i]);
@@ -169,7 +169,7 @@ module Sequences {
   }
 
   function Filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
-  // 
+  // ???
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| <= |run|
     ensures forall i: nat :: i < |result| && f.requires(result[i]) ==> f(result[i])
@@ -339,7 +339,8 @@ module Sequences {
   }
 
   lemma lemma_concatSeqLen_ge_elemLen<A>(a: seq<seq<A>>, i: int)
-  // proves that 
+  /* the concatenated sequence's length is greater than or equal to 
+  each individual inner sequence's length */
   requires 0 <= i < |a|
   ensures |concatSeq(a)| >= |a[i]|
   {
@@ -502,7 +503,9 @@ module Sequences {
   }
 
   function {:opaque} Flatten<A>(seqs: seq<seq<A>>) : seq<A>
-  // ????
+  /* the flattened sequence's length will be equal to flattenening the shape 
+  and then flattening the length; returns a sequence that combines all sequences of 
+  the sequence */
     ensures |Flatten(seqs)| == FlattenLength(FlattenShape(seqs))
     ensures |seqs| == 0 ==> |Flatten(seqs)| == 0
   {
@@ -513,14 +516,15 @@ module Sequences {
   }
 
   lemma FlattenSingleton<A>(s: seq<A>)
-  // ?
+  // flattening a singleton of sequences will simply result in the original sequence
     ensures Flatten([ s ]) == s
   {
     reveal_Flatten();
   }
   
   lemma FlattenAdditive<A>(seqs1: seq<seq<A>>, seqs2: seq<seq<A>>)
-  //???
+  /* concatenating two sequences and then flattening them has the same result 
+  as flattening each sequence seperately and then concatenating afterwards */
     ensures Flatten(seqs1 + seqs2) == Flatten(seqs1) + Flatten(seqs2)
     decreases |seqs2|
   {
@@ -546,6 +550,8 @@ module Sequences {
   }
   
   function FlattenIndex(shape: seq<nat>, i: nat, j: nat) : nat
+  /* returns the summation of the flattened length of a subsequence
+  plus ___j???  */
     requires i < |shape|
     requires j < shape[i]
   {
@@ -553,6 +559,7 @@ module Sequences {
   }
 
   function UnflattenIndex(shape: seq<nat>, i: nat) : (nat, nat)
+  /* ??? */
     requires i < FlattenLength(shape)
   {
     reveal_FlattenLength();
@@ -665,7 +672,7 @@ module Sequences {
   }
 
   function {:opaque} seqMax(s: seq<int>): int
-  // returns the ...?
+  // returns the maximum integer value in the sequence
     requires 0 < |s|
     ensures forall k :: k in s ==> seqMax(s) >= k
     ensures seqMax(s) in s
@@ -677,7 +684,7 @@ module Sequences {
   }
 
   lemma SeqMaxCorrespondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
-  // 
+  /* ??? */
     requires 0 < |s1|
     requires 0 < |s2|
     requires |wit| == |s2|
@@ -693,7 +700,8 @@ module Sequences {
   }
 
   lemma SubseqMax(s: seq<int>, from: nat, to: nat)
-  //???
+  /* the maximum element in any subsequence will not be 
+  greater than the maximum element in the full sequence */
     requires 0 <= from < to <= |s|
     ensures seqMax(s[from .. to]) <= seqMax(s)
   {
@@ -749,7 +757,8 @@ module Sequences {
   }
 
   lemma lemma_array_slice_slice<T>(ar: array<T>, i: int, j: int, k: int, l: int)
-  /* shows the ...??? */
+  /* taking a slice of range i to j and then taking another slice that is within 
+  the first range is equivalent to simply slicing the original array */
   requires 0 <= i <= j <= ar.Length
   requires 0 <= k <= l <= j - i
   ensures ar[i..j][k..l] == ar[i+k..i+l];
@@ -768,6 +777,7 @@ module Sequences {
   }
 
   function {:opaque} fill<T>(n: int, t: T) : (res: seq<T>)
+  // fills the sequence with n identical elements
   requires n >= 0
   ensures |res| == n
   ensures forall i | 0 <= i < n :: res[i] == t
@@ -776,7 +786,9 @@ module Sequences {
   }
 
   lemma sum_slice_second<T>(a: seq<T>, b: seq<T>, i: int, j: int)
-  // ???
+  /* concatenating two sequences and then taking a slice starting from an index 
+  that is greater than the first sequence is the same as taking a slice from the 
+  second sequence */
   requires |a| <= i <= j <= |a| + |b|
   ensures (a+b)[i..j] == b[i-|a| .. j-|a|]
   {
