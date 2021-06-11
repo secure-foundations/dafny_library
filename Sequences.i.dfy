@@ -12,7 +12,7 @@ module Sequences {
   //import opened NativeTypes
   //import Math = Mathematics
 
-  lemma EqualExtensionality<E>(a: seq<E>, b: seq<E>)
+  lemma lemma_seq_equality<E>(a: seq<E>, b: seq<E>)
   // proves that sequence a and b are equal
     requires |a| == |b|
     requires forall i :: 0 <= i < |a| ==> a[i] == b[i]
@@ -20,7 +20,7 @@ module Sequences {
   {
   }
   
-  function Last<E>(run: seq<E>) : E
+  function last<E>(run: seq<E>) : E
   // returns the last element in the sequence
     requires |run| > 0;
   {
@@ -28,12 +28,12 @@ module Sequences {
   }
 
   function FirstOpt<E>(run: seq<E>) : Option<E>
-  // if the sequence is not empty, returns ______???
+  // ???
   {
     if |run| == 0 then None else Some(run[0])
   }
 
-  function DropLast<E>(run: seq<E>) : seq<E>
+  function drop_last<E>(run: seq<E>) : seq<E> // same as all_but_last in 'Seqs.i.dfy'
   // returns the sequence slice up to but not including the last element
     requires |run| > 0;
   {
@@ -46,19 +46,19 @@ module Sequences {
     set x: T | x in multiset(run)
   }
 
-  lemma SetCardinality<T>(run: seq<T>)
+  lemma lemma_cardinality_of_set<T>(run: seq<T>)
   /* proves that the cardinality of a subsequence is always less than or equal to that
   of the full sequence */
     ensures |Set(run)| <= |run| // length of the subset is less than the length of the set
   {
     if |run| == 0 {
     } else {
-      assert Set(run) == Set(DropLast(run)) + {Last(run)};
-      SetCardinality(DropLast(run));
+      assert Set(run) == Set(drop_last(run)) + {last(run)};
+      lemma_cardinality_of_set(drop_last(run));
     }
   }
   
-  lemma SetCardinality0<T>(run: seq<T>)
+  lemma lemma_cardinality_of_empty_set_is_0<T>(run: seq<T>)
   // the cardinality of a subsequence of an empty sequence is also 0
     ensures |Set(run)| == 0 <==> |run| == 0
   {
@@ -73,21 +73,21 @@ module Sequences {
     iset x : T | x in multiset(run)
   }
   
-  predicate {:opaque} NoDupes<T>(a: seq<T>) // function body is hidden
+  predicate {:opaque} no_duplicates<T>(a: seq<T>) // function body is hidden
   // returns true if there are no duplicate values in the sequence
   {
     (forall i, j :: 0 <= i < |a| && 0 <= j < |a| && i != j ==> a[i] != a[j])
   }
 
-  lemma {:timeLimitMultiplier 3} DisjointConcatenation<T>(a: seq<T>, b: seq<T>)
+  lemma {:timeLimitMultiplier 3} lemma_no_duplicates_in_disjoint_concat<T>(a: seq<T>, b: seq<T>)
   /* if sequence a and b don't have duplicates AND they are disjoint, then the
   concatenated sequence of a + b will not contain duplicates either */
-    requires NoDupes(a);
-    requires NoDupes(b);
+    requires no_duplicates(a);
+    requires no_duplicates(b);
     requires multiset(a) !! multiset(b);
-    ensures NoDupes(a + b);
+    ensures no_duplicates(a + b);
   {
-    reveal_NoDupes(); // necessary because NoDupes is :opaque
+    reveal_no_duplicates(); // necessary because no_duplicates is :opaque
     var c := a + b;
     if |c| > 1 {
       assert forall i, j :: i != j && 0 <= i < |a| && |a| <= j < |c| ==>
@@ -95,59 +95,59 @@ module Sequences {
     }
   }
 
-  lemma NoDupesSetCardinality<T>(a: seq<T>)
+  lemma lemma_cardinality_of_set_no_duplicates<T>(a: seq<T>)
   /* proves that the sequence the length of the multiset version of the sequence
-  is the same as the sequence given that there are no duplicates involved */
-    requires NoDupes(a)
+  is the same as the sequence, given that there are no duplicates involved */
+    requires no_duplicates(a)
     ensures |Set(a)| == |a|
   {
-    reveal_NoDupes();
+    reveal_no_duplicates();
     if |a| == 0 {
     } else {
-      NoDupesSetCardinality(DropLast(a));
-      assert Set(a) == Set(DropLast(a)) + {Last(a)};
+      lemma_cardinality_of_set_no_duplicates(drop_last(a));
+      assert Set(a) == Set(drop_last(a)) + {last(a)};
     }
   }
 
-  lemma NoDupesMultiset<T>(a: seq<T>)
+  lemma lemma_multiset_has_no_duplicates<T>(a: seq<T>)
   // proves that there are no duplicate values in the multiset
-    requires NoDupes(a)
+    requires no_duplicates(a)
     ensures forall x | x in multiset(a) :: multiset(a)[x] == 1
   {
     if |a| == 0 {
     } else {
-      assert a == DropLast(a) + [ Last(a) ];
-      assert Last(a) !in DropLast(a) by {
-        reveal_NoDupes();
+      assert a == drop_last(a) + [ last(a) ];
+      assert last(a) !in drop_last(a) by {
+        reveal_no_duplicates();
       }
-      assert NoDupes(DropLast(a)) by {
-        reveal_NoDupes();
+      assert no_duplicates(drop_last(a)) by {
+        reveal_no_duplicates();
       }
-      NoDupesMultiset(DropLast(a));
+      lemma_multiset_has_no_duplicates(drop_last(a));
     }
   }
   
-  function IndexOf<T>(s: seq<T>, e: T) : int
+  function index_of<T>(s: seq<T>, e: T) : int
   // returns the index of a certain element in the sequence
     requires e in s;
-    ensures 0 <= IndexOf(s,e) < |s|;
-    ensures s[IndexOf(s,e)] == e;
+    ensures 0 <= index_of(s,e) < |s|;
+    ensures s[index_of(s,e)] == e;
   {
     var i :| 0 <= i < |s| && s[i] == e;
     i
   }
 
-  function {:opaque} Range(n: int) : seq<int>
+  function {:opaque} range(n: int) : seq<int>
   /* returns a sequence of n integers in which the integer is the
   same number as the index */ 
     requires n >= 0
-    ensures |Range(n)| == n
-    ensures forall i | 0 <= i < n :: Range(n)[i] == i
+    ensures |range(n)| == n
+    ensures forall i | 0 <= i < n :: range(n)[i] == i
   {
-    if n == 0 then [] else Range(n-1) + [n-1]
+    if n == 0 then [] else range(n-1) + [n-1]
   }
   
-  function Apply<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
+  function apply<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
   // applies a transformation function on the sequence
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| == |run|
@@ -155,17 +155,17 @@ module Sequences {
     reads set i, o | 0 <= i < |run| && o in f.reads(run[i]) :: o
   {
     if |run| == 0 then []
-    else  [f(run[0])] + Apply(f, run[1..])
+    else  [f(run[0])] + apply(f, run[1..])
   }
 
   // TODO: can we replace Apply with this?
-  function {:opaque} ApplyOpaque<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
+  function {:opaque} apply_opaque<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| == |run|
     ensures forall i :: 0 <= i < |run| ==> result[i] == f(run[i]);
     reads set i, o | 0 <= i < |run| && o in f.reads(run[i]) :: o
   {
-    Apply(f, run)
+    apply(f, run)
   }
 
   function Filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
@@ -179,22 +179,22 @@ module Sequences {
     else ((if f(run[0]) then [run[0]] else []) + Filter(f, run[1..]))
   }
   
-  function FoldLeft<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function fold_left<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
   {
     if |run| == 0 then init
-    else FoldLeft(f, f(init, run[0]), run[1..])
+    else fold_left(f, f(init, run[0]), run[1..])
   }
 
-  function FoldRight<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function fold_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
   {
     if |run| == 0 then init
-    else f(FoldRight(f, init, run[1..]), run[0])
+    else f(fold_right(f, init, run[1..]), run[0])
   }
 
-  function FoldFromRight<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function fold_from_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
   {
     if |run| == 0 then init
-    else f(FoldFromRight(f, init, DropLast(run)), Last(run))
+    else f(fold_from_right(f, init, drop_last(run)), last(run))
   }
 
   function {:opaque} remove<A>(s: seq<A>, pos: int) : seq<A>
@@ -207,11 +207,11 @@ module Sequences {
     s[.. pos] + s[pos + 1 ..]
   }
 
-  function {:opaque} RemoveOneValue<V>(s: seq<V>, v: V) : (s': seq<V>)
+  function {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
   // slices out a specific value from the sequence and returns the new sequence
-    ensures NoDupes(s) ==> NoDupes(s') && Set(s') == Set(s) - {v}
+    ensures no_duplicates(s) ==> no_duplicates(s') && Set(s') == Set(s) - {v}
   {
-    reveal_NoDupes();
+    reveal_no_duplicates();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
     s[.. i] + s[i + 1 ..]
@@ -245,35 +245,35 @@ module Sequences {
     assert s == s[..pos] + s[pos..];
   }
   
-  function {:opaque} replace1with2<A>(s: seq<A>, a: A, b: A, pos: int) : seq<A>
+  function {:opaque} replace_1_with_2<A>(s: seq<A>, a: A, b: A, pos: int) : seq<A>
   /* inserts 2 values into the sequence at a specified position and replaces the 
   value that was previously in that position. Returns the resulting sequence */
   requires 0 <= pos < |s|;
-  ensures |replace1with2(s,a,b,pos)| == |s| + 1;
-  ensures forall i :: 0 <= i < pos ==> replace1with2(s, a, b, pos)[i] == s[i];
-  ensures forall i :: pos < i < |s| ==> replace1with2(s, a, b, pos)[i+1] == s[i];
-  ensures replace1with2(s, a, b, pos)[pos] == a;
-  ensures replace1with2(s, a, b, pos)[pos + 1] == b;
+  ensures |replace_1_with_2(s,a,b,pos)| == |s| + 1;
+  ensures forall i :: 0 <= i < pos ==> replace_1_with_2(s, a, b, pos)[i] == s[i];
+  ensures forall i :: pos < i < |s| ==> replace_1_with_2(s, a, b, pos)[i+1] == s[i];
+  ensures replace_1_with_2(s, a, b, pos)[pos] == a;
+  ensures replace_1_with_2(s, a, b, pos)[pos + 1] == b;
   {
     s[..pos] + [a, b] + s[pos+1..]
   }
 
-  method Replace1with2<A>(s: seq<A>, a: A, b: A, pos: uint64) returns (res:seq<A>)
+  method Replace_1_with_2<A>(s: seq<A>, a: A, b: A, pos: uint64) returns (res:seq<A>)
   // replaces value at a specified index with 2 values
   requires 0 <= pos as int < |s|;
   requires pos < 0xffff_ffff_ffff_ffff
-  ensures res == replace1with2(s, a, b, pos as int)
+  ensures res == replace_1_with_2(s, a, b, pos as int)
   {
     return s[..pos] + [a, b] + s[pos+1..];
   }
 
-  function {:opaque} replace2with1<A>(s: seq<A>, a: A, pos: int) : seq<A>
+  function {:opaque} replace_2_with_1<A>(s: seq<A>, a: A, pos: int) : seq<A>
   // replaces 2 values with one value at that position
   requires 0 <= pos < |s| - 1;
-  ensures |replace2with1(s,a,pos)| == |s| - 1;
-  ensures forall i :: 0 <= i < pos ==> replace2with1(s, a, pos)[i] == s[i];
-  ensures forall i :: pos < i < |s| - 1 ==> replace2with1(s, a, pos)[i] == s[i+1];
-  ensures replace2with1(s, a, pos)[pos] == a;
+  ensures |replace_2_with_1(s,a,pos)| == |s| - 1;
+  ensures forall i :: 0 <= i < pos ==> replace_2_with_1(s, a, pos)[i] == s[i];
+  ensures forall i :: pos < i < |s| - 1 ==> replace_2_with_1(s, a, pos)[i] == s[i+1];
+  ensures replace_2_with_1(s, a, pos)[pos] == a;
   {
     s[..pos] + [a] + s[pos+2..]
   }
@@ -300,7 +300,7 @@ module Sequences {
   function {:opaque} concatSeq<A>(a: seq<seq<A>>) : seq<A>
   // turns a sequence of sequences into a single sequence and returns the result
   {
-    if |a| == 0 then [] else concatSeq(DropLast(a)) + Last(a)
+    if |a| == 0 then [] else concatSeq(drop_last(a)) + last(a)
   }
 
   lemma concatSeqAdditive<A>(a: seq<seq<A>>, b: seq<seq<A>>)
@@ -322,16 +322,16 @@ module Sequences {
       calc {
         concatSeq(a + b);
         { reveal_concatSeq(); }
-        concatSeq(DropLast(a + b)) + Last(a + b);
+        concatSeq(drop_last(a + b)) + last(a + b);
         {
-          assert DropLast(a + b) == a + DropLast(b);
-          assert Last(a + b) == Last(b);
+          assert drop_last(a + b) == a + drop_last(b);
+          assert last(a + b) == last(b);
         }
-        concatSeq(a + DropLast(b)) + Last(b);
+        concatSeq(a + drop_last(b)) + last(b);
         {
-          concatSeqAdditive(a, DropLast(b));
+          concatSeqAdditive(a, drop_last(b));
         }
-        concatSeq(a) + concatSeq(DropLast(b)) + Last(b);
+        concatSeq(a) + concatSeq(drop_last(b)) + last(b);
         { reveal_concatSeq(); }
         concatSeq(a) + concatSeq(b);
       }
@@ -423,7 +423,7 @@ module Sequences {
     ensures forall i :: 0 <= i < |Zip(a, b)| ==> Zip(a, b)[i] == (a[i], b[i])
   {
     if |a| == 0 then []
-    else Zip(DropLast(a), DropLast(b)) + [(Last(a), Last(b))]
+    else Zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
   function {:opaque} Unzip<A,B>(z: seq<(A, B)>) : (seq<A>, seq<B>)
@@ -433,8 +433,8 @@ module Sequences {
   {
     if |z| == 0 then ([], [])
     else
-      var (a, b) := Unzip(DropLast(z));
-      (a + [Last(z).0], b + [Last(z).1])
+      var (a, b) := Unzip(drop_last(z));
+      (a + [last(z).0], b + [last(z).1])
   }
 
   lemma ZipOfUnzip<A,B>(s: seq<(A,B)>)
@@ -458,7 +458,7 @@ module Sequences {
     ensures forall i :: 0 <= i < |shape| ==> shape[i] == |seqs[i]|
   {
     if |seqs| == 0 then []
-    else FlattenShape(DropLast(seqs)) + [|Last(seqs)|]
+    else FlattenShape(drop_last(seqs)) + [|last(seqs)|]
   }
 
   lemma FlattenShapeAdditive<A>(seqs1: seq<seq<A>>, seqs2: seq<seq<A>>)
@@ -474,7 +474,7 @@ module Sequences {
     ensures |shape| == 0 ==> FlattenLength(shape) == 0
   {
     if |shape| == 0 then 0
-    else FlattenLength(DropLast(shape)) + Last(shape)
+    else FlattenLength(drop_last(shape)) + last(shape)
   }
 
 
@@ -487,7 +487,7 @@ module Sequences {
       assert shape1 + shape2 == shape1;
     } else {
       reveal_FlattenLength();
-      assert shape1 + shape2 == (shape1 + DropLast(shape2)) + [Last(shape2)];
+      assert shape1 + shape2 == (shape1 + drop_last(shape2)) + [last(shape2)];
     }
   }
   
@@ -512,7 +512,7 @@ module Sequences {
     reveal_FlattenShape();
     reveal_FlattenLength();
     if |seqs| == 0 then []
-    else Flatten(DropLast(seqs)) + Last(seqs)
+    else Flatten(drop_last(seqs)) + last(seqs)
   }
 
   lemma FlattenSingleton<A>(s: seq<A>)
@@ -535,15 +535,15 @@ module Sequences {
     } else {
       calc {
         Flatten(seqs1 + seqs2);
-        { assert seqs1 + seqs2 == seqs1 + DropLast(seqs2) + [ Last(seqs2) ]; }
-        Flatten(seqs1 + DropLast(seqs2) + [ Last(seqs2) ]);
-        { FlattenAdditive(seqs1 + DropLast(seqs2), [ Last(seqs2) ]); }
-        Flatten(seqs1 + DropLast(seqs2)) + Flatten([ Last(seqs2) ]);
-        { FlattenAdditive(seqs1, DropLast(seqs2)); }
-        Flatten(seqs1) + Flatten(DropLast(seqs2)) + Flatten([ Last(seqs2) ]);
-        { FlattenAdditive(DropLast(seqs2), [ Last(seqs2) ]); }
-        Flatten(seqs1) + Flatten(DropLast(seqs2) + [ Last(seqs2) ]);
-        { assert seqs2 == DropLast(seqs2) + [ Last(seqs2) ]; }
+        { assert seqs1 + seqs2 == seqs1 + drop_last(seqs2) + [ last(seqs2) ]; }
+        Flatten(seqs1 + drop_last(seqs2) + [ last(seqs2) ]);
+        { FlattenAdditive(seqs1 + drop_last(seqs2), [ last(seqs2) ]); }
+        Flatten(seqs1 + drop_last(seqs2)) + Flatten([ last(seqs2) ]);
+        { FlattenAdditive(seqs1, drop_last(seqs2)); }
+        Flatten(seqs1) + Flatten(drop_last(seqs2)) + Flatten([ last(seqs2) ]);
+        { FlattenAdditive(drop_last(seqs2), [ last(seqs2) ]); }
+        Flatten(seqs1) + Flatten(drop_last(seqs2) + [ last(seqs2) ]);
+        { assert seqs2 == drop_last(seqs2) + [ last(seqs2) ]; }
         Flatten(seqs1) + Flatten(seqs2);
       }
     }
@@ -563,8 +563,8 @@ module Sequences {
     requires i < FlattenLength(shape)
   {
     reveal_FlattenLength();
-    if i < FlattenLength(DropLast(shape)) then UnflattenIndex(DropLast(shape), i)
-    else (|shape|-1, i - FlattenLength(DropLast(shape)))
+    if i < FlattenLength(drop_last(shape)) then UnflattenIndex(drop_last(shape), i)
+    else (|shape|-1, i - FlattenLength(drop_last(shape)))
   }
 
   lemma FlattenIndexInBounds(shape: seq<nat>, i: nat, j: nat)
@@ -575,8 +575,8 @@ module Sequences {
     reveal_FlattenLength();
     if i == |shape|-1 {
     } else {
-      FlattenIndexInBounds(DropLast(shape), i, j);
-      assert DropLast(shape)[..i] == shape[..i];
+      FlattenIndexInBounds(drop_last(shape), i, j);
+      assert drop_last(shape)[..i] == shape[..i];
     }
   }
   
@@ -598,8 +598,8 @@ module Sequences {
     var (shapeidx, shapeoff) := UnflattenIndex(shape, i);
     if shapeidx == |shape|-1 {
     } else {
-      FlattenUnflattenIdentity(DropLast(shape), i);
-      assert DropLast(shape)[..shapeidx] == shape[..shapeidx];
+      FlattenUnflattenIdentity(drop_last(shape), i);
+      assert drop_last(shape)[..shapeidx] == shape[..shapeidx];
     }
   }
   
@@ -612,8 +612,8 @@ module Sequences {
     FlattenIndexInBounds(shape, i, j);
     if i == |shape| - 1 {
     } else {
-      UnflattenFlattenIdentity(DropLast(shape), i, j);
-      assert DropLast(shape)[..i] == shape[..i];
+      UnflattenFlattenIdentity(drop_last(shape), i, j);
+      assert drop_last(shape)[..i] == shape[..i];
     }
   }
   
@@ -635,8 +635,8 @@ module Sequences {
     FlattenIndexInBounds(FlattenShape(seqs), i, j);
     if i == |seqs|-1 {
     } else {
-      FlattenIndexIsCorrect(DropLast(seqs), i, j);
-      assert DropLast(FlattenShape(seqs))[..i] == FlattenShape(seqs)[..i];
+      FlattenIndexIsCorrect(drop_last(seqs), i, j);
+      assert drop_last(FlattenShape(seqs))[..i] == FlattenShape(seqs)[..i];
     }
   }
 
@@ -677,10 +677,10 @@ module Sequences {
     ensures forall k :: k in s ==> seqMax(s) >= k
     ensures seqMax(s) in s
   {
-    assert s == DropLast(s) + [Last(s)];
+    assert s == drop_last(s) + [last(s)];
     if |s| == 1
     then s[0]
-    else Math.max(seqMax(DropLast(s)), Last(s))
+    else Math.max(seqMax(drop_last(s)), last(s))
   }
 
   lemma SeqMaxCorrespondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)

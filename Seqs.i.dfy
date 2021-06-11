@@ -58,7 +58,7 @@ function last<T>(s:seq<T>):T
   s[|s|-1]
 }
 
-function all_but_last<T>(s:seq<T>):seq<T>
+function all_but_last<T>(s:seq<T>):seq<T> // same as drop_last in 'Sequences.i.dfy'
 /* returns a slice of the sequence that includes all elements of the 
 original sequence except for the last element */
   requires |s| > 0
