@@ -341,26 +341,3 @@ lemma lemma_my_lemma <A,B> ( x : seq<seq<A>> , y :B){
     ...
 }
 ```
-
-## Recommendations
-
-This section describes a few recommendations that can help make code more readable and easy to follow, although not strictly enforced.
-
-### Externs
-
-Try to name them the same in Dafny and the target language (e.g. C#, Java, etc) whenever possible, so that in Dafny we only have to write `{:extern}`, not `{:extern "<name>"}`.
-
-### Things to Consider
-
-Ask these questions before designing / implementing a program in Dafny.
-
-•	Is this variable name / function name X a good name?
-
-•	Does it make sense that this method M is in module X? Shouldn’t it be in module Y instead?
-
-•	Does the definition X belong to the file Y.dfy?
-
-•	Is X.dfy a good filename?
-
-
-
