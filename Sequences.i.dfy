@@ -189,7 +189,7 @@ module Sequences {
     }
   }
   
-  function method index_of<T>(s: seq<T>, e: T) : int
+  function index_of<T>(s: seq<T>, e: T) : int
   // returns the index of a certain element in the sequence
     requires e in s;
     ensures 0 <= index_of(s,e) < |s|;
@@ -269,7 +269,7 @@ module Sequences {
     s[.. pos] + s[pos + 1 ..] 
   }
 
-  function method {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
+  function {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
   // slices out a specific value from the sequence and returns the new sequence
     ensures no_duplicates(s) ==> no_duplicates(s') && Set(s') == Set(s) - {v}
   {
@@ -290,7 +290,7 @@ module Sequences {
     s[..pos] + [a] + s[pos..]
   }
 
-  method method Insert<A>(s: seq<A>, a: A, pos: int) returns (res: seq<A>)
+  method Insert<A>(s: seq<A>, a: A, pos: int) returns (res: seq<A>)
   // inserts a value into a specified index of the sequence and returns the new sequence
   requires 0 <= pos as int <= |s|;
   ensures res == insert(s, a, pos as int); //calls the function
@@ -440,7 +440,7 @@ module Sequences {
     && a == b[|b|-|a|..]
   }
 
-  function method {:opaque} SeqIndexIterate<A>(run: seq<A>, needle: A, i: int) : (res : Option<int>)
+  function method {:opaque} SeqIndexIterate<A(==)>(run: seq<A>, needle: A, i: int) : (res : Option<int>)
   requires 0 <= i <= |run|
   ensures res.Some? ==> 0 <= res.value < |run| && run[res.value] == needle
   ensures res.None? ==> forall j | i <= j < |run| :: run[j] != needle
@@ -451,12 +451,12 @@ module Sequences {
     else SeqIndexIterate(run, needle, i+1)
   }
 
-  function method {:opaque} SeqIndex<A>(run: seq<A>, needle: A) : (res : Option<int>)
-  ensures res.Some? ==> 0 <= res.value < |run| && run[res.value] == needle
-  ensures res.None? ==> forall i | 0 <= i < |run| :: run[i] != needle
-  {
-    SeqIndexIterate(run, needle, 0)
-  }
+  // function method {:opaque} SeqIndex<A>(run: seq<A>, needle: A) : (res : Option<int>)
+  // ensures res.Some? ==> 0 <= res.value < |run| && run[res.value] == needle
+  // ensures res.None? ==> forall i | 0 <= i < |run| :: run[i] != needle
+  // {
+  //   SeqIndexIterate(run, needle, 0)
+  // } 
 
   function method {:opaque} SeqOfLength<V>(length: nat, v: V) : (res: seq<V>)
   ensures |res| == length
@@ -571,7 +571,7 @@ module Sequences {
   /* the flattened sequence's length will be equal to flattenening the shape 
   and then flattening the length; returns a sequence that combines all sequences of 
   the sequence */
-    ensures |flatten(seqs)| == flatten_length(FlattenShape(seqs))
+    ensures |flatten(seqs)| == flatten_length(flatten_shape(seqs))
     ensures |seqs| == 0 ==> |flatten(seqs)| == 0
   {
     reveal_flatten_shape();
@@ -695,25 +695,25 @@ module Sequences {
   lemma lemma_flatten_index_is_correct<A>(seqs: seq<seq<A>>, i: nat, j: nat)
     requires i < |seqs|
     requires j < |seqs[i]|
-    ensures flatten_index(FlattenShape(seqs), i, j) < |flatten(seqs)|
-    ensures flatten(seqs)[flatten_index(FlattenShape(seqs), i, j)] == seqs[i][j]
+    ensures flatten_index(flatten_shape(seqs), i, j) < |flatten(seqs)|
+    ensures flatten(seqs)[flatten_index(flatten_shape(seqs), i, j)] == seqs[i][j]
   {
     reveal_flatten();
-    lemma_flatten_index_in_bounds(FlattenShape(seqs), i, j);
+    lemma_flatten_index_in_bounds(flatten_shape(seqs), i, j);
     if i == |seqs|-1 {
     } else {
       lemma_flatten_index_is_correct(drop_last(seqs), i, j);
-      assert drop_last(FlattenShape(seqs))[..i] == FlattenShape(seqs)[..i];
+      assert drop_last(flatten_shape(seqs))[..i] == flatten_shape(seqs)[..i];
     }
   }
 
   lemma {:induction true} {:timeLimitMultiplier 3} lemma_unflatten_index_is_correct<A>(seqs: seq<seq<A>>, i: nat)
-    requires i < flatten_length(FlattenShape(seqs))
-    ensures unflatten_index(FlattenShape(seqs), i).0 < |seqs|
-    ensures unflatten_index(FlattenShape(seqs), i).1 < |seqs[unflatten_index(FlattenShape(seqs), i).0]|
-    ensures flatten(seqs)[i] == seqs[unflatten_index(FlattenShape(seqs), i).0][unflatten_index(FlattenShape(seqs), i).1]
+    requires i < flatten_length(flatten_shape(seqs))
+    ensures unflatten_index(flatten_shape(seqs), i).0 < |seqs|
+    ensures unflatten_index(flatten_shape(seqs), i).1 < |seqs[unflatten_index(flatten_shape(seqs), i).0]|
+    ensures flatten(seqs)[i] == seqs[unflatten_index(flatten_shape(seqs), i).0][unflatten_index(flatten_shape(seqs), i).1]
   {
-    var shape := FlattenShape(seqs);
+    var shape := flatten_shape(seqs);
     lemma_unflatten_index_in_bounds(shape, i);
     reveal_flatten();
   }
