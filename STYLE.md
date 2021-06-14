@@ -298,7 +298,7 @@ method collatz(num: nat)
 
 Avoid unnecessary whitespace inside expressions.
 
-### Type Declaration
+#### Type Declaration
 
 A type declaration should have a form of `variableName: variableType`.
 
@@ -320,7 +320,7 @@ If the type can be inferred by Dafny, leave it out, unless you think it provides
 
     const one := 1
 
-### Function, Method, Predicate, and Lemma Declaration
+#### Function, Method, Predicate, and Lemma Declaration
 
 The `function`, `method`, `predicate`, and `lemma` definitions should have the form `function_name(parameterName: parameterType, ...)`.
 
