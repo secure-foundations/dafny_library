@@ -16,12 +16,12 @@ lemma lemma_item_at_position_in_sequence<T>(s:seq<T>, v:T)
 // if there is an element at a certain index, then that index exists
   requires v in s
   ensures exists idx :: item_at_position_in_sequence(s, v, idx)
-{
+{ 
   var idx :| 0 <= idx < |s| && s[idx] == v;
   assert item_at_position_in_sequence(s, v, idx);
 }
 
-function find_index_in_sequence<T>(s:seq<T>, v:T):int
+function method find_index_in_sequence<T>(s:seq<T>, v:T):int
 /* finds the index of a certain value in the sequence, if it exists. Returns
 the index, or -1 if the value is not included in the sequence */
   ensures var idx := find_index_in_sequence(s, v);
@@ -51,14 +51,14 @@ lemma lemma_identical_seq_singletons_have_itentical_elements<T>(x:T, y:T)
   }
 }
 
-function last<T>(s:seq<T>):T
+function method last<T>(s:seq<T>):T
 // returns the value of the last element in the sequence
   requires |s| > 0
 {
   s[|s|-1]
 }
 
-function all_but_last<T>(s:seq<T>):seq<T> // same as drop_last in 'Sequences.i.dfy'
+function method all_but_last<T>(s:seq<T>):seq<T> // same as drop_last in 'Sequences.i.dfy'
 /* returns a slice of the sequence that includes all elements of the 
 original sequence except for the last element */
   requires |s| > 0
@@ -70,7 +70,7 @@ original sequence except for the last element */
 //////////////////////////////////////////////////////////
 //  Combining sequences of sequences
 //////////////////////////////////////////////////////////
-function seq_concat<T>(seqs:seq<seq<T>>) : seq<T>
+function method seq_concat<T>(seqs:seq<seq<T>>) : seq<T>
 /* concatenates a sequence of sequences into a single sequence. 
 Works by adding elements in order from first to last */
   decreases |seqs|
@@ -79,7 +79,7 @@ Works by adding elements in order from first to last */
   else seqs[0] + seq_concat(seqs[1..])
 }
 
-function seq_concat_reverse<T>(seqs:seq<seq<T>>) : seq<T>
+function method seq_concat_reverse<T>(seqs:seq<seq<T>>) : seq<T>
 /* concatenates the sequence of sequences into a single sequence. 
 works by adding elements from last to first */
   decreases |seqs|
