@@ -3,7 +3,7 @@
 
 module Mathematics {
 
-	function min(a: int, b: int) : int
+	function method min(a: int, b: int) : int
 	{
 		if a < b
 			then a
@@ -11,23 +11,13 @@ module Mathematics {
 			b
 	}
 
-	function max(a: int, b: int) : int
+	function method max(a: int, b: int) : int
 	{
 		if a < b
 			then b
 		else
 			a
 	}
-
-  function Set<T>(ms: multiset<T>) : set<T>
-  {
-    set x : T | x in ms
-  }
-
-  function ISet<T>(ms: set<T>) : iset<T>
-  {
-    iset x : T | x in ms
-  }
 
   lemma PosMulPosIsPos(x: int, y: int)
     requires 0 < x
@@ -93,26 +83,26 @@ module Sequences {
   {
   }
   
-  function last<E>(run: seq<E>) : E
+  function method last<E>(run: seq<E>) : E
   // returns the last element in the sequence
     requires |run| > 0;
   {
     run[|run|-1]
   }
 
-  function FirstOpt<E>(run: seq<E>) : Option<E>
+  function method FirstOpt<E>(run: seq<E>) : Option<E>
   {
     if |run| == 0 then None else Some(run[0])
   }
 
-  function drop_last<E>(run: seq<E>) : seq<E> // same as all_but_last in 'Seqs.i.dfy'
+  function method drop_last<E>(run: seq<E>) : seq<E> // same as all_but_last in 'Seqs.i.dfy'
   // returns the sequence slice up to but not including the last element
     requires |run| > 0;
   {
     run[..|run|-1]
   }
 
-  function Set<T>(run: seq<T>) : set<T> 
+  function method Set<T>(run: seq<T>) : set<T> 
   // converts a sequence to a multiset
   {
     set x: T | x in multiset(run)
@@ -139,7 +129,7 @@ module Sequences {
     }
   }
   
-  function ISet<T>(run: seq<T>) : iset<T> 
+  function method ISet<T>(run: seq<T>) : iset<T> 
   // initializing a possibly infinite set that is included in the original sequence...???
   {
     iset x : T | x in multiset(run)
@@ -199,7 +189,7 @@ module Sequences {
     }
   }
   
-  function index_of<T>(s: seq<T>, e: T) : int
+  function method index_of<T>(s: seq<T>, e: T) : int
   // returns the index of a certain element in the sequence
     requires e in s;
     ensures 0 <= index_of(s,e) < |s|;
@@ -209,7 +199,7 @@ module Sequences {
     i
   }
 
-  function {:opaque} range(n: int) : seq<int>
+  function method {:opaque} range(n: int) : seq<int>
   /* returns a sequence of n integers in which the integer is the
   same number as the index */ 
     requires n >= 0
@@ -219,7 +209,7 @@ module Sequences {
     if n == 0 then [] else range(n-1) + [n-1]
   }
   
-  function apply<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
+  function method apply<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
   // applies a transformation function on the sequence
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| == |run|
@@ -231,7 +221,7 @@ module Sequences {
   }
 
   // TODO: can we replace Apply with this?
-  function {:opaque} apply_opaque<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
+  function method {:opaque} apply_opaque<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| == |run|
     ensures forall i :: 0 <= i < |run| ==> result[i] == f(run[i]);
@@ -240,7 +230,7 @@ module Sequences {
     apply(f, run)
   }
 
-  function filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
+  function method filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
   // uses a selection function to select elements from the sequence
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| <= |run|
@@ -251,26 +241,26 @@ module Sequences {
     else ((if f(run[0]) then [run[0]] else []) + filter(f, run[1..]))
   }
   
-  function fold_left<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function method fold_left<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
   {
     if |run| == 0 then init
     else fold_left(f, f(init, run[0]), run[1..])
   }
 
-  function fold_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function method fold_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
   {
     if |run| == 0 then init
     else f(fold_right(f, init, run[1..]), run[0])
   }
 
-  function fold_from_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function method fold_from_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
   {
     if |run| == 0 then init
     else f(fold_from_right(f, init, drop_last(run)), last(run))
   }
 
-  function {:opaque} remove<A>(s: seq<A>, pos: int) : seq<A>
-  // slices out a specific position's value from the sequence and returns teh new sequence
+  function method {:opaque} remove<A>(s: seq<A>, pos: int) : seq<A>
+  // slices out a specific position's value from the sequence and returns the new sequence
   requires 0 <= pos < |s|
   ensures |remove(s, pos)| == |s| - 1
   ensures forall i | 0 <= i < pos :: remove(s, pos)[i] == s[i]
@@ -279,7 +269,7 @@ module Sequences {
     s[.. pos] + s[pos + 1 ..] 
   }
 
-  function {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
+  function method {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
   // slices out a specific value from the sequence and returns the new sequence
     ensures no_duplicates(s) ==> no_duplicates(s') && Set(s') == Set(s) - {v}
   {
@@ -289,7 +279,7 @@ module Sequences {
     s[.. i] + s[i + 1 ..]
   }
 
-  function {:opaque} insert<A>(s: seq<A>, a: A, pos: int) : seq<A>
+  function method {:opaque} insert<A>(s: seq<A>, a: A, pos: int) : seq<A>
   // inserts a certain value into a specified index of the sequence and returns the new sequence
   requires 0 <= pos <= |s|;
   ensures |insert(s,a,pos)| == |s| + 1;
@@ -300,7 +290,7 @@ module Sequences {
     s[..pos] + [a] + s[pos..]
   }
 
-  method Insert<A>(s: seq<A>, a: A, pos: int) returns (res: seq<A>)
+  method method Insert<A>(s: seq<A>, a: A, pos: int) returns (res: seq<A>)
   // inserts a value into a specified index of the sequence and returns the new sequence
   requires 0 <= pos as int <= |s|;
   ensures res == insert(s, a, pos as int); //calls the function
@@ -317,7 +307,7 @@ module Sequences {
     assert s == s[..pos] + s[pos..];
   }
   
-  function {:opaque} replace_1_with_2<A>(s: seq<A>, a: A, b: A, pos: int) : seq<A>
+  function method {:opaque} replace_1_with_2<A>(s: seq<A>, a: A, b: A, pos: int) : seq<A>
   /* inserts 2 values into the sequence at a specified position and replaces the 
   value that was previously in that position. Returns the resulting sequence */
   requires 0 <= pos < |s|;
@@ -339,7 +329,7 @@ module Sequences {
     return s[..pos] + [a, b] + s[pos+1..];
   }
 
-  function {:opaque} replace_2_with_1<A>(s: seq<A>, a: A, pos: int) : seq<A>
+  function method {:opaque} replace_2_with_1<A>(s: seq<A>, a: A, pos: int) : seq<A>
   // replaces 2 values with one value at that position
   requires 0 <= pos < |s| - 1;
   ensures |replace_2_with_1(s,a,pos)| == |s| - 1;
@@ -350,7 +340,7 @@ module Sequences {
     s[..pos] + [a] + s[pos+2..]
   }
 
-  function {:opaque} concat<A>(a: seq<A>, b: seq<A>) : seq<A>
+  function method {:opaque} concat<A>(a: seq<A>, b: seq<A>) : seq<A>
   // concatenates two sequences
   ensures |concat(a,b)| == |a| + |b|
   ensures forall i :: 0 <= i < |a| ==> a[i] == concat(a,b)[i];
@@ -359,7 +349,7 @@ module Sequences {
     a + b
   }
 
-  function {:opaque} concat_3<A>(a: seq<A>, b: A, c: seq<A>) : seq<A>
+  function method {:opaque} concat_3<A>(a: seq<A>, b: A, c: seq<A>) : seq<A>
   // concatenates 2 sequences with one value in between 
   // should I make b into a sequence, and the user can choose for it be be used as a singleton???
   ensures |concat_3(a,b,c)| == |a| + |c| + 1
@@ -372,6 +362,7 @@ module Sequences {
 
   function method {:opaque} concat_seq<A>(a: seq<seq<A>>) : seq<A>
   // turns a sequence of sequences into a single sequence and returns the result
+  // was already a function method
   {
     if |a| == 0 then [] else concat_seq(drop_last(a)) + last(a)
   }
@@ -449,7 +440,7 @@ module Sequences {
     && a == b[|b|-|a|..]
   }
 
-  function {:opaque} SeqIndexIterate<A>(run: seq<A>, needle: A, i: int) : (res : Option<int>)
+  function method {:opaque} SeqIndexIterate<A>(run: seq<A>, needle: A, i: int) : (res : Option<int>)
   requires 0 <= i <= |run|
   ensures res.Some? ==> 0 <= res.value < |run| && run[res.value] == needle
   ensures res.None? ==> forall j | i <= j < |run| :: run[j] != needle
@@ -460,14 +451,14 @@ module Sequences {
     else SeqIndexIterate(run, needle, i+1)
   }
 
-  function {:opaque} SeqIndex<A>(run: seq<A>, needle: A) : (res : Option<int>)
+  function method {:opaque} SeqIndex<A>(run: seq<A>, needle: A) : (res : Option<int>)
   ensures res.Some? ==> 0 <= res.value < |run| && run[res.value] == needle
   ensures res.None? ==> forall i | 0 <= i < |run| :: run[i] != needle
   {
     SeqIndexIterate(run, needle, 0)
   }
 
-  function {:opaque} SeqOfLength<V>(length: nat, v: V) : (res: seq<V>)
+  function method {:opaque} SeqOfLength<V>(length: nat, v: V) : (res: seq<V>)
   ensures |res| == length
   ensures forall i: nat | i < |res| :: res[i] == v
   {
@@ -479,6 +470,7 @@ module Sequences {
 
   // This is a workaround since Dafny right now doesn't support
   // s[i := t] when i is a native type integer.
+  //already a function method
   function method {:opaque} SeqIndexUpdate<T>(s: seq<T>, i: int, t: T) : seq<T>
   requires i as int + 1 < 0x1_0000_0000_0000_0000
   requires 0 <= i as int < |s|
@@ -487,7 +479,7 @@ module Sequences {
     s[..i] + [t] + s[i+1..]
   }
 
-  function {:opaque} zip<A,B>(a: seq<A>, b: seq<B>) : seq<(A,B)>
+  function method {:opaque} zip<A,B>(a: seq<A>, b: seq<B>) : seq<(A,B)>
   /* takes two sequences, a and b, and combines then to form one sequence in which
   each position contains an ordered pair from a and b */
 
@@ -499,7 +491,7 @@ module Sequences {
     else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
-  function {:opaque} unzip<A,B>(z: seq<(A, B)>) : (seq<A>, seq<B>)
+  function method {:opaque} unzip<A,B>(z: seq<(A, B)>) : (seq<A>, seq<B>)
   // unzips a sequence that contains ordered pairs into 2 seperate sequences
     ensures |unzip(z).0| == |unzip(z).1| == |z|
     ensures forall i :: 0 <= i < |z| ==> (unzip(z).0[i], unzip(z).1[i]) == z[i]
@@ -524,7 +516,7 @@ module Sequences {
   {
   }
   
-  function {:opaque} flatten_shape<A>(seqs: seq<seq<A>>) : (shape: seq<nat>)
+  function method {:opaque} flatten_shape<A>(seqs: seq<seq<A>>) : (shape: seq<nat>)
   /* receives a sequence of sequences. Returns a sequence in which the ith element corresponds 
   to the length of the sequence at the ith position*/
     ensures |shape| == |seqs|
@@ -541,7 +533,7 @@ module Sequences {
   {
   }
   
-  function {:opaque} flatten_length(shape: seq<nat>) : nat
+  function method {:opaque} flatten_length(shape: seq<nat>) : nat
   /* returns a number that results from adding up each all 
   of the elements in the sequence's shape */
     ensures |shape| == 0 ==> flatten_length(shape) == 0
@@ -575,7 +567,7 @@ module Sequences {
     lemma_flatten_length_addition(shape[..from], shape[from..to]);
   }
 
-  function {:opaque} flatten<A>(seqs: seq<seq<A>>) : seq<A>
+  function method {:opaque} flatten<A>(seqs: seq<seq<A>>) : seq<A>
   /* the flattened sequence's length will be equal to flattenening the shape 
   and then flattening the length; returns a sequence that combines all sequences of 
   the sequence */
@@ -622,7 +614,7 @@ module Sequences {
     }
   }
   
-  function flatten_index(shape: seq<nat>, i: nat, j: nat) : nat
+  function method flatten_index(shape: seq<nat>, i: nat, j: nat) : nat
   /* returns the index of the flattened sequence  */
     requires i < |shape|
     requires j < shape[i]
@@ -630,7 +622,7 @@ module Sequences {
     flatten_length(shape[..i]) + j
   }
 
-  function unflatten_index(shape: seq<nat>, i: nat) : (nat, nat)
+  function method unflatten_index(shape: seq<nat>, i: nat) : (nat, nat)
   /* returns the index of the unflattened sequence */
     requires i < flatten_length(shape)
   {
@@ -746,7 +738,7 @@ module Sequences {
     }
   }
 
-  function {:opaque} seq_max(s: seq<int>): int
+  function method {:opaque} seq_max(s: seq<int>): int
   // returns the maximum integer value in the sequence
     requires 0 < |s|
     ensures forall k :: k in s ==> seq_max(s) >= k
@@ -852,7 +844,7 @@ module Sequences {
   {
   }
 
-  function {:opaque} fill<T>(n: int, t: T) : (res: seq<T>)
+  function method {:opaque} fill<T>(n: int, t: T) : (res: seq<T>)
   // fills the sequence with n identical elements
   requires n >= 0
   ensures |res| == n
