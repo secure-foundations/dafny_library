@@ -181,15 +181,24 @@ method {:<attributes>} method_name(param1: Type, param2: Type,
     decreases param1
 ````
 
-Multiple requires or ensures can be combined into one:
+Multiple `requires` or `ensures` can be combined into one:
+
+```
 requires
     && P1()
     && P2()
     && P3()
-The same rules apply to function, predicate, and lemma definitions.
-Content Conventions
-Order
-Functions, predicates, and methods within a file should be sorted topologically, meaning that everything method M depends on should be above M in the file.
+````
+
+The same rules apply to `function`, `predicate`, and `lemma` definitions.
+
+## Content Conventions
+
+### Order
+
+Functions, predicates, and methods within a file should be sorted topologically, meaning that everything `method M` depends on should be above `M` in the file.
+
+```
 function my_function(a: int): int{
   ...
 }
@@ -197,8 +206,13 @@ method my_method(i: int) {
   ...
   return my_function(i);
 }
-Predicates
+```
+
+### Predicates
+
 Predicates should be used instead of functions that return a Boolean value. 
+
+```
 // YES
 predicate foo() {
   ...
@@ -208,10 +222,17 @@ predicate foo() {
 Function foo():bool {
   ...
 }
-Things to Avoid
-Parentheses
+```
+
+## Things to Avoid
+
+### Parentheses
+
 In many cases, Dafny does not require parentheses around expressions. Here are some examples.
+
 •	If-Else-While Statements
+
+```
 // YES
 var i := 1;
 while i < 10 {
@@ -231,7 +252,11 @@ while (i < 10) {
     }
     ...
 }
+```
+
 •	Statements That Take Expression Arguments
+
+```
 // YES
 assert x < 100;
 print x;
@@ -239,7 +264,11 @@ print x;
 // NO
 assert(x < 100);
 print(x);
+```
+
 •	Simple Boolean/Arithmetic Expressions
+
+```
 // YES
 method collatz(num: nat)
     decreases *
@@ -263,10 +292,17 @@ method collatz(num: nat)
         n := if ((n % 2) == 0) then (n / 2) else ((n * 3) + 1); // unnecessary parentheses
     }
 }
-Whitespace
+```
+
+### Whitespace
+
 Avoid unnecessary whitespace inside expressions.
-Type Declaration
-A type declaration should have a form of variableName: variableType.
+
+### Type Declaration
+
+A type declaration should have a form of `variableName: variableType`.
+
+```
 // YES
 const one: int := 1
 class {:extern} Util {
@@ -278,10 +314,17 @@ const one : int := 1 // unnecessary whitespace
 class {:extern} Util {
     var {:extern} Exception : System.String // unnecessary whitespace
 }
-If the type can be inferred by Dafny, leave it out, unless you think it provides useful documentation in the program. So, constant one above is better declared as
-const one := 1
-Function, Method, Predicate, and Lemma Declaration
-The function, method, predicate, and lemma definitions should have the form function_name(parameterName: parameterType, ...).
+```
+
+If the type can be inferred by Dafny, leave it out, unless you think it provides useful documentation in the program. So, constant `one` above is better declared as
+
+    const one := 1
+
+### Function, Method, Predicate, and Lemma Declaration
+
+The `function`, `method`, `predicate`, and `lemma` definitions should have the form `function_name(parameterName: parameterType, ...)`.
+
+```
 // YES
 function method foo<int>(i: int): int
 
@@ -297,15 +340,26 @@ lemma lemma_my_lemma<A, B>(x: seq<seq<A>>, y: B) {
 lemma lemma_my_lemma <A,B> ( x : seq<seq<A>> , y :B){
     ...
 }
-Recommendations
+```
+
+## Recommendations
+
 This section describes a few recommendations that can help make code more readable and easy to follow, although not strictly enforced.
-Externs
-Try to name them the same in Dafny and the target language (e.g. C#, Java, etc) whenever possible, so that in Dafny we only have to write {:extern}, not {:extern "<name>"}.
-Things to Consider
+
+### Externs
+
+Try to name them the same in Dafny and the target language (e.g. C#, Java, etc) whenever possible, so that in Dafny we only have to write `{:extern}`, not `{:extern "<name>"}`.
+
+### Things to Consider
+
 Ask these questions before designing / implementing a program in Dafny.
+
 •	Is this variable name / function name X a good name?
+
 •	Does it make sense that this method M is in module X? Shouldn’t it be in module Y instead?
+
 •	Does the definition X belong to the file Y.dfy?
+
 •	Is X.dfy a good filename?
 
 
