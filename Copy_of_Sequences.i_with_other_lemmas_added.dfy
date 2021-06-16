@@ -121,14 +121,6 @@ module Sequences {
   {
   }
 
-  lemma lemma_seq_slice_full_length<T>(intseq:seq<T>)
-  // from seqs_simple.i
-  /* a sequence is the same as that sequence sliced until the end 
-  of that sequence's length */
-    ensures intseq==intseq[..|intseq|];
-  {
-  }
-
   function method last<E>(run: seq<E>) : E
   // returns the last element in the sequence
     requires |run| > 0;
@@ -157,6 +149,24 @@ module Sequences {
   ensures  |all_but_last(s)| == |s| - 1
   {
     s[..|s|-1]
+  }
+
+  
+  lemma lemma_all_but_last_plus_last<T>(s:seq<T>)
+  // from Vale Seqs.i
+  // concatenating everything but the last element + the last element results in the original seq
+    requires |s| > 0;
+    ensures  all_but_last(s) + [last(s)] == s;
+  {
+
+  }
+  
+  lemma lemma_seq_slice_full_length<T>(intseq:seq<T>)
+  // from seqs_simple.i
+  /* a sequence is the same as that sequence sliced until the end 
+  of that sequence's length */
+    ensures intseq==intseq[..|intseq|];
+  {
   }
 
   function method Set<T>(run: seq<T>) : set<T> 
@@ -444,6 +454,50 @@ module Sequences {
     a + b
   }
 
+  lemma lemma_concatenation_of_2_seqs<T>(s1:seq<T>, s2:seq<T>)
+  // from Vale Seqs.i
+  // shows concatenation of 2 sequences 
+      ensures  forall i :: 0 <= i < |s1 + s2| ==> (s1 + s2)[i] == if i < |s1| then s1[i] else s2[i - |s1|];
+  {
+  }
+
+
+  lemma lemma_concatenation_of_3_seqs<T>(s1:seq<T>, s2:seq<T>, s3:seq<T>)
+  // from Vale Seqs.i
+  // shows concatenation of 3 sequences
+      ensures  forall i :: 0 <= i < |s1 + s2 + s3| ==>
+                 (s1 + s2 + s3)[i] ==
+                  if i < |s1| then s1[i]
+                  else if i < |s1| + |s2| then s2[i - |s1|]
+                  else s3[i - |s1| - |s2|];
+  {
+  }
+
+  lemma lemma_concatenation_of_4_seqs<T>(s1:seq<T>, s2:seq<T>, s3:seq<T>, s4:seq<T>)
+  // from Vale Seqs.i
+  // shows concatenation of 4 sequences
+  ensures  forall i :: 0 <= i < |s1 + s2 + s3 + s4| ==>
+                (s1 + s2 + s3 + s4)[i] ==
+                if i < |s1| then s1[i]
+                else if i < |s1| + |s2| then s2[i - |s1|]
+                else if i < |s1| + |s2| + |s3| then s3[i - |s1| - |s2|]
+                else s4[i - |s1| - |s2| - |s3|];
+  {
+  }
+
+  lemma lemma_concatenation_of_5_seqs<T>(s1:seq<T>, s2:seq<T>, s3:seq<T>, s4:seq<T>, s5:seq<T>)
+  // from Vale Seqs.i
+  // shows concatenation of 5 sequences
+  ensures  forall i :: 0 <= i < |s1 + s2 + s3 + s4 + s5| ==>
+                (s1 + s2 + s3 + s4 + s5)[i] ==
+                if i < |s1| then s1[i]
+                else if i < |s1| + |s2| then s2[i - |s1|]
+                else if i < |s1| + |s2| + |s3| then s3[i - |s1| - |s2|]
+                else if i < |s1| + |s2| + |s3| + |s4| then s4[i - |s1| - |s2| - |s3|]
+                else s5[i - |s1| - |s2| - |s3| - |s4|];
+  {
+  }
+
   function method {:opaque} concat_3<A>(a: seq<A>, b: A, c: seq<A>) : seq<A>
   // concatenates 2 sequences with one value in between 
   ensures |concat_3(a,b,c)| == |a| + |c| + 1
@@ -461,6 +515,44 @@ module Sequences {
   rightmost element */
   requires 0 <= left <= middle <= right <= |s|;
   ensures s[left..right] == s[left..middle] + s[middle..right];
+  {
+  }
+
+  lemma lemma_if_pairs_of_seqs_have_same_concat_and_first_matches_then_second_matches<T>
+        (s1:seq<T>, s2:seq<T>, s3:seq<T>, s4:seq<T>)
+   // from Vale Seqs.i 
+    requires s1 + s2 == s3 + s4;
+    requires s1 == s3;
+    ensures  s2 == s4;
+  {
+  }
+
+  lemma lemma_if_concat_is_prefix_and_first_matches_then_second_is_prefix<T>
+        (s1:seq<T>, s2:seq<T>, s3:seq<T>, s4:seq<T>)
+  // from Vale Seqs.i
+    requires s1 + s2 <= s3 + s4;
+    requires s1 == s3;
+    ensures  s2 <= s4;
+  {
+  }
+
+  lemma lemma_if_triplets_of_seqs_have_same_concat_and first_two_match_then_last_match<T>
+        (s1:seq<T>, s2:seq<T>, s3:seq<T>, s4:seq<T>, s5:seq<T>, s6:seq<T>)
+  // from Vale Seqs.i
+    requires s1 + s2 + s3 == s4 + s5 + s6;
+    requires s1 == s4;
+    requires s2 == s5;
+    ensures  s3 == s6;
+  {
+  }
+
+  lemma lemma_if_concat_is_prefix_and_first_and_second_match_then_third_is_prefix<T>
+        (s1:seq<T>, s2:seq<T>, s3:seq<T>, s4:seq<T>, s5:seq<T>, s6:seq<T>)
+  // from Vale Seqs.i 
+    requires s1 + s2 + s3 <= s4 + s5 + s6;
+    requires s1 == s4;
+    requires s2 == s5;
+    ensures  s3 <= s6;
   {
   }
 
@@ -980,12 +1072,33 @@ module Sequences {
     lemma_seq_max_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
   }
 
+  lemma lemma_element_from_seq_slice<T>(s:seq<T>, s':seq<T>, a:int, b:int, pos:int)
+  // from Vale Seqs.i
+  // ensures that the element from a slice is included in the original sequence
+  requires 0 <= a <= b <= |s|;
+  requires s' == s[a..b];
+  requires a <= pos < b;
+  ensures  0 <= pos - a < |s'|;
+  ensures  s'[pos-a] == s[pos];
+  {
+  }
+
   lemma lemma_seq_suffix_slice<T>(s: seq<T>, i: int, j: int, k: int)
   /* proves that if a sequence is sliced from i until the end and then sliced a seconds time, 
   the resulting sequence is the same as the original sequence shifted by i */ 
   requires 0 <= i <= |s|
   requires 0 <= j <= k <= |s| - i
   ensures s[i..][j..k] == s[i+j..i+k];
+  {
+  }
+
+  lemma lemma_element_from_seq_suffix<T>(s:seq<T>, s':seq<T>, a:int, pos:int)
+  // from Vale Seqs.i; I believe this is similar to lemma_seq_suffix...
+  // the given element is included in the sequence's sliced portion
+    requires 0 <= a <= |s|;
+    requires s' == s[a..];
+    requires a <= pos < |s|;
+    ensures  s'[pos-a] == s[pos];
   {
   }
 
@@ -1016,6 +1129,7 @@ module Sequences {
   ensures ar[i..][j..k] == ar[i+j..i+k];
   {
   }
+
   
   lemma lemma_seq_shift_after_slicing<T>(sequence:seq<T>, j:int)
   // from seqs_simple.i
@@ -1024,6 +1138,15 @@ module Sequences {
     requires 0<=j<|sequence|-1;
     ensures sequence[1..][j] == sequence[j+1];
   {
+  }
+
+  function method increment_seq(s:seq<int>, amount:int) : seq<int>
+  // from Vale Seqs.i
+  // increments all of the elements of the sequence of ints by a specified amount
+  ensures var s' := increment_seq(s, amount);
+  |s| == |s'| && forall i :: 0 <= i < |s'| ==> s'[i] == s[i] + amount;
+  {
+    if s == [] then [] else [s[0] + amount] + increment_seq(s[1..], amount)
   }
 
   lemma lemma_seq_equal<E>(a: seq<E>, b: seq<E>)
@@ -1055,7 +1178,24 @@ module Sequences {
   {
   }
 
+  lemma lemma_seq_slice_of_slice<T>(s:seq<T>, s1:int, e1:int, s2:int, e2:int)
+  // from Vale Seqs.i
+  // similar to lemma_seq_slice_slice
+  requires 0 <= s1 <= e1 <= |s|;
+  requires 0 <= s2 <= e2 <= e1 - s1;
+  ensures  s[s1..e1][s2..e2] == s[s1+s2..s1+e2];
+  {
+    var r1 := s[s1..e1];
+    var r2 := r1[s2..e2];
+    var r3 := s[s1+s2..s1+e2];
+    assert |r2| == |r3|;
+    forall i | 0 <= i < |r2| ensures r2[i] == r3[i];
+    {
+    }
+  }
+
   lemma lemma_seq_slice_slice<T>(s: seq<T>, i: int, j: int, k: int, l: int)
+  // similar to lemma_seq_slice_of_slice
   /* shows the sequence equivalence of slices of slices */
   requires 0 <= i <= j <= |s|
   requires 0 <= k <= l <= j - i
@@ -1100,5 +1240,19 @@ module Sequences {
   requires |a| <= i <= j <= |a| + |b|
   ensures (a+b)[i..j] == b[i-|a| .. j-|a|]
   {
+  }
+
+  function method {:opaque} convert_map_to_seq<T>(n:int, m:map<int, T>) : seq<T>
+  // from Vale Seqs.i
+  // should this be included with maps or seqs...?
+  // converts a map to a sequence
+    requires n >= 0;
+    requires forall i {:trigger i in m} :: 0 <= i < n ==> i in m;
+    ensures |ConvertMapToSeq(n, m)| == n;
+    ensures var s := ConvertMapToSeq(n, m);
+    forall i {:trigger s[i]} :: 0 <= i < n ==> s[i] == m[i];
+  {
+      if n == 0 then []
+      else ConvertMapToSeq(n-1, m) + [m[n-1]]
   }
 }
