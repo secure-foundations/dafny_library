@@ -71,6 +71,7 @@ module {:extern} Options {
     }
   }
 } // module
+
 module Sequences {
   import opened Options
   import Math = Mathematics
@@ -81,14 +82,6 @@ module Sequences {
   sequence sliced from the jth element is equal to the original, unsliced sequence */
   requires 0<=j<|intseq|;
   ensures intseq[..j] + intseq[j..] == intseq;
-  {
-  }
-
-  lemma lemma_seq_equality<E>(a: seq<E>, b: seq<E>)
-  // proves that sequence a and b are equal
-    requires |a| == |b|
-    requires forall i :: 0 <= i < |a| ==> a[i] == b[i]
-    ensures a == b
   {
   }
 
@@ -148,7 +141,8 @@ module Sequences {
     if |run| == 0 then None else Some(run[0])
   }
 
-  function method drop_last<E>(run: seq<E>) : seq<E> // same as all_but_last in 'Seqs.i.dfy'
+  function method drop_last<E>(run: seq<E>) : seq<E> 
+  // same as all_but_last in 'Seqs.i.dfy'
   // returns the sequence slice up to but not including the last element
     requires |run| > 0;
   {
@@ -194,7 +188,7 @@ module Sequences {
   }
   
   function method ISet<T>(run: seq<T>) : iset<T> 
-  // initializing a possibly infinite set that is included in the original sequence...???
+  // initializing a possibly infinite set that is included in the original sequence...
   {
     iset x : T | x in multiset(run)
   }
@@ -270,7 +264,7 @@ module Sequences {
     assert item_at_position_in_sequence(s, v, idx);
   }
 
-  function method find_index_in_sequence<T>(s:seq<T>, v:T):int
+  function find_index_in_sequence<T>(s:seq<T>, v:T):int
   // from Seqs.i; similar to index_of
   /* finds the index of a certain value in the sequence, if it exists. Returns
   the index, or -1 if the value is not included in the sequence */
@@ -452,7 +446,6 @@ module Sequences {
 
   function method {:opaque} concat_3<A>(a: seq<A>, b: A, c: seq<A>) : seq<A>
   // concatenates 2 sequences with one value in between 
-  // should I make b into a sequence, and the user can choose for it be be used as a singleton???
   ensures |concat_3(a,b,c)| == |a| + |c| + 1
   ensures forall i :: 0 <= i < |a| ==> a[i] == concat_3(a,b,c)[i];
   ensures concat_3(a,b,c)[|a|] == b;
@@ -1012,7 +1005,7 @@ module Sequences {
   requires 0 <= i <= j <= |s|
   requires 0 <= k <= j - i
   ensures s[i..j][k..] == s[i+k..j];
-  {
+  { 
   }
 
   lemma lemma_array_suffix_slice<T>(ar: array<T>, i: int, j: int, k: int)
@@ -1030,6 +1023,15 @@ module Sequences {
   elements' values are shifted down by 1 */
     requires 0<=j<|sequence|-1;
     ensures sequence[1..][j] == sequence[j+1];
+  {
+  }
+
+  lemma lemma_seq_equal<E>(a: seq<E>, b: seq<E>)
+  // same as lemma_seq_equality
+  // proves that sequence a and b are equal
+    requires |a| == |b|
+    requires forall i :: 0 <= i < |a| ==> a[i] == b[i]
+    ensures a == b
   {
   }
 

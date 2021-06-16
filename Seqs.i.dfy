@@ -21,7 +21,7 @@ lemma lemma_item_at_position_in_sequence<T>(s:seq<T>, v:T)
   assert item_at_position_in_sequence(s, v, idx);
 }
 
-function method find_index_in_sequence<T>(s:seq<T>, v:T):int
+function find_index_in_sequence<T>(s:seq<T>, v:T):int
 /* finds the index of a certain value in the sequence, if it exists. Returns
 the index, or -1 if the value is not included in the sequence */
   ensures var idx := find_index_in_sequence(s, v);
