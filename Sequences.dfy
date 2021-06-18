@@ -11,9 +11,9 @@ module Seq {
 
   /* a sequence that is sliced at the jth element concatenated with that same
   sequence sliced from the jth element is equal to the original, unsliced sequence */
-  lemma lemma_split_act<T>(intseq: seq<T>, j: int)
-  requires 0<=j<|intseq|;
-  ensures intseq[..j] + intseq[j..] == intseq;
+  lemma lemma_split_act<T>(s: seq<T>, j: int)
+  requires 0<=j<|s|;
+  ensures s[..j] + s[j..] == s;
   {
   }
 
@@ -58,9 +58,9 @@ module Seq {
   }
 
   // returns true if there are no duplicate values in the sequence
-  predicate {:opaque} has_no_duplicates<T>(a: seq<T>) 
+  predicate {:opaque} has_no_duplicates<T>(s: seq<T>) 
   {
-    (forall i, j :: 0 <= i < |a| && 0 <= j < |a| && i != j ==> a[i] != a[j])
+    (forall i, j :: 0 <= i < |s| && 0 <= j < |s| && i != j ==> s[i] != s[j])
   }
 
   /* if sequence a and b don't have duplicates AND they are disjoint, then the
@@ -81,33 +81,33 @@ module Seq {
 
   /* proves that the sequence the length of the multiset version of the sequence
   is the same as the sequence, given that there are no duplicates involved */
-  lemma lemma_cardinality_of_set_no_duplicates<T>(a: seq<T>)
-    requires has_no_duplicates(a)
-    ensures |to_set(a)| == |a|
+  lemma lemma_cardinality_of_set_no_duplicates<T>(s: seq<T>)
+    requires has_no_duplicates(s)
+    ensures |to_set(s)| == |s|
   {
     reveal_has_no_duplicates();
-    if |a| == 0 {
+    if |s| == 0 {
     } else {
-      lemma_cardinality_of_set_no_duplicates(drop_last(a));
-      assert to_set(a) == to_set(drop_last(a)) + {last(a)};
+      lemma_cardinality_of_set_no_duplicates(drop_last(s));
+      assert to_set(s) == to_set(drop_last(s)) + {last(s)};
     }
   }
 
   // proves that there are no duplicate values in the multiset
-  lemma lemma_multiset_has_no_duplicates<T>(a: seq<T>)
-    requires has_no_duplicates(a)
-    ensures forall x | x in multiset(a):: multiset(a)[x] == 1
+  lemma lemma_multiset_has_no_duplicates<T>(s: seq<T>)
+    requires has_no_duplicates(s)
+    ensures forall x | x in multiset(s):: multiset(s)[x] == 1
   {
-    if |a| == 0 {
+    if |s| == 0 {
     } else {
-      assert a == drop_last(a) + [ last(a) ];
-      assert last(a) !in drop_last(a) by {
+      assert s == drop_last(s) + [ last(s) ];
+      assert last(s) !in drop_last(s) by {
         reveal_has_no_duplicates();
       }
-      assert has_no_duplicates(drop_last(a)) by {
+      assert has_no_duplicates(drop_last(s)) by {
         reveal_has_no_duplicates();
       }
-      lemma_multiset_has_no_duplicates(drop_last(a));
+      lemma_multiset_has_no_duplicates(drop_last(s));
     }
   }
 
@@ -187,143 +187,15 @@ module Seq {
       ensures (a+b)+c == a+(b+c);
   {
   }
-
-  /* concatenating two sequences of sequences is equivalent to concatenating
-  each sequence of sequences seperately, and then concatenating the two resulting 
-  sequences together */
-  lemma lemma_seq_concat_adds<T>(A:seq<seq<T>>, B:seq<seq<T>>)
-    ensures seq_concat(A + B) == seq_concat(A) + seq_concat(B)
-  {
-    if |A| == 0 {
-      assert A+B == B;
-    } else {
-      calc == {
-        seq_concat(A + B);
-          { assert (A + B)[0] == A[0];  assert (A + B)[1..] == A[1..] + B; }
-        A[0] + seq_concat(A[1..] + B);
-        A[0] + seq_concat(A[1..]) + seq_concat(B);
-        seq_concat(A) + seq_concat(B);
-      }
-    }
-  }
-
-  // proves sequence addition
-  lemma lemma_concat_seq_addition<A>(a: seq<seq<A>>, b: seq<seq<A>>)
-  ensures concat_seq(a + b) == concat_seq(a) + concat_seq(b)
-  {
-    if b == [] {
-      calc {
-        concat_seq(a + b);
-        { assert a + b == a; }
-        concat_seq(a);
-        {
-          reveal_concat_seq();
-          assert concat_seq(b) == [];
-        }
-        concat_seq(a) + concat_seq(b);
-      }
-    } else {
-      calc {
-        concat_seq(a + b);
-        { reveal_concat_seq(); }
-        concat_seq(drop_last(a + b)) + last(a + b);
-        {
-          assert drop_last(a + b) == a + drop_last(b);
-          assert last(a + b) == last(b);
-        }
-        concat_seq(a + drop_last(b)) + last(b);
-        {
-          lemma_concat_seq_addition(a, drop_last(b));
-        }
-        concat_seq(a) + concat_seq(drop_last(b)) + last(b);
-        { reveal_concat_seq(); }
-        concat_seq(a) + concat_seq(b);
-      }
-    }
-  }
-
-  /* concatenates the sequence of sequences into a single sequence. 
-  works by adding elements from last to first */
-  function method seq_concat_reverse<T>(seqs: seq<seq<T>>): seq<T>
-  decreases |seqs|
-  {
-    if |seqs| == 0 then []
-    else seq_concat_reverse(drop_last(seqs)) + last(seqs)
-  }
-
-  /* concatenating two reversed sequences of sequences is the same as reversing two 
-  sequences of sequences and then adding the two resulting sequences together */
-  lemma lemma_seq_concat_reverse_adds<T>(A:seq<seq<T>>, B:seq<seq<T>>)
-  ensures seq_concat_reverse(A + B) == seq_concat_reverse(A) + seq_concat_reverse(B)
-  {
-    if |B| == 0 {
-      assert seq_concat_reverse(B) == [];
-      assert A+B == A;
-    } else {
-      calc == {
-        seq_concat_reverse(A + B);
-          { assert last(A + B) == last(B);  assert drop_last(A + B) == A + drop_last(B); }
-        seq_concat_reverse(A + drop_last(B)) + last(B);
-        seq_concat_reverse(A) + seq_concat_reverse(drop_last(B)) + last(B);
-        seq_concat_reverse(A) + seq_concat_reverse(B);
-      }
-    }
-  }
-
-  /* both methods of concatenating sequence (starting from front v. starting from back)
-  result in the same sequence */
-  lemma lemma_seq_concat_and_seq_concat_reverse_are_equivalent<T>(seqs: seq<seq<T>>)
-    ensures seq_concat(seqs) == seq_concat_reverse(seqs)
-  {
-    if |seqs| == 0 {
-    } else {
-      calc == {
-        seq_concat_reverse(seqs);
-        seq_concat_reverse(drop_last(seqs)) + last(seqs);
-          { lemma_seq_concat_and_seq_concat_reverse_are_equivalent(drop_last(seqs)); }
-        seq_concat(drop_last(seqs)) + last(seqs);
-        seq_concat(drop_last(seqs)) + seq_concat([last(seqs)]);
-          { lemma_seq_concat_adds(drop_last(seqs), [last(seqs)]); 
-        assert seqs == drop_last(seqs) + [last(seqs)]; }
-        seq_concat(seqs);
-      }
-    }
-  }
-
-  /* the concatenated sequence's length is greater than or equal to 
-  each individual inner sequence's length */
-  lemma lemma_concat_seq_length_ge_single_element_length<A>(a: seq<seq<A>>, i: int)
-  requires 0 <= i < |a|
-  ensures |concat_seq(a)| >= |a[i]|
-  {
-    reveal_concat_seq();
-    if i < |a| - 1 {
-      lemma_concat_seq_length_ge_single_element_length(a[..|a|-1], i);
-    }
-  }
-
-  /* the length of concatenating sequence in a sequence together will be no longer 
-  than the length of the original sequence of sequences multiplied by the length of 
-  the longest sequence */
-  lemma lemma_concat_seq_length_le_mul<A>(a: seq<seq<A>>, t: int)
-  requires forall i | 0 <= i < |a| :: |a[i]| <= t
-  ensures |concat_seq(a)| <= |a| * t
-  {
-    reveal_concat_seq();
-    if |a| == 0 {
-    } else {
-      lemma_concat_seq_length_le_mul(a[..|a|-1], t);
-    }
-  }
   
-  predicate {:opaque} IsPrefix<A>(a: seq<A>, b: seq<A>)
-  ensures IsPrefix(a, b) ==> |a| <= |b|
+  predicate {:opaque} is_prefix<A>(a: seq<A>, b: seq<A>)
+  ensures is_prefix(a, b) ==> |a| <= |b|
   {
     && |a| <= |b|
     && a == b[..|a|]
   }
   
-  predicate {:opaque} IsSuffix<A>(a: seq<A>, b: seq<A>) {
+  predicate {:opaque} is_suffix<A>(a: seq<A>, b: seq<A>) {
     && |a| <= |b|
     && a == b[|b|-|a|..]
   }
@@ -367,10 +239,10 @@ module Seq {
   }
   
   // if a zipped sequence is unzipped, this results in two seperate sequences
-  lemma lemma_unzip_of_zip<A,B>(sa: seq<A>, sb: seq<B>)
-    requires |sa| == |sb|
-    ensures unzip(zip(sa, sb)).0 == sa
-    ensures unzip(zip(sa, sb)).1 == sb
+  lemma lemma_unzip_of_zip<A,B>(a: seq<A>, b: seq<B>)
+    requires |a| == |b|
+    ensures unzip(zip(a, b)).0 == a
+    ensures unzip(zip(a, b)).1 == b
   {
   }
 
@@ -440,17 +312,5 @@ module Seq {
     ensures ar[i..j][k..l] == ar[i+k..i+l];
   {
     lemma_seq_slice_slice(ar[..], i, j, k, l);
-  }
-  
-  // converts a map to a sequence
-  function method {:opaque} convert_map_to_seq<T>(n:int, m:map<int, T>): seq<T>
-    requires n >= 0;
-    requires forall i {:trigger i in m} :: 0 <= i < n ==> i in m;
-    ensures |convert_map_to_seq(n, m)| == n;
-    ensures var s := convert_map_to_seq(n, m);
-    forall i {:trigger s[i]} :: 0 <= i < n ==> s[i] == m[i];
-  {
-      if n == 0 then []
-      else convert_map_to_seq(n-1, m) + [m[n-1]]
   }
 }
