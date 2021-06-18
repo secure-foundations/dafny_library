@@ -1,118 +1,49 @@
+include "Mathematics.dfy"
+include "Options.dfy"
+
 // Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
 // SPDX-License-Identifier: BSD-2-Clause
-
-module Mathematics {
-
-	function method min(a: int, b: int) : int
-	{
-		if a < b
-			then a
-		else
-			b
-	}
-
-	function method max(a: int, b: int) : int
-	{
-		if a < b
-			then b
-		else
-			a
-	}
-
-  lemma PosMulPosIsPos(x: int, y: int)
-    requires 0 < x
-    requires 0 < y
-    ensures 0 < x * y
-  {
-  }
-  
-  lemma DivCeilLT(x: int, d: int)
-    requires 1 < d
-    requires 1 < x
-    ensures (x + d - 1) / d < x
-  {
-    PosMulPosIsPos(d-1, x-1);
-    calc <= {
-      0; <
-      (d-1) * (x-1);
-    }
-  }
-
-  lemma PosMulPreservesOrder(x: nat, y: nat, m: nat)
-    requires x <= y
-    ensures x * m <= y * m
-  {
-  }
-}
-module {:extern} Options {
-  datatype Option<V> = None | Some(value:V)
-
-  function MapOption<V0, V1>(opt: Option<V0>, f: V0 ~> V1) : (result: Option<V1>)
-  requires opt.Some? ==> f.requires(opt.value)
-  ensures opt.Some? <==> result.Some?
-  ensures result.Some? ==> result.value == f(opt.value)
-  reads if opt.Some? then f.reads(opt.value) else {}
-  {
-    match opt {
-      case Some(v) => Some(f(v))
-      case None => None
-    }
-  }
-
-  function FlatMapOption<V0, V1>(opt: Option<V0>, f: V0 ~> Option<V1>) : (result: Option<V1>)
-  requires opt.Some? ==> f.requires(opt.value)
-  ensures opt.Some? && f(opt.value).Some? ==> result.Some?
-  ensures opt.Some? && f(opt.value).Some? ==> result.value == f(opt.value).value
-  reads if opt.Some? then f.reads(opt.value) else {}
-  {
-    match opt {
-      case Some(v) => f(v)
-      case None => None
-    }
-  }
-} // module
 
 module Seq {
   import opened Options
   import Math = Mathematics
 
-
   /* a sequence that is sliced at the jth element concatenated with that same
   sequence sliced from the jth element is equal to the original, unsliced sequence */
-  lemma lemma_split_act<T>(intseq:seq<T>, j:int)
+  lemma lemma_split_act<T>(intseq: seq<T>, j: int)
   requires 0<=j<|intseq|;
   ensures intseq[..j] + intseq[j..] == intseq;
   {
   }
 
   /* explains sequence reduction */
-  lemma lemma_sequence_reduction<T>(s:seq<T>, b:nat)
+  lemma lemma_sequence_reduction<T>(s: seq<T>, b: nat)
     requires 0<b<|s|;
     ensures s[0..b][0..b-1] == s[0..b-1];
   {
     var t := s[0..b];
-    forall (i | 0<=i<b-1)
-        ensures s[0..b][0..b-1][i] == s[0..b-1][i];
+    forall (i | 0 <= i < b-1)
+      ensures s[0..b][0..b-1][i] == s[0..b-1][i];
     {
     }
   }
 
   // returns the last element in the sequence
-  function method last<E>(run: seq<E>) : E
+  function method last<E>(run: seq<E>): E
     requires |run| > 0;
   {
     run[|run|-1]
   }
 
   // returns the sequence slice up to but not including the last element
-  function method drop_last<E>(run: seq<E>) : seq<E> 
+  function method drop_last<E>(run: seq<E>): seq<E> 
   requires |run| > 0;
   {
     run[..|run|-1]
   }
 
   // concatenating everything but the last element + the last element results in the original seq 
-  lemma lemma_last<T>(s:seq<T>)
+  lemma lemma_last<T>(s: seq<T>)
     requires |s| > 0;
     ensures  drop_last(s) + [last(s)] == s;
   {
@@ -120,7 +51,7 @@ module Seq {
   }
   
   // converts a sequence to a multiset
-  function method to_set<T>(run: seq<T>) : set<T> 
+  function method to_set<T>(run: seq<T>): set<T> 
   {
     set x: T | x in multiset(run)
   }
@@ -186,7 +117,7 @@ module Seq {
   // proves that there are no duplicate values in the multiset
   lemma lemma_multiset_has_no_duplicates<T>(a: seq<T>)
     requires has_no_duplicates(a)
-    ensures forall x | x in multiset(a) :: multiset(a)[x] == 1
+    ensures forall x | x in multiset(a):: multiset(a)[x] == 1
   {
     if |a| == 0 {
     } else {
@@ -201,25 +132,8 @@ module Seq {
     }
   }
 
-  /* finds the index of a certain value in the sequence, if it exists. Returns
-  the index, or -1 if the value is not included in the sequence */
-  function find_index_in_sequence<T>(s:seq<T>, v:T):int
-    ensures var idx := find_index_in_sequence(s, v);
-            if idx >= 0 then
-              idx < |s| && s[idx] == v
-            else
-              v !in s
-  {
-    if v in s then
-      lemma_item_at_position_in_sequence(s, v);
-      var idx :| item_at_position_in_sequence(s, v, idx);
-      idx
-    else
-      -1
-  }
-  
   // returns the index of a certain element in the sequence
-  function index_of<T>(s: seq<T>, e: T) : int
+  function index_of<T>(s: seq<T>, e: T): int
     requires e in s;
     ensures 0 <= index_of(s,e) < |s|;
     ensures s[index_of(s,e)] == e;
@@ -227,20 +141,36 @@ module Seq {
     var i :| 0 <= i < |s| && s[i] == e;
     i
   }
+
+  /* finds the index of a certain value in the sequence, if it exists. Returns
+  the index, or -1 if the value is not included in the sequence */
+  function find_index_in_sequence<T>(s: seq<T>, v: T): int
+    ensures var idx := find_index_in_sequence(s, v);
+            if idx >= 0 then
+              idx < |s| && s[idx] == v
+            else
+              v !in s
+  {
+    if v in s then
+      index_of(s, v)
+    else
+      -1
+  }
   
+
   // applies a transformation function on the sequence
-  function method {:opaque} Map<E,R>(f: (E ~> R), run: seq<E>) : (result: seq<R>)
+  function method {:opaque} Map<E,R>(f: (E ~> R), run: seq<E>): (result: seq<R>)
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| == |run|
     ensures forall i :: 0 <= i < |run| ==> result[i] == f(run[i]);
-    reads set i, o | 0 <= i < |run| && o in f.reads(run[i]) :: o
+    reads set i, o | 0 <= i < |run| && o in f.reads(run[i]):: o
   {
     if |run| == 0 then []
     else  [f(run[0])] + Map(f, run[1..])
   }
 
   // uses a selection function to select elements from the sequence
-  function method filter<E>(f : (E ~> bool), run: seq<E>) : (result: seq<E>)
+  function method filter<E>(f : (E ~> bool), run: seq<E>): (result: seq<E>)
     requires forall i :: 0 <= i < |run| ==> f.requires(run[i])
     ensures |result| <= |run|
     ensures forall i: nat :: i < |result| && f.requires(result[i]) ==> f(result[i])
@@ -250,20 +180,20 @@ module Seq {
     else ((if f(run[0]) then [run[0]] else []) + filter(f, run[1..]))
   }
   
-  function method fold_left<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function method fold_left<A,E>(f: (A, E) -> A, init: A, run: seq<E>): A
   {
     if |run| == 0 then init
     else fold_left(f, f(init, run[0]), run[1..])
   }
 
-  function method fold_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>) : A
+  function method fold_right<A,E>(f: (A, E) -> A, init: A, run: seq<E>): A
   {
     if |run| == 0 then init
     else f(fold_right(f, init, run[1..]), run[0])
   }
 
   // slices out a specific position's value from the sequence and returns the new sequence
-  function method {:opaque} remove<A>(s: seq<A>, pos: int) : seq<A>
+  function method {:opaque} remove<A>(s: seq<A>, pos: int): seq<A>
   requires 0 <= pos < |s|
   ensures |remove(s, pos)| == |s| - 1
   ensures forall i | 0 <= i < pos :: remove(s, pos)[i] == s[i]
@@ -273,7 +203,7 @@ module Seq {
   }
 
   // slices out a specific value from the sequence and returns the new sequence
-  function {:opaque} remove_one_value<V>(s: seq<V>, v: V) : (s': seq<V>)
+  function {:opaque} remove_one_value<V>(s: seq<V>, v: V): (s': seq<V>)
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
   {
     reveal_has_no_duplicates();
@@ -283,7 +213,7 @@ module Seq {
   }
 
   // inserts a certain value into a specified index of the sequence and returns the new sequence
-  function method {:opaque} insert<A>(s: seq<A>, a: A, pos: int) : seq<A>
+  function method {:opaque} insert<A>(s: seq<A>, a: A, pos: int): seq<A>
   requires 0 <= pos <= |s|;
   ensures |insert(s,a,pos)| == |s| + 1;
   ensures forall i :: 0 <= i < pos ==> insert(s, a, pos)[i] == s[i];
@@ -304,7 +234,7 @@ module Seq {
 
   /* concatenates a sequence of sequences into a single sequence. 
   Works by adding elements in order from first to last */
-  function method seq_concat<T>(seqs:seq<seq<T>>) : seq<T>
+  function method seq_concat<T>(seqs: seq<seq<T>>): seq<T>
   decreases |seqs|
   {
     if |seqs| == 0 then []
@@ -312,7 +242,7 @@ module Seq {
   }
 
   // turns a sequence of sequences into a single sequence and returns the result
-  function method {:opaque} concat_seq<A>(a: seq<seq<A>>) : seq<A>
+  function method {:opaque} concat_seq<A>(a: seq<seq<A>>): seq<A>
   {
     if |a| == 0 then [] else concat_seq(drop_last(a)) + last(a)
   }
@@ -385,7 +315,7 @@ module Seq {
 
   /* concatenates the sequence of sequences into a single sequence. 
   works by adding elements from last to first */
-  function method seq_concat_reverse<T>(seqs:seq<seq<T>>) : seq<T>
+  function method seq_concat_reverse<T>(seqs: seq<seq<T>>): seq<T>
   decreases |seqs|
   {
     if |seqs| == 0 then []
@@ -413,7 +343,7 @@ module Seq {
 
   /* both methods of concatenating sequence (starting from front v. starting from back)
   result in the same sequence */
-  lemma lemma_seq_concat_and_seq_concat_reverse_are_equivalent<T>(seqs:seq<seq<T>>)
+  lemma lemma_seq_concat_and_seq_concat_reverse_are_equivalent<T>(seqs: seq<seq<T>>)
     ensures seq_concat(seqs) == seq_concat_reverse(seqs)
   {
     if |seqs| == 0 {
@@ -469,7 +399,7 @@ module Seq {
     && a == b[|b|-|a|..]
   }
   
-  function method {:opaque} repeat<V>(v:V length: nat) : (res: seq<V>)
+  function method {:opaque} repeat<V>(v: V, length: nat): (res: seq<V>)
   ensures |res| == length
   ensures forall i: nat | i < |res| :: res[i] == v
   {
@@ -482,7 +412,7 @@ module Seq {
   // This is a workaround since Dafny right now doesn't support
   // s[i := t] when i is a native type integer.
   //already a function method
-  function method {:opaque} SeqIndexUpdate<T>(s: seq<T>, i: int, t: T) : seq<T>
+  function method {:opaque} SeqIndexUpdate<T>(s: seq<T>, i: int, t: T): seq<T>
   requires i as int + 1 < 0x1_0000_0000_0000_0000
   requires 0 <= i as int < |s|
   ensures SeqIndexUpdate(s, i, t) == s[i as int := t]
@@ -492,7 +422,7 @@ module Seq {
 
   /* takes two sequences, a and b, and combines then to form one sequence in which
   each position contains an ordered pair from a and b */
-  function method {:opaque} zip<A,B>(a: seq<A>, b: seq<B>) : seq<(A,B)>
+  function method {:opaque} zip<A,B>(a: seq<A>, b: seq<B>): seq<(A,B)>
     requires |a| == |b|
     ensures |zip(a, b)| == |a|
     ensures forall i :: 0 <= i < |zip(a, b)| ==> zip(a, b)[i] == (a[i], b[i])
@@ -502,13 +432,13 @@ module Seq {
   }
 
   // unzips a sequence that contains ordered pairs into 2 seperate sequences
-  function method {:opaque} unzip<A,B>(z: seq<(A, B)>) : (seq<A>, seq<B>)
+  function method {:opaque} unzip<A,B>(z: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(z).0| == |unzip(z).1| == |z|
     ensures forall i :: 0 <= i < |z| ==> (unzip(z).0[i], unzip(z).1[i]) == z[i]
   {
     if |z| == 0 then ([], [])
     else
-      var (a, b) := unzip(drop_last(z));
+      var (a, b):= unzip(drop_last(z));
       (a + [last(z).0], b + [last(z).1])
   }
 
@@ -528,7 +458,7 @@ module Seq {
   
   /* receives a sequence of sequences. Returns a sequence in which the ith element corresponds 
   to the length of the sequence at the ith position*/
-  function method {:opaque} flatten_shape<A>(seqs: seq<seq<A>>) : (shape: seq<nat>)
+  function method {:opaque} flatten_shape<A>(seqs: seq<seq<A>>): (shape: seq<nat>)
     ensures |shape| == |seqs|
     ensures forall i :: 0 <= i < |shape| ==> shape[i] == |seqs[i]|
   {
@@ -545,7 +475,7 @@ module Seq {
   
   /* returns a number that results from adding up each all 
   of the elements in the sequence's shape */
-  function method {:opaque} flatten_length(shape: seq<nat>) : nat
+  function method {:opaque} flatten_length(shape: seq<nat>): nat
     ensures |shape| == 0 ==> flatten_length(shape) == 0
   {
     if |shape| == 0 then 0
@@ -579,7 +509,7 @@ module Seq {
   /* the flattened sequence's length will be equal to flattenening the shape 
   and then flattening the length; returns a sequence that combines all sequences of 
   the sequence */
-  function method {:opaque} flatten<A>(seqs: seq<seq<A>>) : seq<A>
+  function method {:opaque} flatten<A>(seqs: seq<seq<A>>): seq<A>
     ensures |flatten(seqs)| == flatten_length(flatten_shape(seqs))
     ensures |seqs| == 0 ==> |flatten(seqs)| == 0
   {
@@ -624,7 +554,7 @@ module Seq {
   }
   
   /* returns the index of the flattened sequence  */
-  function method flatten_index(shape: seq<nat>, i: nat, j: nat) : nat
+  function method flatten_index(shape: seq<nat>, i: nat, j: nat): nat
     requires i < |shape|
     requires j < shape[i]
   {
@@ -632,7 +562,7 @@ module Seq {
   }
 
   /* returns the index of the unflattened sequence */
-  function method unflatten_index(shape: seq<nat>, i: nat) : (nat, nat)
+  function method unflatten_index(shape: seq<nat>, i: nat): (nat, nat)
     requires i < flatten_length(shape)
   {
     reveal_flatten_length();
@@ -672,7 +602,7 @@ module Seq {
     ensures i == flatten_index(shape, unflatten_index(shape, i).0, unflatten_index(shape, i).1)
   {
     lemma_unflatten_index_in_bounds(shape, i);
-    var (shapeidx, shapeoff) := unflatten_index(shape, i);
+    var (shapeidx, shapeoff):= unflatten_index(shape, i);
     if shapeidx == |shape|-1 {
     } else {
       lemma_flatten_unflatten_indentity(drop_last(shape), i);
@@ -738,7 +668,7 @@ module Seq {
     requires t == set i | 0 <= i < |q|
     ensures |t| == |q|
   {
-    if |q|>0 {
+    if |q| > 0 {
       var sq := q[..|q|-1];
       var st := set i | 0 <= i < |sq|;
       calc {
@@ -759,9 +689,11 @@ module Seq {
     ensures seq_max(s) in s
   {
     assert s == drop_last(s) + [last(s)];
-    if |s| == 1
-    then s[0]
-    else Math.max(seq_max(drop_last(s)), last(s))
+
+    if |s| == 1 then
+      s[0]
+    else
+      Math.max(seq_max(drop_last(s)), last(s))
   }
 
   /* the maximum value in sequence 1 is greater than or equal to the maximum
@@ -792,26 +724,26 @@ module Seq {
   }
 
   // ensures that the element from a slice is included in the original sequence
-  lemma lemma_element_from_seq_slice<T>(s:seq<T>, s':seq<T>, a:int, b:int, pos:int)
-  requires 0 <= a <= b <= |s|;
-  requires s' == s[a..b];
-  requires a <= pos < b;
-  ensures  0 <= pos - a < |s'|;
-  ensures  s'[pos-a] == s[pos];
+  lemma lemma_element_from_seq_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:int)
+    requires 0 <= a <= b <= |s|;
+    requires s' == s[a..b];
+    requires a <= pos < b;
+    ensures  0 <= pos - a < |s'|;
+    ensures  s'[pos-a] == s[pos];
   {
   }
 
   /* proves that if a sequence is sliced from i until the end and then sliced a seconds time, 
   the resulting sequence is the same as the original sequence shifted by i */ 
   lemma lemma_seq_suffix_slice<T>(s: seq<T>, i: int, j: int, k: int)
-  requires 0 <= i <= |s|
-  requires 0 <= j <= k <= |s| - i
-  ensures s[i..][j..k] == s[i+j..i+k];
+    requires 0 <= i <= |s|
+    requires 0 <= j <= k <= |s| - i
+    ensures s[i..][j..k] == s[i+j..i+k];
   {
   }
 
   // the given element is included in the sequence's sliced portion
-  lemma lemma_element_from_seq_suffix<T>(s:seq<T>, s':seq<T>, a:int, pos:int)
+  lemma lemma_element_from_seq_suffix<T>(s: seq<T>, s':seq<T>, a:int, pos:int)
     requires 0 <= a <= |s|;
     requires s' == s[a..];
     requires a <= pos < |s|;
@@ -831,18 +763,18 @@ module Seq {
   from k until the end, then this is the same as slicing the initial
   sequence from the first + the second slice */
   lemma lemma_seq_slice_suffix<T>(s: seq<T>, i: int, j: int, k: int)
-  requires 0 <= i <= j <= |s|
-  requires 0 <= k <= j - i
-  ensures s[i..j][k..] == s[i+k..j];
+    requires 0 <= i <= j <= |s|
+    requires 0 <= k <= j - i
+    ensures s[i..j][k..] == s[i+k..j];
   { 
   }
 
   /* proves that if an array is sliced from i until the end and then sliced a seconds time, 
   the resulting array is the same as the original array shifted by i */ 
   lemma lemma_array_suffix_slice<T>(ar: array<T>, i: int, j: int, k: int)
-  requires 0 <= i <= ar.Length
-  requires 0 <= j <= k <= ar.Length - i
-  ensures ar[i..][j..k] == ar[i+j..i+k];
+    requires 0 <= i <= ar.Length
+    requires 0 <= j <= k <= ar.Length - i
+    ensures ar[i..][j..k] == ar[i+j..i+k];
   {
   }
 
@@ -855,9 +787,9 @@ module Seq {
   }
 
   // increments all of the elements of the sequence of ints by a specified amount
-  function method increment_seq(s:seq<int>, amount:int) : seq<int>
-  ensures var s' := increment_seq(s, amount);
-  |s| == |s'| && forall i :: 0 <= i < |s'| ==> s'[i] == s[i] + amount;
+  function method increment_seq(s: seq<int>, amount:int): seq<int>
+    ensures var s' := increment_seq(s, amount);
+      |s| == |s'| && forall i :: 0 <= i < |s'| ==> s'[i] == s[i] + amount;
   {
     if s == [] then [] else [s[0] + amount] + increment_seq(s[1..], amount)
   }
@@ -873,9 +805,9 @@ module Seq {
   /* if sequence a and sequence b are of equall lengths and all of their
   elements are equal, a and b are equal sequences */ 
   lemma lemma_seq_equality<T>(a:seq<T>, b:seq<T>, len:int)
-  requires |a| == |b| == len;
-  requires forall i {:trigger a[i]}{:trigger b[i]} :: 0 <= i < len ==> a[i] == b[i];
-  ensures a == b;
+    requires |a| == |b| == len;
+    requires forall i {:trigger a[i]}{:trigger b[i]} :: 0 <= i < len ==> a[i] == b[i];
+    ensures a == b;
   {
     assert forall i :: 0 <= i < len ==> a[i] == b[i];
   }
@@ -883,17 +815,17 @@ module Seq {
   /* if the length two sequences are equal and each element is equal, then the two
   sequences are equal */
   lemma lemma_seq_extensionality<T>(s: seq<T>, t: seq<T>)
-  requires |s| == |t|
-  requires forall i | 0 <= i < |s| :: s[i] == t[i]
-  ensures s == t
+    requires |s| == |t|
+    requires forall i | 0 <= i < |s| :: s[i] == t[i]
+    ensures s == t
   {
   }
 
   // similar to lemma_seq_slice_slice
-  lemma lemma_seq_slice_of_slice<T>(s:seq<T>, s1:int, e1:int, s2:int, e2:int)
-  requires 0 <= s1 <= e1 <= |s|;
-  requires 0 <= s2 <= e2 <= e1 - s1;
-  ensures  s[s1..e1][s2..e2] == s[s1+s2..s1+e2];
+  lemma lemma_seq_slice_of_slice<T>(s: seq<T>, s1:int, e1:int, s2:int, e2:int)
+    requires 0 <= s1 <= e1 <= |s|;
+    requires 0 <= s2 <= e2 <= e1 - s1;
+    ensures  s[s1..e1][s2..e2] == s[s1+s2..s1+e2];
   {
     var r1 := s[s1..e1];
     var r2 := r1[s2..e2];
@@ -906,9 +838,9 @@ module Seq {
 
   /* shows the sequence equivalence of slices of slices */
   lemma lemma_seq_slice_slice<T>(s: seq<T>, i: int, j: int, k: int, l: int)
-  requires 0 <= i <= j <= |s|
-  requires 0 <= k <= l <= j - i
-  ensures s[i..j][k..l] == s[i+k..i+l];
+    requires 0 <= i <= j <= |s|
+    requires 0 <= k <= l <= j - i
+    ensures s[i..j][k..l] == s[i+k..i+l];
   {
     lemma_seq_extensionality(s[i..j][k..l], s[i+k..i+l]);
   }
@@ -916,9 +848,9 @@ module Seq {
   /* taking a slice of range i to j and then taking another slice that is within 
   the first range is equivalent to simply slicing the original array */
   lemma lemma_array_slice_slice<T>(ar: array<T>, i: int, j: int, k: int, l: int)
-  requires 0 <= i <= j <= ar.Length
-  requires 0 <= k <= l <= j - i
-  ensures ar[i..j][k..l] == ar[i+k..i+l];
+    requires 0 <= i <= j <= ar.Length
+    requires 0 <= k <= l <= j - i
+    ensures ar[i..j][k..l] == ar[i+k..i+l];
   {
     lemma_seq_slice_slice(ar[..], i, j, k, l);
   }
@@ -926,18 +858,18 @@ module Seq {
   /* if two sequences have the same elements in a certain interval
   the subsequences over that interval are equal */
   lemma lemma_seq_extensionality_slice<T>(s: seq<T>, t: seq<T>, a: int, b: int)
-  requires 0 <= a <= b <= |s|
-  requires b <= |t|
-  requires forall i | a <= i < b :: s[i] == t[i]
-  ensures s[a..b] == t[a..b]
+    requires 0 <= a <= b <= |s|
+    requires b <= |t|
+    requires forall i | a <= i < b :: s[i] == t[i]
+    ensures s[a..b] == t[a..b]
   {
   }
 
   // fills the sequence with n identical elements
-  function method {:opaque} fill<T>(n: int, t: T) : (res: seq<T>)
-  requires n >= 0
-  ensures |res| == n
-  ensures forall i | 0 <= i < n :: res[i] == t
+  function method {:opaque} fill<T>(n: int, t: T): (res: seq<T>)
+    requires n >= 0
+    ensures |res| == n
+    ensures forall i | 0 <= i < n :: res[i] == t
   {
     if n == 0 then [] else fill(n-1, t) + [t]
   }
@@ -946,13 +878,13 @@ module Seq {
   that is greater than the first sequence is the same as taking a slice from the 
   second sequence */
   lemma sum_slice_second<T>(a: seq<T>, b: seq<T>, i: int, j: int)
-  requires |a| <= i <= j <= |a| + |b|
-  ensures (a+b)[i..j] == b[i-|a| .. j-|a|]
+    requires |a| <= i <= j <= |a| + |b|
+    ensures (a+b)[i..j] == b[i-|a| .. j-|a|]
   {
   }
 
   // converts a map to a sequence
-  function method {:opaque} convert_map_to_seq<T>(n:int, m:map<int, T>) : seq<T>
+  function method {:opaque} convert_map_to_seq<T>(n:int, m:map<int, T>): seq<T>
     requires n >= 0;
     requires forall i {:trigger i in m} :: 0 <= i < n ==> i in m;
     ensures |convert_map_to_seq(n, m)| == n;
