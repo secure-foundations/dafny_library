@@ -6,23 +6,17 @@ This style guide provides coding conventions for the Dafny Standard Library code
 
 ## Naming Convention
 
-Any **variables** are named with `camelCase`.
-
-    var minValue := 1;
-
-    var cipherMessage := "Hello World";
-
-
 Any **classes**, **modules**, **datatypes**, and **newtypes** are named with `PascalCase`.
 
     Module MyModule {
         ...
     }
     
-Any **lemmas**, **predicates**, **functions** and **methods** are named with `snake_case`.
+Any **lemmas**, **predicates**, **functions**, **methods** and **variables** are named with `snake_case`.
 
     method find_index(arr: seq<int>, k: int)
         ...
+        
         
 The **lemma** keyword indicates a ghost method used for proof purposes. Any **lemma** names should be prefixed with `lemma_`.
 
@@ -135,8 +129,6 @@ Although not required, it’s recommended to keep the order of `imports` and `in
 ## Indentation and Line Breaks
 
 ### Tabs or Spaces?
-
-Spaces are preferred over tabs. Tabs should only be used to remain consistent with existing code containing tabs.
 
 Use 2 spaces for each indentation.
 
