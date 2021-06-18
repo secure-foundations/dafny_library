@@ -1,13 +1,14 @@
 include "Mathematics.dfy"
 include "Options.dfy"
-
+include "SeqLast.dfy"
 // Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
 // SPDX-License-Identifier: BSD-2-Clause
 
 module Seq {
   import opened Options
   import Math = Mathematics
-
+  import opened SeqLast
+  
   /* a sequence that is sliced at the jth element concatenated with that same
   sequence sliced from the jth element is equal to the original, unsliced sequence */
   lemma lemma_split_act<T>(intseq: seq<T>, j: int)
@@ -26,28 +27,6 @@ module Seq {
       ensures s[0..b][0..b-1][i] == s[0..b-1][i];
     {
     }
-  }
-
-  // returns the last element in the sequence
-  function method last<E>(s: seq<E>): E
-    requires |s| > 0;
-  {
-    s[|s|-1]
-  }
-
-  // returns the sequence slice up to but not including the last element
-  function method drop_last<E>(s: seq<E>): seq<E> 
-  requires |s| > 0;
-  {
-    s[..|s|-1]
-  }
-
-  // concatenating everything but the last element + the last element results in the original seq 
-  lemma lemma_last<T>(s: seq<T>)
-    requires |s| > 0;
-    ensures  drop_last(s) + [last(s)] == s;
-  {
-
   }
   
   // converts a sequence to a multiset
@@ -229,21 +208,6 @@ module Seq {
   {
     reveal_insert();
     assert s == s[..pos] + s[pos..];
-  }
-
-  /* concatenates a sequence of sequences into a single sequence. 
-  Works by adding elements in order from first to last */
-  function method seq_concat<T>(seqs: seq<seq<T>>): seq<T>
-  decreases |seqs|
-  {
-    if |seqs| == 0 then []
-    else seqs[0] + seq_concat(seqs[1..])
-  }
-
-  // turns a sequence of sequences into a single sequence and returns the result
-  function method {:opaque} concat_seq<A>(a: seq<seq<A>>): seq<A>
-  {
-    if |a| == 0 then [] else concat_seq(drop_last(a)) + last(a)
   }
 
   // explains associative property of sequences in addition
