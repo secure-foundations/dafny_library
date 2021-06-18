@@ -144,19 +144,18 @@ module Seq {
 
   /* finds the index of a certain value in the sequence, if it exists. Returns
   the index, or -1 if the value is not included in the sequence */
-  function find_index_in_sequence<T>(s: seq<T>, v: T): int
+  function find_index_in_sequence<T>(s: seq<T>, v: T): Option<nat>
     ensures var idx := find_index_in_sequence(s, v);
-            if idx >= 0 then
-              idx < |s| && s[idx] == v
+            if idx.Some? then
+              idx.value < |s| && s[idx.value] == v
             else
               v !in s
   {
     if v in s then
-      index_of(s, v)
+      Some(index_of(s, v))
     else
-      -1
+      None
   }
-  
 
   // applies a transformation function on the sequence
   function method {:opaque} Map<E,R>(f: (E ~> R), run: seq<E>): (result: seq<R>)
