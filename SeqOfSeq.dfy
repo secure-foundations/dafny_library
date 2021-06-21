@@ -22,7 +22,7 @@ module SeqOfSeq {
     /* concatenating two sequences of sequences is equivalent to concatenating
   each sequence of sequences seperately, and then concatenating the two resulting 
   sequences together */
-  lemma lemma_seq_concat_adds<T>(a: seq<seq<T>>, b: seq<seq<T>>)
+  lemma lemma_concat_adds<T>(a: seq<seq<T>>, b: seq<seq<T>>)
     ensures seq_concat(a + b) == seq_concat(a) + seq_concat(b)
   {
     if |a| == 0 {
@@ -39,7 +39,7 @@ module SeqOfSeq {
   }
 
   // proves sequence addition
-  lemma lemma_concat_seq_addition<A>(a: seq<seq<A>>, b: seq<seq<A>>)
+  lemma lemma_concat_addition<T>(a: seq<seq<T>>, b: seq<seq<T>>)
   ensures concat_seq(a + b) == concat_seq(a) + concat_seq(b)
   {
     if b == [] {
@@ -64,7 +64,7 @@ module SeqOfSeq {
         }
         concat_seq(a + drop_last(b)) + last(b);
         {
-          lemma_concat_seq_addition(a, drop_last(b));
+          lemma_concat_addition(a, drop_last(b));
         }
         concat_seq(a) + concat_seq(drop_last(b)) + last(b);
         { reveal_concat_seq(); }
@@ -84,7 +84,7 @@ module SeqOfSeq {
 
   /* concatenating two reversed sequences of sequences is the same as reversing two 
   sequences of sequences and then adding the two resulting sequences together */
-  lemma lemma_seq_concat_reverse_adds<T>(A:seq<seq<T>>, B:seq<seq<T>>)
+  lemma lemma_concat_reverse_adds<T>(A:seq<seq<T>>, B:seq<seq<T>>)
   ensures seq_concat_reverse(A + B) == seq_concat_reverse(A) + seq_concat_reverse(B)
   {
     if |B| == 0 {
@@ -103,7 +103,7 @@ module SeqOfSeq {
 
   /* both methods of concatenating sequence (starting from front v. starting from back)
   result in the same sequence */
-  lemma lemma_seq_concat_and_seq_concat_reverse_are_equivalent<T>(s: seq<seq<T>>)
+  lemma lemma_concat_and_concat_reverse_are_equivalent<T>(s: seq<seq<T>>)
     ensures seq_concat(s) == seq_concat_reverse(s)
   {
     if |s| == 0 {
@@ -111,10 +111,10 @@ module SeqOfSeq {
       calc == {
         seq_concat_reverse(s);
         seq_concat_reverse(drop_last(s)) + last(s);
-          { lemma_seq_concat_and_seq_concat_reverse_are_equivalent(drop_last(s)); }
+          { lemma_concat_and_concat_reverse_are_equivalent(drop_last(s)); }
         seq_concat(drop_last(s)) + last(s);
         seq_concat(drop_last(s)) + seq_concat([last(s)]);
-          { lemma_seq_concat_adds(drop_last(s), [last(s)]); 
+          { lemma_concat_adds(drop_last(s), [last(s)]); 
         assert s == drop_last(s) + [last(s)]; }
         seq_concat(s);
       }
@@ -123,27 +123,27 @@ module SeqOfSeq {
 
   /* the concatenated sequence's length is greater than or equal to 
   each individual inner sequence's length */
-  lemma lemma_concat_seq_length_ge_single_element_length<T>(s: seq<seq<T>>, i: int)
+  lemma lemma_concat_length_ge_single_element_length<T>(s: seq<seq<T>>, i: int)
   requires 0 <= i < |s|
   ensures |concat_seq(s)| >= |s[i]|
   {
     reveal_concat_seq();
     if i < |s| - 1 {
-      lemma_concat_seq_length_ge_single_element_length(s[..|s|-1], i);
+      lemma_concat_length_ge_single_element_length(s[..|s|-1], i);
     }
   }
 
   /* the length of concatenating sequence in a sequence together will be no longer 
   than the length of the original sequence of sequences multiplied by the length of 
   the longest sequence */
-  lemma lemma_concat_seq_length_le_mul<T>(s: seq<seq<T>>, j: int)
+  lemma lemma_concat_length_le_mul<T>(s: seq<seq<T>>, j: int)
   requires forall i | 0 <= i < |s| :: |s[i]| <= j
   ensures |concat_seq(s)| <= |s| * j
   {
     reveal_concat_seq();
     if |s| == 0 {
     } else {
-      lemma_concat_seq_length_le_mul(s[..|s|-1], j);
+      lemma_concat_length_le_mul(s[..|s|-1], j);
     }
   }
 

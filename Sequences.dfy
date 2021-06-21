@@ -18,7 +18,7 @@ module Seq {
   }
 
   /* explains sequence reduction */
-  lemma lemma_sequence_reduction<T>(s: seq<T>, b: nat)
+  lemma lemma_reduction<T>(s: seq<T>, b: nat)
     requires 0<b<|s|;
     ensures s[0..b][0..b-1] == s[0..b-1];
   {
@@ -63,13 +63,13 @@ module Seq {
     (forall i, j :: 0 <= i < |s| && 0 <= j < |s| && i != j ==> s[i] != s[j])
   }
 
-  /* if sequence a and b don't have duplicates AND they are disjoint, then the
+  /* if sequence a and b don't have duplicates, then the
   concatenated sequence of a + b will not contain duplicates either */
   lemma {:timeLimitMultiplier 3} lemma_no_duplicates_in_concat<T>(a: seq<T>, b: seq<T>)
     requires has_no_duplicates(a);
     requires has_no_duplicates(b);
     requires multiset(a) !! multiset(b);
-    ensures has_no_duplicates(a + b);
+    ensures has_no_duplicates(a+b);
   {
     reveal_has_no_duplicates();
     var c := a + b;
@@ -123,8 +123,8 @@ module Seq {
 
   /* finds the index of a certain value in the sequence, if it exists. Returns
   the index, or -1 if the value is not included in the sequence */
-  function find_index_in_sequence<T>(s: seq<T>, v: T): Option<nat>
-    ensures var idx := find_index_in_sequence(s, v);
+  function find_index<T>(s: seq<T>, v: T): Option<nat>
+    ensures var idx := find_index(s, v);
             if idx.Some? then
               idx.value < |s| && s[idx.value] == v
             else
@@ -137,7 +137,7 @@ module Seq {
   }
 
   // slices out a specific position's value from the sequence and returns the new sequence
-  function method {:opaque} remove<A>(s: seq<A>, pos: int): seq<A>
+  function method {:opaque} remove<T>(s: seq<T>, pos: int): seq<T>
   requires 0 <= pos < |s|
   ensures |remove(s, pos)| == |s| - 1
   ensures forall i | 0 <= i < pos :: remove(s, pos)[i] == s[i]
@@ -147,7 +147,7 @@ module Seq {
   }
 
   // slices out a specific value from the sequence and returns the new sequence
-  function {:opaque} remove_one_value<V>(s: seq<V>, v: V): (s': seq<V>)
+  function {:opaque} remove_one_value<T>(s: seq<T>, v: T): (s': seq<T>)
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
   {
     reveal_has_no_duplicates();
@@ -157,7 +157,7 @@ module Seq {
   }
 
   // inserts a certain value into a specified index of the sequence and returns the new sequence
-  function method {:opaque} insert<A>(s: seq<A>, a: A, pos: int): seq<A>
+  function method {:opaque} insert<T>(s: seq<T>, a: T, pos: int): seq<T>
   requires 0 <= pos <= |s|;
   ensures |insert(s,a,pos)| == |s| + 1;
   ensures forall i :: 0 <= i < pos ==> insert(s, a, pos)[i] == s[i];
@@ -168,7 +168,7 @@ module Seq {
   }
 
   // shows that the inserted element is now included in the multiset
-  lemma lemma_insert_multiset<A>(s: seq<A>, a: A, pos: int)
+  lemma lemma_insert_multiset<T>(s: seq<T>, a: T, pos: int)
     requires 0 <= pos <= |s|;
     ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
   {
@@ -177,32 +177,32 @@ module Seq {
   }
 
   // explains associative property of sequences in addition
-  lemma lemma_seq_addition_is_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
+  lemma lemma_addition_is_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
   ensures a+(b+c) == (a+b)+c;
   {
   }
 
   /* explains the associative nature of adding sequences*/
-  lemma lemma_seq_concatenation_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
+  lemma lemma_concatenation_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
       ensures (a+b)+c == a+(b+c);
   {
   }
   
-  predicate {:opaque} is_prefix<A>(a: seq<A>, b: seq<A>)
+  predicate {:opaque} is_prefix<T>(a: seq<T>, b: seq<T>)
   ensures is_prefix(a, b) ==> |a| <= |b|
   {
     && |a| <= |b|
-    && a == b[..|a|]
-  }
+    && a == b[..|a|]    
+  } 
   
-  predicate {:opaque} is_suffix<A>(a: seq<A>, b: seq<A>) {
+  predicate {:opaque} is_suffix<T>(a: seq<T>, b: seq<T>) {
     && |a| <= |b|
     && a == b[|b|-|a|..]
   }
   
-  function method {:opaque} repeat<V>(v: V, length: nat): (res: seq<V>)
-  ensures |res| == length
-  ensures forall i: nat | i < |res| :: res[i] == v
+  function method {:opaque} repeat<T>(v: T, length: nat): (s: seq<T>)
+  ensures |s| == length
+  ensures forall i: nat | i < |s| :: s[i] == v
   {
     if length == 0 then
       []
@@ -222,14 +222,14 @@ module Seq {
   }
 
   // unzips a sequence that contains ordered pairs into 2 seperate sequences
-  function method {:opaque} unzip<A,B>(z: seq<(A, B)>): (seq<A>, seq<B>)
-    ensures |unzip(z).0| == |unzip(z).1| == |z|
-    ensures forall i :: 0 <= i < |z| ==> (unzip(z).0[i], unzip(z).1[i]) == z[i]
+  function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
+    ensures |unzip(s).0| == |unzip(s).1| == |s|
+    ensures forall i :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
   {
-    if |z| == 0 then ([], [])
+    if |s| == 0 then ([], [])
     else
-      var (a, b):= unzip(drop_last(z));
-      (a + [last(z).0], b + [last(z).1])
+      var (a, b):= unzip(drop_last(s));
+      (a + [last(s).0], b + [last(s).1])
   }
 
   // if a sequence is unzipped and then zipped, it forms the original sequence
@@ -247,31 +247,49 @@ module Seq {
   }
 
   // returns the maximum integer value in the sequence
-  function method {:opaque} seq_max(s: seq<int>): int
+  function method {:opaque} max(s: seq<int>): int
     requires 0 < |s|
-    ensures forall k :: k in s ==> seq_max(s) >= k
-    ensures seq_max(s) in s
+    ensures forall k :: k in s ==> max(s) >= k
+    ensures max(s) in s
   {
     assert s == drop_last(s) + [last(s)];
 
     if |s| == 1 then
       s[0]
     else
-      Math.max(seq_max(drop_last(s)), last(s))
+      Math.max(max(drop_last(s)), last(s))
+  }
+
+  // necessary for lemma_submax
+  /* the maximum value in sequence 1 is greater than or equal to the maximum
+  value of sequence 2 */
+  lemma lemma_max_correspondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
+    requires 0 < |s1|
+    requires 0 < |s2|
+    requires |wit| == |s2|
+    requires forall j:nat :: j < |wit| ==> wit[j] < |s1|
+    requires forall i :: 0 <= i < |s2| ==> s2[i] <= s1[wit[i]]
+    ensures max(s2) <= max(s1)
+  {
+    if max(s2) > max(s1) {
+      var idx :| 0 <= idx < |s2| && s2[idx] == max(s2);
+      assert s1[wit[idx]] in s1;  // trigger
+      assert false;
+    }
   }
 
   /* the maximum element in any subsequence will not be 
   greater than the maximum element in the full sequence */
-  lemma lemma_subseq_max(s: seq<int>, from: nat, to: nat)
+  lemma lemma_submax(s: seq<int>, from: nat, to: nat)
     requires 0 <= from < to <= |s|
-    ensures seq_max(s[from .. to]) <= seq_max(s)
+    ensures max(s[from .. to]) <= max(s)
   {
     var subseq := s[from .. to];
-    lemma_seq_max_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
+    lemma_max_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
   }
 
   // ensures that the element from a slice is included in the original sequence
-  lemma lemma_element_from_seq_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:int)
+  lemma lemma_element_from_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:int)
     requires 0 <= a <= b <= |s|;
     requires s' == s[a..b];
     requires a <= pos < b;
@@ -280,8 +298,7 @@ module Seq {
   {
   }
 
-  // similar to lemma_seq_slice_slice
-  lemma lemma_seq_slice_of_slice<T>(s: seq<T>, s1:int, e1:int, s2:int, e2:int)
+  lemma lemma_slice_of_slice<T>(s: seq<T>, s1:int, e1:int, s2:int, e2:int)
     requires 0 <= s1 <= e1 <= |s|;
     requires 0 <= s2 <= e2 <= e1 - s1;
     ensures  s[s1..e1][s2..e2] == s[s1+s2..s1+e2];
@@ -293,24 +310,5 @@ module Seq {
     forall i | 0 <= i < |r2| ensures r2[i] == r3[i];
     {
     }
-  }
-
-  /* shows the sequence equivalence of slices of slices */
-  lemma lemma_seq_slice_slice<T>(s: seq<T>, i: int, j: int, k: int, l: int)
-    requires 0 <= i <= j <= |s|
-    requires 0 <= k <= l <= j - i
-    ensures s[i..j][k..l] == s[i+k..i+l];
-  {
-    lemma_seq_extensionality(s[i..j][k..l], s[i+k..i+l]);
-  }
-
-  /* taking a slice of range i to j and then taking another slice that is within 
-  the first range is equivalent to simply slicing the original array */
-  lemma lemma_array_slice_slice<T>(ar: array<T>, i: int, j: int, k: int, l: int)
-    requires 0 <= i <= j <= ar.Length
-    requires 0 <= k <= l <= j - i
-    ensures ar[i..j][k..l] == ar[i+k..i+l];
-  {
-    lemma_seq_slice_slice(ar[..], i, j, k, l);
   }
 }
