@@ -16,20 +16,9 @@ module Seq {
   ensures s[..pos] + s[pos..] == s;
   {
   }
-
-  /* explains sequence reduction */
-  lemma lemma_reduction<T>(s: seq<T>, b: nat)
-    requires 0<b<|s|;
-    ensures s[0..b][0..b-1] == s[0..b-1];
-  {
-    var t := s[0..b];
-    forall (i | 0 <= i < b-1)
-      ensures s[0..b][0..b-1][i] == s[0..b-1][i];
-    {
-    }
-  }
   
   // converts a sequence to a multiset
+  // multiset() specifically converts a sequence to a multiset; no set() exists
   function method to_set<T>(s: seq<T>): set<T> 
   {
     set x: T | x in multiset(s)
@@ -241,6 +230,17 @@ module Seq {
     if |s| == 1 then s[0] else Math.max(max(drop_last(s)), last(s))
   }
 
+  // function method max_of_concat(a: seq<int>, b: seq<int>): int
+  //   requires 0 < |a| && 0 < |b|
+  //   ensures max(a+b) >= max(a)
+  //   ensures max(a+b) >= max(b)
+  //   ensures forall i :: i in a+b ==> max(a+b) >= i
+  // {
+  //   reveal_max();
+  //   if max(b) >= max(a) then max(b) else max(a)
+  // }
+
+  // returns the minimum integer value in the sequence
   function method {:opaque} min(s: seq<int>): int
     requires 0 < |s|
     ensures forall k :: k in s ==> min(s) <= k
@@ -278,27 +278,27 @@ module Seq {
     lemma_max_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
   }
 
-  // lemma lemma_min_correspondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
-  //   requires 0 < |s1|
-  //   requires 0 < |s2|
-  //   requires |wit| == |s2|
-  //   requires forall j:nat :: j < |wit| ==> wit[j] < |s1|
-  //   requires forall i :: 0 <= i < |s2| ==> s2[i] <= s1[wit[i]]
-  //   ensures min(s2) >= min(s1)
-  // {
-  //   if min(s2) < min(s1) {
-  //     var k :| 0 <= k < |s2| && s2[k] == min(s2);
-  //     assert s1[wit[k]] in s1;
-  //   }
-  // }
+  lemma lemma_min_correspondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
+    requires 0 < |s1|
+    requires 0 < |s2|
+    requires |wit| == |s2|
+    requires forall j:nat :: j < |wit| ==> wit[j] < |s1|
+    requires forall i :: 0 <= i < |s2| ==> s2[i] >= s1[wit[i]]
+    ensures min(s2) >= min(s1)
+  {
+    if min(s2) < min(s1) {
+      var k :| 0 <= k < |s2| && s2[k] == min(s2);
+      assert s1[wit[k]] in s1;
+    }
+  }
 
-  // lemma lemma_subseq_min(s: seq<int>, from: nat, to: nat)
-  //   requires from < to <= |s|
-  //   ensures min(s[from..to]) >= min(s)
-  //   {
-  //     var subseq := s[from..to];
-  //     lemma_min_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
-  //   }
+  lemma lemma_subseq_min(s: seq<int>, from: nat, to: nat)
+    requires from < to <= |s|
+    ensures min(s[from..to]) >= min(s)
+    {
+      var subseq := s[from..to];
+      lemma_min_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
+    }
 
   // ensures that the element from a slice is included in the original sequence
   lemma lemma_element_from_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:nat)

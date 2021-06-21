@@ -1,27 +1,46 @@
 module {:extern} Options {
-  datatype Option<V> = None | Some(value:V)
+  newtype uint8 =  x | 0 <= x < 0x100
+  newtype uint16 = x | 0 <= x < 0x1_0000
+  newtype uint32 = x | 0 <= x < 0x1_0000_0000
+  newtype uint64 = x | 0 <= x < 0x1_0000_0000_0000_0000
 
-  function MapOption<V0, V1>(opt: Option<V0>, f: V0 ~> V1): (result: Option<V1>)
-  requires opt.Some? ==> f.requires(opt.value)
-  ensures opt.Some? <==> result.Some?
-  ensures result.Some? ==> result.value == f(opt.value)
-  reads if opt.Some? then f.reads(opt.value) else {}
-  {
-    match opt {
-      case Some(v) => Some(f(v))
-      case None => None
+  newtype int8  = x | -0x80 <= x < 0x80
+  newtype int16 = x | -0x8000 <= x < 0x80000
+  newtype int32 = x | -0x8000_0000 <= x < 0x8000_0000
+  newtype int64 = x | -0x8000_0000_0000_0000 <= x < 0x8000_0000_0000_0000
+
+  datatype Option<T> = None | Some(value: T) {
+    function method to_result(): Result<T> {
+      match this
+      case Some(v) => Success(v)
+      case None() => Failure("Option is None")
+    }
+    
+    function method unwrap_or(default: T): T {
+      match this
+      case Some(v) => v
+      case None => default
+    }
+  }
+  
+  datatype Result<T> = | Success(value: T) | Failure(error: string) {
+    function method to_option(): Option<T> {
+      match this
+      case Success(s) => Some(s)
+      case Failure(e) => None()
+    }
+    function method unwrap_pr(default: T): T {
+      match this
+      case Success(s) => s
+      case Failure(e) => default
     }
   }
 
-  function FlatMapOption<V0, V1>(opt: Option<V0>, f: V0 ~> Option<V1>): (result: Option<V1>)
-  requires opt.Some? ==> f.requires(opt.value)
-  ensures opt.Some? && f(opt.value).Some? ==> result.Some?
-  ensures opt.Some? && f(opt.value).Some? ==> result.value == f(opt.value).value
-  reads if opt.Some? then f.reads(opt.value) else {}
+  method to_array<T>(s: seq<T>) returns (a: array<T>)
+    ensures fresh(a)
+    ensures a.Length == |s|
+    ensures forall i :: 0 <= i < |s| ==> a[i] == s[i]
   {
-    match opt {
-      case Some(v) => f(v)
-      case None => None
-    }
+    a := new T[|s|](i requires 0 <= i < |s| => s[i]);
   }
-} // module
+} 

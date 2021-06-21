@@ -15,14 +15,14 @@ module Mathematics {
       a
   }
 
-  lemma PosMulPosIsPos(x: int, y: int)
+  lemma pos_mul_pos_is_pos(x: int, y: int)
     requires 0 < x
     requires 0 < y
     ensures 0 < x * y
   {
   }
   
-  lemma DivCeilLT(x: int, d: int)
+  lemma div_ceil_LT(x: int, d: int)
     requires 1 < d
     requires 1 < x
     ensures (x + d - 1) / d < x
@@ -34,7 +34,7 @@ module Mathematics {
     }
   }
 
-  lemma PosMulPreservesOrder(x: nat, y: nat, m: nat)
+  lemma pos_mul_presevess_order(x: nat, y: nat, m: nat)
     requires x <= y
     ensures x * m <= y * m
   {
