@@ -1,8 +1,8 @@
 include "Mathematics.dfy"
 include "Options.dfy"
 include "SeqLast.dfy"
-// Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
-// SPDX-License-Identifier: BSD-2-Clause
+
+// add in copyright from all libraries?
 
 module Seq {
   import opened Options
@@ -11,9 +11,9 @@ module Seq {
 
   /* a sequence that is sliced at the jth element concatenated with that same
   sequence sliced from the jth element is equal to the original, unsliced sequence */
-  lemma lemma_split_act<T>(s: seq<T>, j: int)
-  requires 0<=j<|s|;
-  ensures s[..j] + s[j..] == s;
+  lemma lemma_split_act<T>(s: seq<T>, pos: nat)
+  requires pos<|s|;
+  ensures s[..pos] + s[pos..] == s;
   {
   }
 
@@ -112,33 +112,17 @@ module Seq {
   }
 
   // returns the index of a certain element in the sequence
-  function index_of<T>(s: seq<T>, e: T): int
-    requires e in s;
-    ensures 0 <= index_of(s,e) < |s|;
-    ensures s[index_of(s,e)] == e;
+  function index_of<T>(s: seq<T>, v: T): Option<nat>
+    requires v in s;
+    ensures var i:= index_of(s, v);
+    if i.Some? then i.value < |s| && s[i.value] == v else v !in s;
   {
-    var i :| 0 <= i < |s| && s[i] == e;
-    i
-  }
-
-  /* finds the index of a certain value in the sequence, if it exists. Returns
-  the index, or -1 if the value is not included in the sequence */
-  function find_index<T>(s: seq<T>, v: T): Option<nat>
-    ensures var idx := find_index(s, v);
-            if idx.Some? then
-              idx.value < |s| && s[idx.value] == v
-            else
-              v !in s
-  {
-    if v in s then
-      Some(index_of(s, v))
-    else
-      None
+    if i :| 0 <= i < |s| && s[i] == v then Some(i) else None
   }
 
   // slices out a specific position's value from the sequence and returns the new sequence
-  function method {:opaque} remove<T>(s: seq<T>, pos: int): seq<T>
-  requires 0 <= pos < |s|
+  function method {:opaque} remove<T>(s: seq<T>, pos: nat): seq<T>
+  requires pos < |s|
   ensures |remove(s, pos)| == |s| - 1
   ensures forall i | 0 <= i < pos :: remove(s, pos)[i] == s[i]
   ensures forall i | pos <= i < |s| - 1 :: remove(s, pos)[i] == s[i+1]
@@ -168,8 +152,8 @@ module Seq {
   }
 
   // shows that the inserted element is now included in the multiset
-  lemma lemma_insert_multiset<T>(s: seq<T>, a: T, pos: int)
-    requires 0 <= pos <= |s|;
+  lemma lemma_insert_multiset<T>(s: seq<T>, a: T, pos: nat)
+    requires pos <= |s|;
     ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
   {
     reveal_insert();
@@ -221,6 +205,12 @@ module Seq {
     else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
+   lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
+  // if a sequence is unzipped and then zipped, it forms the original sequence
+    ensures zip(unzip(s).0, unzip(s).1) == s
+  {
+  }
+
   // unzips a sequence that contains ordered pairs into 2 seperate sequences
   function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(s).0| == |unzip(s).1| == |s|
@@ -230,12 +220,6 @@ module Seq {
     else
       var (a, b):= unzip(drop_last(s));
       (a + [last(s).0], b + [last(s).1])
-  }
-
-  // if a sequence is unzipped and then zipped, it forms the original sequence
-  lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
-    ensures zip(unzip(s).0, unzip(s).1) == s
-  {
   }
   
   // if a zipped sequence is unzipped, this results in two seperate sequences
@@ -254,10 +238,16 @@ module Seq {
   {
     assert s == drop_last(s) + [last(s)];
 
-    if |s| == 1 then
-      s[0]
-    else
-      Math.max(max(drop_last(s)), last(s))
+    if |s| == 1 then s[0] else Math.max(max(drop_last(s)), last(s))
+  }
+
+  function method {:opaque} min(s: seq<int>): int
+    requires 0 < |s|
+    ensures forall k :: k in s ==> min(s) <= k
+    ensures min(s) in s
+  {
+    assert s == drop_last(s) + [last(s)];
+    if |s| == 1 then s[0] else Math.min(min(drop_last(s)), last(s))
   }
 
   // necessary for lemma_submax
@@ -272,28 +262,50 @@ module Seq {
     ensures max(s2) <= max(s1)
   {
     if max(s2) > max(s1) {
-      var idx :| 0 <= idx < |s2| && s2[idx] == max(s2);
-      assert s1[wit[idx]] in s1;  // trigger
+      var k :| 0 <= k < |s2| && s2[k] == max(s2);
+      assert s1[wit[k]] in s1;
       assert false;
     }
   }
 
   /* the maximum element in any subsequence will not be 
   greater than the maximum element in the full sequence */
-  lemma lemma_submax(s: seq<int>, from: nat, to: nat)
-    requires 0 <= from < to <= |s|
+  lemma lemma_subseq_max(s: seq<int>, from: nat, to: nat)
+    requires from < to <= |s|
     ensures max(s[from .. to]) <= max(s)
   {
     var subseq := s[from .. to];
     lemma_max_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
   }
 
+  // lemma lemma_min_correspondence(s1:seq<int>, s2:seq<int>, wit: seq<nat>)
+  //   requires 0 < |s1|
+  //   requires 0 < |s2|
+  //   requires |wit| == |s2|
+  //   requires forall j:nat :: j < |wit| ==> wit[j] < |s1|
+  //   requires forall i :: 0 <= i < |s2| ==> s2[i] <= s1[wit[i]]
+  //   ensures min(s2) >= min(s1)
+  // {
+  //   if min(s2) < min(s1) {
+  //     var k :| 0 <= k < |s2| && s2[k] == min(s2);
+  //     assert s1[wit[k]] in s1;
+  //   }
+  // }
+
+  // lemma lemma_subseq_min(s: seq<int>, from: nat, to: nat)
+  //   requires from < to <= |s|
+  //   ensures min(s[from..to]) >= min(s)
+  //   {
+  //     var subseq := s[from..to];
+  //     lemma_min_correspondence(s, subseq, seq(|subseq|, i requires 0<=i<|subseq| => i + from));
+  //   }
+
   // ensures that the element from a slice is included in the original sequence
-  lemma lemma_element_from_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:int)
+  lemma lemma_element_from_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:nat)
     requires 0 <= a <= b <= |s|;
     requires s' == s[a..b];
     requires a <= pos < b;
-    ensures  0 <= pos - a < |s'|;
+    ensures  pos - a < |s'|;
     ensures  s'[pos-a] == s[pos];
   {
   }
