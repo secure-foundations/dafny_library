@@ -1,15 +1,14 @@
 include "SeqLast.dfy"
-include "Options.dfy"
+include "../Options.dfy"
 
 // add in copyright from all libraries?
 
 module Seq {
+
   import opened SeqLast
   import opened Options
 
-  // converts a sequence to a multiset
-  // multiset() specifically converts a sequence to a multiset; no set() exists
-  function method to_set<T>(s: seq<T>): set<T> 
+  function method {:opaque} to_set<T>(s: seq<T>): set<T> 
   {
     set x: T | x in multiset(s)
   }
@@ -17,8 +16,9 @@ module Seq {
   /* proves that the cardinality of a subsequence is always less than or equal to that
   of the full sequence */
   lemma lemma_cardinality_of_set<T>(s: seq<T>)
-    ensures |to_set(s)| <= |s| // length of the subset is less than the length of the set
+    ensures |to_set(s)| <= |s| 
   {
+    reveal_to_set();
     if |s| == 0 {
     } else {
       assert to_set(s) == to_set(drop_last(s)) + {last(s)};
@@ -26,23 +26,24 @@ module Seq {
     }
   }
   
-  // the cardinality of a subsequence of an empty sequence is also 0
+  /* the cardinality of a subsequence of an empty sequence is also 0 */
   lemma lemma_cardinality_of_empty_set_is_0<T>(s: seq<T>)
     ensures |to_set(s)| == 0 <==> |s| == 0
   {
+    reveal_to_set();
     if |s| != 0 {
       assert s[0] in to_set(s);
     }
   }
 
-  // returns true if there are no duplicate values in the sequence
+  /* returns true if there are no duplicate values in the sequence */
   predicate {:opaque} has_no_duplicates<T>(s: seq<T>) 
   {
     (forall i, j :: 0 <= i < |s| && 0 <= j < |s| && i != j ==> s[i] != s[j])
   }
 
-  /* if sequence a and b don't have duplicates, then the
-  concatenated sequence of a + b will not contain duplicates either */
+  /* if sequence a and b don't have duplicates, then the concatenated sequence of a + b
+  will not contain duplicates either */
   lemma {:timeLimitMultiplier 3} lemma_no_duplicates_in_concat<T>(a: seq<T>, b: seq<T>)
     requires has_no_duplicates(a);
     requires has_no_duplicates(b);
@@ -57,13 +58,14 @@ module Seq {
     }
   }
 
-  /* proves that the sequence the length of the multiset version of the sequence
-  is the same as the sequence, given that there are no duplicates involved */
+  /* proves that the sequence the length of the multiset version of the sequence is the
+  same as the sequence, given that there are no duplicates involved */
   lemma lemma_cardinality_of_set_no_duplicates<T>(s: seq<T>)
     requires has_no_duplicates(s)
     ensures |to_set(s)| == |s|
   {
     reveal_has_no_duplicates();
+    reveal_to_set();
     if |s| == 0 {
     } else {
       lemma_cardinality_of_set_no_duplicates(drop_last(s));
@@ -71,7 +73,7 @@ module Seq {
     }
   }
 
-  // proves that there are no duplicate values in the multiset
+  /* proves that there are no duplicate values in the multiset */
   lemma lemma_multiset_has_no_duplicates<T>(s: seq<T>)
     requires has_no_duplicates(s)
     ensures forall x | x in multiset(s):: multiset(s)[x] == 1
@@ -89,7 +91,7 @@ module Seq {
     }
   }
 
-   // returns the index of a certain element in the sequence
+  /* returns the index of a certain element in the sequence */
   function index_of<T>(s: seq<T>, v: T): Option<nat>
     requires v in s;
     ensures var i:= index_of(s, v);
@@ -98,7 +100,7 @@ module Seq {
     if i :| 0 <= i < |s| && s[i] == v then Some(i) else None
   }
 
-  // slices out a specific position's value from the sequence and returns the new sequence
+  /* slices out a specific position's value from the sequence and returns the new sequence */
   function method {:opaque} remove<T>(s: seq<T>, pos: nat): seq<T>
     requires pos < |s|
     ensures |remove(s, pos)| == |s| - 1
@@ -108,17 +110,18 @@ module Seq {
     s[.. pos] + s[pos + 1 ..] 
   }
 
-  // slices out a specific value from the sequence and returns the new sequence
+  /* slices out a specific value from the sequence and returns the new sequence */
   function {:opaque} remove_one_value<T>(s: seq<T>, v: T): (s': seq<T>)
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
   {
     reveal_has_no_duplicates();
+    reveal_to_set();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
     s[.. i] + s[i + 1 ..]
   }
 
-  // inserts a certain value into a specified index of the sequence and returns the new sequence
+  /* inserts a certain value into a specified index of the sequence and returns the new sequence */
   function method {:opaque} insert<T>(s: seq<T>, a: T, pos: int): seq<T>
     requires 0 <= pos <= |s|;
     ensures |insert(s,a,pos)| == |s| + 1;
@@ -129,7 +132,7 @@ module Seq {
     s[..pos] + [a] + s[pos..]
   }
 
-  // shows that the inserted element is now included in the multiset
+  /* shows that the inserted element is now included in the multiset */
   lemma lemma_insert_multiset<T>(s: seq<T>, a: T, pos: nat)
     requires pos <= |s|;
     ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
@@ -161,9 +164,9 @@ module Seq {
       [v] + repeat(v, length - 1)
   }
 
-  // explains associative property of sequences in addition
+  /* explains associative property of sequences in addition */
   lemma lemma_addition_is_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
-  ensures a+(b+c) == (a+b)+c;
+    ensures a+(b+c) == (a+b)+c;
   {
   }
   
@@ -178,13 +181,13 @@ module Seq {
     else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
-   lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
-  // if a sequence is unzipped and then zipped, it forms the original sequence
+  /* if a sequence is unzipped and then zipped, it forms the original sequence */
+  lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
     ensures zip(unzip(s).0, unzip(s).1) == s
   {
   }
 
-  // unzips a sequence that contains ordered pairs into 2 seperate sequences
+  /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
   function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(s).0| == |unzip(s).1| == |s|
     ensures forall i :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
@@ -195,7 +198,7 @@ module Seq {
       (a + [last(s).0], b + [last(s).1])
   }
   
-  // if a zipped sequence is unzipped, this results in two seperate sequences
+  /* if a zipped sequence is unzipped, this results in two seperate sequences */
   lemma lemma_unzip_of_zip<A,B>(a: seq<A>, b: seq<B>)
     requires |a| == |b|
     ensures unzip(zip(a, b)).0 == a
@@ -205,13 +208,13 @@ module Seq {
 
   /* a sequence that is sliced at the jth element concatenated with that same
   sequence sliced from the jth element is equal to the original, unsliced sequence */
-  lemma lemma_split_act<T>(s: seq<T>, pos: nat)
+  lemma lemma_split_at<T>(s: seq<T>, pos: nat)
     requires pos<|s|;
     ensures s[..pos] + s[pos..] == s;
   {
   }
 
-  // ensures that the element from a slice is included in the original sequence
+  /* ensures that the element from a slice is included in the original sequence */
   lemma lemma_element_from_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:nat)
     requires 0 <= a <= b <= |s|;
     requires s' == s[a..b];

@@ -4,8 +4,8 @@ module SeqOfSeq {
 
   import opened SeqLast
 
-  /*concatenates a sequence of sequences into a single sequence. 
-  Works by adding elements in order from first to last */
+  /*concatenates a sequence of sequences into a single sequence. Works by adding 
+  elements in order from first to last */
   function method concat<T>(s: seq<seq<T>>): seq<T>
   decreases |s|
   {
@@ -13,7 +13,7 @@ module SeqOfSeq {
     else s[0] + concat(s[1..])
   }
 
-    /* concatenating two sequences of sequences is equivalent to concatenating
+  /* concatenating two sequences of sequences is equivalent to concatenating 
   each sequence of sequences seperately, and then concatenating the two resulting 
   sequences together */
   lemma lemma_concat_adds<T>(a: seq<seq<T>>, b: seq<seq<T>>)
@@ -32,8 +32,8 @@ module SeqOfSeq {
     }
   }
 
-  /* concatenates the sequence of sequences into a single sequence. 
-  works by adding elements from last to first */
+  /* concatenates the sequence of sequences into a single sequence. Works by adding 
+  elements from last to first */
   function method concat_reverse<T>(s: seq<seq<T>>): seq<T>
   decreases |s|
   {
@@ -80,11 +80,11 @@ module SeqOfSeq {
     }
   }
 
-  /* the concatenated sequence's length is greater than or equal to 
-  each individual inner sequence's length */
+  /* the concatenated sequence's length is greater than or equal to each individual
+  inner sequence's length */
   lemma lemma_concat_length_ge_single_element_length<T>(s: seq<seq<T>>, i: int)
-  requires 0 <= i < |s|
-  ensures |concat_reverse(s)| >= |s[i]|
+    requires 0 <= i < |s|
+    ensures |concat_reverse(s)| >= |s[i]|
   {
     if i < |s| - 1 {
       lemma_concat_length_ge_single_element_length(s[..|s|-1], i);
@@ -95,8 +95,8 @@ module SeqOfSeq {
   than the length of the original sequence of sequences multiplied by the length of 
   the longest sequence */
   lemma lemma_concat_length_le_mul<T>(s: seq<seq<T>>, j: int)
-  requires forall i | 0 <= i < |s| :: |s[i]| <= j
-  ensures |concat_reverse(s)| <= |s| * j
+    requires forall i | 0 <= i < |s| :: |s[i]| <= j
+    ensures |concat_reverse(s)| <= |s| * j
   {
     if |s| == 0 {
     } else {
