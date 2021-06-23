@@ -36,7 +36,7 @@ module Seq {
     }
   }
 
-  /* returns true if there are no duplicate values in the sequence */
+  /* is true if there are no duplicate values in the sequence */
   predicate {:opaque} has_no_duplicates<T>(s: seq<T>) 
   {
     (forall i, j :: 0 <= i < |s| && 0 <= j < |s| && i != j ==> s[i] != s[j])
@@ -58,8 +58,7 @@ module Seq {
     }
   }
 
-  /* proves that the sequence the length of the multiset version of the sequence is the
-  same as the sequence, given that there are no duplicates involved */
+  /* A sequence with no duplicates converts to a set of the same cardinality */
   lemma lemma_cardinality_of_set_no_duplicates<T>(s: seq<T>)
     requires has_no_duplicates(s)
     ensures |to_set(s)| == |s|
@@ -73,7 +72,7 @@ module Seq {
     }
   }
 
-  /* proves that there are no duplicate values in the multiset */
+  /* proves that there are no duplicate values in the multiset version of the sequence */
   lemma lemma_multiset_has_no_duplicates<T>(s: seq<T>)
     requires has_no_duplicates(s)
     ensures forall x | x in multiset(s):: multiset(s)[x] == 1
@@ -91,7 +90,7 @@ module Seq {
     }
   }
 
-  /* returns the index of a certain element in the sequence */
+  /* finds the index of a certain element in the sequence if found*/
   function index_of<T>(s: seq<T>, v: T): Option<nat>
     requires v in s;
     ensures var i:= index_of(s, v);
@@ -100,7 +99,7 @@ module Seq {
     if i :| 0 <= i < |s| && s[i] == v then Some(i) else None
   }
 
-  /* slices out a specific position's value from the sequence and returns the new sequence */
+  /* slices out a specific position's value from the sequence */
   function method {:opaque} remove<T>(s: seq<T>, pos: nat): seq<T>
     requires pos < |s|
     ensures |remove(s, pos)| == |s| - 1
@@ -110,8 +109,10 @@ module Seq {
     s[.. pos] + s[pos + 1 ..] 
   }
 
-  /* slices out a specific value from the sequence and returns the new sequence */
-  function {:opaque} remove_one_value<T>(s: seq<T>, v: T): (s': seq<T>)
+  /* slices out a specific value from the sequence */
+  function {:opaque} remove_value<T>(s: seq<T>, v: T): (s': seq<T>)
+    ensures v !in s ==> s == s'
+    ensures v in s ==> |multiset(s')| == |multiset(s)| - 1
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
   {
     reveal_has_no_duplicates();
@@ -121,34 +122,26 @@ module Seq {
     s[.. i] + s[i + 1 ..]
   }
 
-  /* inserts a certain value into a specified index of the sequence and returns the new sequence */
-  function method {:opaque} insert<T>(s: seq<T>, a: T, pos: int): seq<T>
-    requires 0 <= pos <= |s|;
+  /* inserts a certain value into a specified index of the sequence */
+  function method {:opaque} insert<T>(s: seq<T>, a: T, pos: nat): seq<T>
+    requires pos <= |s|;
     ensures |insert(s,a,pos)| == |s| + 1;
     ensures forall i :: 0 <= i < pos ==> insert(s, a, pos)[i] == s[i];
     ensures forall i :: pos <= i < |s| ==> insert(s, a, pos)[i+1] == s[i];
     ensures insert(s, a, pos)[pos] == a;
+    ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
   {
+    assert s == s[..pos] + s[pos..];
     s[..pos] + [a] + s[pos..]
   }
 
-  /* shows that the inserted element is now included in the multiset */
-  lemma lemma_insert_multiset<T>(s: seq<T>, a: T, pos: nat)
-    requires pos <= |s|;
-    ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
-  {
-    reveal_insert();
-    assert s == s[..pos] + s[pos..];
-  }
-
-  predicate {:opaque} is_prefix<T>(a: seq<T>, b: seq<T>)
-    ensures is_prefix(a, b) ==> |a| <= |b|
+  predicate is_prefix<T>(a: seq<T>, b: seq<T>)
   {
     && |a| <= |b|
     && a == b[..|a|]    
   } 
   
-  predicate {:opaque} is_suffix<T>(a: seq<T>, b: seq<T>) {
+  predicate is_suffix<T>(a: seq<T>, b: seq<T>) {
     && |a| <= |b|
     && a == b[|b|-|a|..]
   }
@@ -165,7 +158,7 @@ module Seq {
   }
 
   /* explains associative property of sequences in addition */
-  lemma lemma_addition_is_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
+  lemma lemma_concat_is_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
     ensures a+(b+c) == (a+b)+c;
   {
   }
@@ -176,21 +169,18 @@ module Seq {
     requires |a| == |b|
     ensures |zip(a, b)| == |a|
     ensures forall i :: 0 <= i < |zip(a, b)| ==> zip(a, b)[i] == (a[i], b[i])
+    ensures unzip(zip(a, b)).0 == a;
+    ensures unzip(zip(a, b)).1 == b;
   {
     if |a| == 0 then []
     else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
-  }
-
-  /* if a sequence is unzipped and then zipped, it forms the original sequence */
-  lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
-    ensures zip(unzip(s).0, unzip(s).1) == s
-  {
   }
 
   /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
   function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(s).0| == |unzip(s).1| == |s|
     ensures forall i :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
+    //ensures zip(unzip(s).0, unzip(s).1) == s
   {
     if |s| == 0 then ([], [])
     else
@@ -214,7 +204,8 @@ module Seq {
   {
   }
 
-  /* ensures that the element from a slice is included in the original sequence */
+  /* ensures that the element from a slice is included in the original sequence. Shows 
+  s[a..b][pos] == ??? */
   lemma lemma_element_from_slice<T>(s: seq<T>, s':seq<T>, a:int, b:int, pos:nat)
     requires 0 <= a <= b <= |s|;
     requires s' == s[a..b];
