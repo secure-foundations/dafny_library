@@ -52,17 +52,14 @@ class Integer {
 
 ### Braces
 
-Opening braces go on the same line by default.
+Opening braces for **modules**, **classes**, **datatypes**, **if** statements go on the same line.
 ```
 module M {
     ...
-    method met() {
-        ...
-    }
 }
 ```
 
-In case the method (or function, lemma, etc) signature is too long to fit in one line, or in case the signature has at least one specification clause, the opening brace goes on a new line.
+Opening braces for **methods**, **lemmas**, **functions**, and **predicates** go on a new line.
 
 ```
 module M {
@@ -75,8 +72,6 @@ module M {
     }
 }
 ```
-
-This applies to every scope: `module`, `class`, `predicate`, `if`, `while`, and more.
 
 ### Imports
 
@@ -96,7 +91,8 @@ When a file uses two modules and both of them define a method of the same name, 
 import MyModule
 import YourModule
 ...
-method my_method() {
+method my_method() 
+{
     my_module.foo();
     your_module.foo();
 }
@@ -108,7 +104,8 @@ In this case, if you want to shorten the module name, import it with a shorthand
 import M = MyModuleWithACumbersomeName
 import Y = YourModuleWithACumbersomeName
 ...
-method my_method() {
+method my_method() 
+{
     M.foo();
     Y.foo();
 }
@@ -191,10 +188,12 @@ The same rules apply to `function`, `predicate`, and `lemma` definitions.
 Functions, predicates, and methods within a file should be sorted topologically, meaning that everything `method M` depends on should be above `M` in the file.
 
 ```
-function my_function(a: int): int{
+function my_function(a: int): int
+{
   ...
 }
-method my_method(i: int) {
+method my_method(i: int) 
+{
   ...
   return my_function(i);
 }
@@ -206,12 +205,14 @@ Predicates should be used instead of functions that return a Boolean value.
 
 ```
 // YES
-predicate foo() {
+predicate foo() 
+{
   ...
 } 
 
 // NO
-Function foo():bool {
+Function foo():bool 
+{
   ...
 }
 ```
