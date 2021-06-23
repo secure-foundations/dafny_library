@@ -87,13 +87,14 @@ module Set {
     ys
   }
 
-  function {:opaque} map_seq_to_set<X(!new), Y>(xs: seq<X>, f: X-->Y): set<Y>
+  function method {:opaque} map_seq_to_set<X(!new), Y>(xs: seq<X>, f: X-->Y): set<Y>
     reads f.reads
     requires forall x :: f.requires(x)
     requires Math.injective(f)
     ensures forall x :: x in xs <==> f(x) in map_seq_to_set(xs, f)
+    decreases xs
   {
-    set x | x in xs :: f(x)
+    if |xs| == 0 then {} else map_seq_to_set(xs[1..], f) + {f(xs[0])}
   }
 
   lemma lemma_filter_cardinality<X>(xs: set<X>, ys: set<X>, f: X~>bool)
