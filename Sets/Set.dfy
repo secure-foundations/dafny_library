@@ -146,7 +146,7 @@ module Set {
 
   function method set_of_numbers_in_right_exclusive_range(a: int, b: int): set<int>
     requires a <= b
-    ensures forall e :: a <= e < b <==> e
+    ensures forall i :: a <= i < b <==> i
             in set_of_numbers_in_right_exclusive_range(a, b)
     ensures |set_of_numbers_in_right_exclusive_range(a, b)| == b - a
     decreases b - a
@@ -155,17 +155,45 @@ module Set {
     else {a} + set_of_numbers_in_right_exclusive_range(a + 1, b)
   }
 
-  lemma lemma_bounded_set_cardinality(s: set<int>, a: int, b: int)
-    requires forall e :: e in s ==> a <= e < b
+  lemma lemma_bounded_set_cardinality(x: set<int>, a: int, b: int)
+    requires forall i :: i in x ==> a <= i < b
     requires a <= b
-    ensures |s| <= b - a
+    ensures |x| <= b - a
   {
     var range := set_of_numbers_in_right_exclusive_range(a, b);
-    forall i | i in s
-      ensures i in range;
+    forall e | e in x
+      ensures e in range;
     {
     }
-    assert s <= range;
-    lemma_subset_cardinality(s, range);
+    assert x <= range;
+    lemma_subset_cardinality(x, range);
+  }
+
+  function set_range(n: int): set<int>
+    requires n >= 0
+    ensures forall i :: 0 <= i < n <==> i in set_range(n)
+    ensures |set_range(n)| == n
+    decreases n
+  {
+    if n == 0 then {}
+    else {n - 1} + set_range(n - 1)
+  }
+
+  lemma {:induction n} lemma_set_range_cardinality(n: int)
+    requires n >= 0
+    ensures |set_range(n)| == n
+    decreases n
+  {
+    if n == 0 {
+    } else {
+      lemma_set_range_cardinality(n - 1);
+      assert set_range(n) == set_range(n - 1) + {n - 1};
+    }
+  }
+
+  lemma lemma_subset_extensionality<T>(x: set<T>, y: set<T>)
+    requires forall e | e in x :: e in y
+    ensures x <= y
+  {
   }
 }
