@@ -1,4 +1,4 @@
-include "../Sequences/Mathematics.dfy"
+include "../Mathematics.dfy"
 
 module Set {
   import Math = Mathematics
