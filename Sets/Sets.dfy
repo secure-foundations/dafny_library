@@ -1,6 +1,6 @@
 include "../Mathematics.dfy"
 
-module Set {
+module Sets {
   import Math = Mathematics
 
   lemma lemma_proper_subset_cardinality<T>(x: set<T>, y: set<T>)
