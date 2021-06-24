@@ -55,17 +55,17 @@ module Sets {
   /**
    * Elements in a singleton set are equal to each other.
    */
-  lemma lemma_singleton_equality<T>(s: set<T>, x: T, y: T)
-    requires |s| == 1
-    requires x in s
-    requires y in s
-    ensures x == y
+  lemma lemma_singleton_equality<T>(x: set<T>, a: T, b: T)
+    requires |x| == 1
+    requires a in x
+    requires b in x
+    ensures a == b
   {
-    if x != y {
-      assert {x} < s;
-      lemma_subset_cardinality({x}, s);
-      assert |{x}| < |s|;
-      assert |s| > 1;
+    if a != b {
+      assert {a} < x;
+      lemma_subset_cardinality({a}, x);
+      assert |{a}| < |x|;
+      assert |x| > 1;
       assert false;
     }
   }
