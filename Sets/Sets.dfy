@@ -4,6 +4,15 @@ module Sets {
   import Math = Mathematics
 
   /**
+   * If all elements in set x are in set y, x is a subset of y.
+   */
+  lemma lemma_subset_extensionality<T>(x: set<T>, y: set<T>)
+    requires forall e | e in x :: e in y
+    ensures x <= y
+  {
+  }
+
+  /**
    * If x is a proper subset of y, then the cardinality of x is less than
    * the cardinality of y.
    */
@@ -186,37 +195,6 @@ module Sets {
   }
 
   /**
-   * Construct a set containing all integers in the range [a, b).
-   */
-  function method set_range(a: int, b: int): set<int>
-    requires a <= b
-    ensures forall i :: a <= i < b <==> i
-            in set_range(a, b)
-    ensures |set_range(a, b)| == b - a
-    decreases b - a
-  {
-    if a == b then {} else {a} + set_range(a + 1, b)
-  }
-
-  /**
-   * If a set solely contains integers in the range [a, b) then its cardinality
-   * is bounded by b - a.
-   */
-  lemma lemma_bounded_set_cardinality(x: set<int>, a: int, b: int)
-    requires forall i :: i in x ==> a <= i < b
-    requires a <= b
-    ensures |x| <= b - a
-  {
-    var range := set_range(a, b);
-    forall e | e in x
-      ensures e in range;
-    {
-    }
-    assert x <= range;
-    lemma_subset_cardinality(x, range);
-  }
-
-  /**
    * Construct a set containing all integers in the range [0, n).
    */
   function set_range_zero_bound(n: int): set<int>
@@ -245,11 +223,33 @@ module Sets {
   }
 
   /**
-   * If all elements in set x are in set y, x is a subset of y.
+   * Construct a set containing all integers in the range [a, b).
    */
-  lemma lemma_subset_extensionality<T>(x: set<T>, y: set<T>)
-    requires forall e | e in x :: e in y
-    ensures x <= y
+  function method set_range(a: int, b: int): set<int>
+    requires a <= b
+    ensures forall i :: a <= i < b <==> i
+            in set_range(a, b)
+    ensures |set_range(a, b)| == b - a
+    decreases b - a
   {
+    if a == b then {} else {a} + set_range(a + 1, b)
+  }
+
+  /**
+   * If a set solely contains integers in the range [a, b) then its cardinality
+   * is bounded by b - a.
+   */
+  lemma lemma_bounded_set_cardinality(x: set<int>, a: int, b: int)
+    requires forall i :: i in x ==> a <= i < b
+    requires a <= b
+    ensures |x| <= b - a
+  {
+    var range := set_range(a, b);
+    forall e | e in x
+      ensures e in range;
+    {
+    }
+    assert x <= range;
+    lemma_subset_cardinality(x, range);
   }
 }
