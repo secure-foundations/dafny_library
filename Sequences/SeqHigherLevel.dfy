@@ -73,10 +73,22 @@ module SeqHigherLevel {
   }
 
   lemma {:opaque} lemma_fold_left_concat<A,T>(f: (A, T) -> A, init: A, a: seq<T>, b: seq<T>)
-    // ensures fold_left(f, f(init, (a+b)[0]), a + b) == fold_left(f, f(init, (a)[0]), a) 
-    //         + fold_left(f, f(init, (b)[0]), b)
+    ensures fold_left(f, init, a + b) == fold_left(f, fold_left(f, init, a), b)
   {
-
+    // reveal_fold_left();
+    // if |a| == 0 {
+    //   calc {
+    //     a + b;
+    //     b;
+    //   }
+    //   fold_left(f, init, b) == fold_left(f, init, a + b);
+    // } else {
+    //   calc {
+    //     fold_left(f, init, a + b);
+    //     fold_left(f, init, a + [b[0]] + b[1..]);
+    //       {assert b == [b[0]] + b[1..]; }
+    //   }
+    // }
   }
 
   function method {:opaque} fold_right<A,T>(f: (A, T) -> A, init: A, s: seq<T>): A
@@ -90,11 +102,16 @@ module SeqHigherLevel {
   {
   }
 
-  lemma {:opaque} lemma_apply_then_fold_right_same_as_fold_right_then_apply<A, T, R>
-                  (f1: (A, T) -> A, f2: (T ~> R), init: A, s: seq<T>)
-  //   ensures apply(f2, [fold_right(f1, init, s)]) == fold_right(f1, init, apply(f2, s))
-  // {
-  //   reveal_fold_right();
-  // }
+  lemma {:opaque} lemma_apply_then_fold_right_same_as_fold_right_then_apply<T>
+                  (f1: (T, T) -> T, f2: (T -> T), init: T, s: seq<T>)
+    requires f2(init) == init
+    ensures f2(fold_right(f1, init, s)) == fold_right(f1, init, apply(f2, s))
+  {
+    reveal_fold_right();
+    reveal_apply();
+    if |s| != 0 {
+      
+    } 
+  }
 
 }
