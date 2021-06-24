@@ -1,7 +1,9 @@
+include "../Mathematics.dfy"
 include "../Options.dfy"
 
 module SeqHigherLevel { 
 
+  import Math = Mathematics
   import opened Options
 
   /* applies a transformation function on the sequence; this acts as "map" in other languages */
@@ -13,6 +15,16 @@ module SeqHigherLevel {
   {
     if |s| == 0 then []
     else  [f(s[0])] + apply(f, s[1..])
+  }
+
+  /* Apply an injective function to each element of a sequence. */
+  function method {:opaque} apply_to_set<X(!new), Y>(xs: seq<X>, f: X-->Y): set<Y>
+    reads f.reads
+    requires forall x :: f.requires(x)
+    requires Math.injective(f)
+    ensures forall x :: x in xs <==> f(x) in apply_to_set(xs, f)
+  {
+    if |xs| == 0 then {} else apply_to_set(xs[1..], f) + {f(xs[0])}
   }
 
   lemma {:opaque} lemma_apply_concat<T,R>(f: (T ~> R), a: seq<T>, b: seq<T>)
