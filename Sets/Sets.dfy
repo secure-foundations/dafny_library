@@ -170,7 +170,8 @@ module Sets {
   }
 
   /**
-   * The cardinality of a union of two sets greater than either individual set.
+   * The cardinality of a union of two sets greater than the cardinality of
+   * either individual set.
    */
   lemma lemma_union_cardinality<X>(xs: set<X>, ys: set<X>, us: set<X>)
     requires us == xs + ys
@@ -195,7 +196,7 @@ module Sets {
   }
 
   /**
-   * Construct a set containing all integers in the range [0, n).
+   * Construct a set with all integers in the range [0, n).
    */
   function set_range_zero_bound(n: int): set<int>
     requires n >= 0
@@ -207,7 +208,7 @@ module Sets {
   }
 
   /**
-   * If a set contains all integers in the range [0, n) then its cardinality is
+   * If a set contains all integers in the range [0, n), then its cardinality is
    * n.
    */
   lemma {:induction n} lemma_set_range_cardinality(n: int)
@@ -223,7 +224,7 @@ module Sets {
   }
 
   /**
-   * Construct a set containing all integers in the range [a, b).
+   * Construct a set with all integers in the range [a, b).
    */
   function method set_range(a: int, b: int): set<int>
     requires a <= b
@@ -236,7 +237,7 @@ module Sets {
   }
 
   /**
-   * If a set solely contains integers in the range [a, b) then its cardinality
+   * If a set solely contains integers in the range [a, b), then its cardinality
    * is bounded by b - a.
    */
   lemma lemma_bounded_set_cardinality(x: set<int>, a: int, b: int)
