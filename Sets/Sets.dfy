@@ -6,7 +6,7 @@ module Sets {
   /**
    * If all elements in set x are in set y, x is a subset of y.
    */
-  lemma lemma_subset_extensionality<T>(x: set<T>, y: set<T>)
+  lemma lemma_subset<T>(x: set<T>, y: set<T>)
     requires forall e | e in x :: e in y
     ensures x <= y
   {
