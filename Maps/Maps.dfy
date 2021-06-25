@@ -5,7 +5,7 @@ module Maps {
     (forall a :: a in x <==> a in y) && (forall a :: a in x ==> x[a] == y[a])
   }
 
-  function method domain<U(!new), V>(m: map<U,V>): set<U>
+  function method domain<U(!new), V>(m: map<U, V>): set<U>
     ensures forall i :: i in domain(m) <==> i in m
   {
     set s | s in m
@@ -32,8 +32,8 @@ module Maps {
     m'
   }
 
-  lemma lemma_map_size_is_domain_size<S(!new), T(!new)>(dom: set<S>,
-                                                        m: map<S, T>)
+  lemma lemma_size_is_domain_size<S(!new), T(!new)>(dom: set<S>,
+                                                    m: map<S, T>)
     requires dom == domain(m)
     ensures |m| == |dom|
   {
@@ -42,14 +42,14 @@ module Maps {
       var x :| x in m;
       var m' := map y | y in m && y != x :: m[y];
       var dom' := dom - {x};
-      lemma_map_size_is_domain_size(dom', m');
+      lemma_size_is_domain_size(dom', m');
       assert m == m'[x := m[x]];
     }
   }
 
-  lemma lemma_maps_decrease<S(!new), T(!new)>(before: map<S, T>,
-                                              after: map<S, T>,
-                                              item_removed: S)
+  lemma lemma_remove_decreases_size<S(!new), T(!new)>(before: map<S, T>,
+                                                      after: map<S, T>,
+                                                      item_removed: S)
     requires item_removed in before
     requires after == map s | s in before && s != item_removed :: before[s]
     ensures |after| < |before|
@@ -57,8 +57,8 @@ module Maps {
     var domain_before := set s | s in before;
     var domain_after := set s | s in after;
 
-    lemma_map_size_is_domain_size(domain_before, before);
-    lemma_map_size_is_domain_size(domain_after, after);
+    lemma_size_is_domain_size(domain_before, before);
+    lemma_size_is_domain_size(domain_after, after);
 
     if |after| == |before| {
       assert |domain_before - domain_after| > 0;
@@ -77,9 +77,9 @@ module Maps {
     var domain_before := domain(before);
     var domain_after := domain(after);
 
-    lemma_map_size_is_domain_size(domain_before, before);
-    lemma_map_size_is_domain_size(domain_after, after);
+    lemma_size_is_domain_size(domain_before, before);
+    lemma_size_is_domain_size(domain_after, after);
 
     assert domain_after + {item_removed} == domain_before;
-  }
+  }  
 } 
