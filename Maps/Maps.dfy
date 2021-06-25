@@ -11,6 +11,12 @@ module Maps {
     set s | s in m
   }
 
+  function range<U, V(!new)>(m: map<U, V>) : set<V>
+    ensures forall i :: i in range(m) <==> exists j :: j in m && m[j] == i
+  {
+    set s | s in m :: m[s]
+  }
+
   function union<U(!new), V>(m: map<U, V>, m': map<U, V>): map<U, V>
     requires m.Keys !! m'.Keys
     ensures forall i :: i in union(m, m') <==> i in m || i in m'
