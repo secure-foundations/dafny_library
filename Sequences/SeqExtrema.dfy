@@ -9,7 +9,7 @@ module SeqExtrema {
   /* finds the maximum integer value in the sequence */
   function method {:opaque} max(s: seq<int>): int
     requires 0 < |s|
-    ensures forall k :: k in s ==> max(s) >= k
+    ensures forall k {:trigger max(s)}:: k in s ==> max(s) >= k
     ensures max(s) in s
   {
     assert s == [s[0]] + s[1..];
