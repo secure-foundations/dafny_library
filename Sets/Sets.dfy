@@ -81,8 +81,7 @@ module Sets {
     requires forall y :: y in ys ==> exists x :: x in xs && y == f(x)
     ensures |xs| == |ys|
   {
-    if xs != {}
-    {
+    if xs != {} {
       var x :| x in xs;
       var xs' := xs - {x};
       var ys' := ys - {f(x)};
@@ -100,7 +99,7 @@ module Sets {
     ensures forall x :: x in xs <==> f(x) in apply(xs, f)
     ensures |xs| == |apply(xs, f)|
   {
-    var ys := set x | x in xs :: f(x); 
+    var ys := set x | x in xs :: f(x);
     lemma_apply_cardinality(xs, ys, f);
     ys
   }
@@ -116,8 +115,7 @@ module Sets {
     ensures |ys| <= |xs|
     decreases xs, ys
   {
-    if ys != {}
-    {
+    if ys != {} {
       var y :| y in ys;
       var xs' := xs - {y};
       var ys' := ys - {y};
