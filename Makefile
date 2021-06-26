@@ -44,7 +44,6 @@ TIMELIMIT?=
 DAFNY_VERIFY := $(DAFNY) \
 	/compile:0 \
 	/allocated:3 \
-	/nologo \
 	/printVerifiedProceduresCount:0 \
 	$(DAFNY_ADDITIONAL_ARGS)
 
@@ -161,7 +160,7 @@ obj/%.cpp: %.dfy $(DAFNY_DEPS) | obj
 	@ \
 	TEMPFILE=$$(mktemp); \
 	$(DAFNY) \
-		/nologo /noVerify /compile:0 \
+		/noVerify /compile:0 \
 		/printVerifiedProceduresCount:0 \
 		/spillTargetCode:3 /compileTarget:cpp \
 		$(DOTHs) $< 2>&1 \
@@ -184,7 +183,7 @@ obj/%.cs: %.dfy $(DAFNY_DEPS) | obj
 	@ \
 	TEMPFILE=$$(mktemp); \
 	$(DAFNY) \
-		/nologo /noVerify /compile:0 \
+		/noVerify /compile:0 \
 		/printVerifiedProceduresCount:0 \
 		/spillTargetCode:3 /compileTarget:cs \
 		$< \
