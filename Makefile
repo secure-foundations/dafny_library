@@ -65,7 +65,7 @@ verify: $(patsubst %, %-verify, $(DFYs))
 
 whitespace-cleanup:
 	@echo $(BOLD)"[+] Cleaning up whitespace for all dafny files"$(RESET)
-	@sed -i -E "s/[[:blank:]]*$$//" $(DFYs)
+	@sed -i '' -e "s/[[:blank:]]*$$//" $(DFYs)
 
 initialize:
 	@cp .git/hooks/pre-commit.sample .git/hooks/pre-commit 2>/dev/null && \
