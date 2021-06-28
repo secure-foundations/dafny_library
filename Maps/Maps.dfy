@@ -1,43 +1,44 @@
 module Maps {
-  predicate is_equal<A(!new), B>(x: map<A, B>, y: map<A, B>) {
-    (forall a :: a in x <==> a in y) && (forall a :: a in x ==> x[a] == y[a])
+
+  predicate is_equal<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
+    (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
   }
 
-  function method domain<U(!new), V>(m: map<U, V>): set<U>
-    ensures forall i :: i in domain(m) <==> i in m
+  function method domain<X(!new), Y>(m: map<X, Y>): set<X>
+    ensures forall x :: x in domain(m) <==> x in m
   {
-    set s | s in m
+    set x | x in m
   }
 
-  function method range<U, V(!new)>(m: map<U, V>) : set<V>
-    ensures forall i :: i in range(m) <==> exists j :: j in m && m[j] == i
+  function method range<X, Y(!new)>(m: map<X, Y>) : set<Y>
+    ensures forall y :: y in range(m) <==> exists x :: x in m && m[x] == y
   {
-    set s | s in m :: m[s]
+    set x | x in m :: m[x]
   }
 
-  function method union<U(!new), V>(m: map<U, V>, m': map<U, V>): map<U, V>
+  function method union<X(!new), Y>(m: map<X, Y>, m': map<X, Y>): map<X, Y>
     requires m.Keys !! m'.Keys
-    ensures forall i :: i in union(m, m') <==> i in m || i in m'
-    ensures forall i :: i in m ==> union(m, m')[i] == m[i]
-    ensures forall i :: i in m' ==> union(m, m')[i] == m'[i]
+    ensures forall x :: x in union(m, m') <==> x in m || x in m'
+    ensures forall x :: x in m ==> union(m, m')[x] == m[x]
+    ensures forall x :: x in m' ==> union(m, m')[x] == m'[x]
   {
-    map i | i in (domain(m) + domain(m')) :: if i in m then m[i] else m'[i]
+    map x | x in (domain(m) + domain(m')) :: if x in m then m[x] else m'[x]
   }
 
-  function method remove<U(!new), V(!new)>(m: map<U, V>, u: U) : map<U, V>
-    requires u in m
+  function method remove<X(!new), Y(!new)>(m: map<X, Y>, x: X) : map<X, Y>
+    requires x in m
     decreases |m|
-    ensures |remove(m, u)| == |m| - 1
-    ensures !(u in remove(m, u))
-    ensures forall u' :: u' in remove(m, u) <==> u' in m && u' != u
+    ensures |remove(m, x)| == |m| - 1
+    ensures !(x in remove(m, x))
+    ensures forall i :: i in remove(m, x) <==> i in m && i != x
   {
-    var m' := map u' | u' in m && u' != u :: m[u'];
-    lemma_remove_one(m, m', u);
+    var m' := map x' | x' in m && x' != x :: m[x'];
+    lemma_remove_one(m, m', x);
     m'
   }
 
-  lemma lemma_size_is_domain_size<S(!new), T(!new)>(dom: set<S>,
-                                                    m: map<S, T>)
+  lemma lemma_size_is_domain_size<X(!new), Y(!new)>(dom: set<X>,
+                                                    m: map<X, Y>)
     requires dom == domain(m)
     ensures |m| == |dom|
   {
@@ -51,9 +52,9 @@ module Maps {
     }
   }
 
-  lemma lemma_remove_decreases_size<S(!new), T(!new)>(before: map<S, T>,
-                                                      after: map<S, T>,
-                                                      item_removed: S)
+  lemma lemma_remove_decreases_size<X(!new), Y(!new)>(before: map<X, Y>,
+                                                      after: map<X, Y>,
+                                                      item_removed: X)
     requires item_removed in before
     requires after == map s | s in before && s != item_removed :: before[s]
     ensures |after| < |before|
@@ -71,11 +72,11 @@ module Maps {
     }
   }
 
-  lemma lemma_remove_one<S(!new), T(!new)>(before: map<S, T>,
-                                           after: map<S, T>,
-                                           item_removed: S)
+  lemma lemma_remove_one<X(!new), Y(!new)>(before: map<X, Y>,
+                                           after: map<X, Y>,
+                                           item_removed: X)
     requires item_removed in before
-    requires after == map s | s in before && s != item_removed :: before[s]
+    requires after == map i | i in before && i != item_removed :: before[i]
     ensures |after| + 1 == |before|
   {
     var domain_before := domain(before);
@@ -85,5 +86,6 @@ module Maps {
     lemma_size_is_domain_size(domain_after, after);
 
     assert domain_after + {item_removed} == domain_before;
-  }  
+  }
+ 
 }

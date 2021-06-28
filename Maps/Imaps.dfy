@@ -1,21 +1,22 @@
 module Imaps {
-  predicate total<S(!new), T>(m: imap<S, T>) {
-    forall s :: s in m
+
+  predicate total<X(!new), Y>(m: imap<X, Y>) {
+    forall i :: i in m
   }
 
   predicate monotonic(m: imap<int, int>) {
-    forall s, s' :: s in m && s' in m && s <= s' ==> m[s] <= m[s']
+    forall x, x' :: x in m && x' in m && x <= x' ==> m[x] <= m[x']
   }
 
   predicate monotonic_from(start: int, m: imap<int, int>) {
-    forall s, s' :: s in m && s' in m && start <= s <= s' ==> m[s] <= m[s']
+    forall x, x' :: x in m && x' in m && start <= x <= x' ==> m[x] <= m[x']
   }
 
-  predicate monotonic_behavior<S>(x: imap<int, S>, y: imap<S, int>)
-    requires total(x)
-    requires total(y)
+  predicate monotonic_behavior<X>(m: imap<int, X>, m': imap<X, int>)
+    requires total(m)
+    requires total(m')
   {
-    forall s, s' :: s <= s' ==> y[x[s]] <= y[x[s']]
+    forall x, x' :: x <= x' ==> m'[m[x]] <= m'[m[x']]
   }
 
   lemma lemma_induction_range(start: int, end: int, m: imap<int, bool>)
@@ -30,4 +31,5 @@ module Imaps {
       lemma_induction_range(start + 1, end, m);
     }
   }
+
 }

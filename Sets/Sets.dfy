@@ -1,6 +1,7 @@
 include "../Mathematics.dfy"
 
 module Sets {
+
   import Math = Mathematics
 
   /**
@@ -203,4 +204,5 @@ module Sets {
     assert x <= range;
     lemma_subset_cardinality(x, range);
   }
+
 }
