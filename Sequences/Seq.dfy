@@ -1,3 +1,8 @@
+/*********************************************************************************************************************
+Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
+SPDX-License-Identifier: BSD-2-Clause
+**********************************************************************************************************************/
+
 include "../Options.dfy"
 include "../Mathematics.dfy"
 
@@ -535,25 +540,33 @@ module Seq {
   }
 
   lemma {:opaque} lemma_fold_left_concat<A,T>(f: (A, T) -> A, init: A, a: seq<T>, b: seq<T>)
-    requires 0 <= |a + b|
-    ensures fold_left(f, init, a + b) == fold_left(f, fold_left(f, init, a), b)
+    // requires 0 < |a + b|
+    // requires 0 < |b|;
+    // ensures fold_left(f, init, a + b) == fold_left(f, fold_left(f, init, a), b)
   {
-  //   reveal_fold_left();
-  //   if |a| == 0 {
-  //     calc {
-  //       a + b;
-  //       b;
-  //     }
-  //     calc {
-  //       fold_left(f, init, b);
-  //       fold_left(f, init, a + b);
-  //     }
-  //   } else {
-  //     calc {
-  //       fold_left(f, init, a + b);
-  //       fold_left(f, fold_left(f, init, a), b);
-  //     }
-  //   }
+    // reveal_fold_left();
+    // if |a| == 0 {
+    //   calc {
+    //     a + b;
+    //     b;
+    //   }
+    //   calc {
+    //     fold_left(f, init, b);
+    //     fold_left(f, init, a + b);
+    //   }
+    // } else {
+    //   calc {
+    //     fold_left(f, init, a + b);
+    //     fold_left(f, init, (a + b)[..|a|] + b);
+    //       { lemma_split_at(a + b, |a|);
+    //       assert a == (a + b)[..|a|];
+    //       assert a + b == (a + b)[..|a|] + b; }
+    //     fold_left(f, fold_left(f, init, (a + b)[..|a|]), b);
+    //       { assert fold_left(f, init, a) == fold_left(f(init, b), init, a);
+    //       assert fold_left(f, init, a) == fold_left(f, init, (a + b)[..|a|]); }
+    //     fold_left(f, fold_left(f, init, a), b);
+    //   }
+    // }
   }
 
   function method {:opaque} fold_right<A,T>(f: (A, T) -> A, init: A, s: seq<T>): A
