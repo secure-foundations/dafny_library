@@ -547,8 +547,6 @@ module Seq {
     if |a| == 0 {
       assert a + b == b;
     } else {
-      assert |a| >= 1;
-      assert ([a[0]] + a[1..] + b)[0] == a[0];
       calc {
         fold_left(f, fold_left(f, init, a), b);
         fold_left(f, fold_left(f, f(init, a[0]), a[1..]), b);
