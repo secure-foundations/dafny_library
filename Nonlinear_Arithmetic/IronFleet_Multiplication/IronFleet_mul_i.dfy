@@ -1,6 +1,13 @@
 include "IronFleet_mul_nonlinear_i.dfy"
 include "IronFleet_mul_auto_i.dfy"
 
+///////////////////////////////////////////////////
+// https://github.com/microsoft/Ironclad/blob/main/ironclad-apps/src/Dafny/Libraries/Math/mul.i.dfy
+// the above link contains almost all of the below lemmas
+// and methods. However, the difference is that they don't
+// make use of the "auto" functions...which is preferable?
+///////////////////////////////////////////////////
+
 module Math__mul_i {
 
   import opened Math__mul_nonlinear_i
@@ -468,6 +475,12 @@ module Math__mul_i {
     lemma_mul_increases_forall();
   }
 
+  lemma lemma_mul_cancels_negatives(a:int, b:int)
+    ensures a*b == (-a)*(-b);
+  {
+    lemma_mul_properties();
+  
+  }
   //- Kept for legacy reasons:
   function method INTERNAL_mul_recursive(x:int, y:int) : int { mul_recursive(x, y) }
 
