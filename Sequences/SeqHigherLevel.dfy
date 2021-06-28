@@ -76,22 +76,23 @@ module SeqHigherLevel {
     requires 0 <= |a + b|
     ensures fold_left(f, init, a + b) == fold_left(f, fold_left(f, init, a), b)
   {
-  //   reveal_fold_left();
-  //   if |a| == 0 {
-  //     calc {
-  //       a + b;
-  //       b;
-  //     }
-  //     calc {
-  //       fold_left(f, init, b);
-  //       fold_left(f, init, a + b);
-  //     }
-  //   } else {
-  //     calc {
-  //       fold_left(f, init, a + b);
-  //       fold_left(f, fold_left(f, init, a), b);
-  //     }
-  //   }
+    reveal_fold_left();
+    if |a| == 0 {
+      assert a + b == b;
+    } else {
+      assert |a| >= 1;
+      assert ([a[0]] + a[1..] + b)[0] == a[0];
+      calc {
+        fold_left(f, fold_left(f, init, a), b);
+        fold_left(f, fold_left(f, f(init, a[0]), a[1..]), b);
+        { lemma_fold_left_concat(f, f(init, a[0]), a[1..], b); }
+        fold_left(f, f(init, a[0]), a[1..] + b);
+        { assert (a + b)[0] == a[0]; }
+        { assert (a + b)[1..] == a[1..] + b; }
+        { assert fold_left(f, init, a + b) == fold_left(f, f(init, a[0]), a[1..] + b); }
+        fold_left(f, init, a + b);
+      }
+    }
   }
 
   function method {:opaque} fold_right<A,T>(f: (A, T) -> A, init: A, s: seq<T>): A
