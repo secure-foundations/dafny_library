@@ -14,18 +14,6 @@ module Maps {
 	  imap x | x in m :: m[x]
 	}
 
-  function method {:opaque} domain<X(!new), Y>(m: map<X, Y>): set<X>
-    ensures forall x :: x in domain(m) <==> x in m
-  {
-    set x | x in m
-  }
-
-  function method {:opaque} range<X, Y(!new)>(m: map<X, Y>): set<Y>
-    ensures forall y :: y in range(m) <==> exists x :: x in m && m[x] == y
-  {
-    set x | x in m :: m[x]
-  }
-
   lemma lemma_size_is_domain_size<X(!new), Y(!new)>(dom: set<X>,
                                                     m: map<X, Y>)
     requires dom == domain(m)
