@@ -16,7 +16,7 @@ module Maps {
 
   lemma lemma_size_is_domain_size<X(!new), Y(!new)>(dom: set<X>,
                                                     m: map<X, Y>)
-    requires dom == domain(m)
+    requires dom == m.Keys
     ensures |m| == |dom|
   {
     if |m| == 0 {
@@ -75,8 +75,8 @@ module Maps {
     requires after == map i | i in before && i != item_removed :: before[i]
     ensures |after| + 1 == |before|
   {
-    var domain_before := domain(before);
-    var domain_after := domain(after);
+    var domain_before := before.Keys;
+    var domain_after := after.Keys;
 
     lemma_size_is_domain_size(domain_before, before);
     lemma_size_is_domain_size(domain_after, after);
