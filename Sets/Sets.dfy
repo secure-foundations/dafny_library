@@ -14,22 +14,22 @@ module Sets {
   }
 
   /**
-   * If x is a subset of y, then the cardinality of x is less than or equal to
-   * the cardinality of y.
+   * If x is a subset of y, then the size of x is less than or equal to the
+   * size of y.
    */
-  lemma lemma_subset_cardinality<T>(x: set<T>, y: set<T>)
+  lemma lemma_subset_size<T>(x: set<T>, y: set<T>)
     ensures x < y ==> |x| < |y|
     ensures x <= y ==> |x| <= |y|
   {
     if x != {} {
       var e :| e in x;
-      lemma_subset_cardinality(x - {e}, y - {e});
+      lemma_subset_size(x - {e}, y - {e});
     }
   }
 
   /**
-   * If x is a subset of y and the cardinality of x is equal to the cardinality
-   * of y, x is equal to y.
+   * If x is a subset of y and the size of x is equal to the size of y, x is
+   * equal to y.
    */
   lemma lemma_subset_equality<T>(x: set<T>, y: set<T>)
     requires x <= y
@@ -45,9 +45,9 @@ module Sets {
   }
 
   /**
-   * A singleton set has a cardinality of 1.
+   * A singleton set has a size of 1.
    */
-  lemma lemma_singleton_cardinality<T>(x: set<T>, e: T)
+  lemma lemma_singleton_size<T>(x: set<T>, e: T)
     requires x == {e}
     ensures |x| == 1
   {
@@ -64,7 +64,7 @@ module Sets {
   {
     if a != b {
       assert {a} < x;
-      lemma_subset_cardinality({a}, x);
+      lemma_subset_size({a}, x);
       assert |{a}| < |x|;
       assert |x| > 1;
       assert false;
@@ -73,9 +73,9 @@ module Sets {
 
   /**
    * If an injective function is applied to each element of a set to construct
-   * another set, the two sets have the same cardinality. 
+   * another set, the two sets have the same size. 
    */
-  lemma lemma_apply_cardinality<X(!new), Y>(xs: set<X>, ys: set<Y>, f: X-->Y)
+  lemma lemma_apply_size<X(!new), Y>(xs: set<X>, ys: set<Y>, f: X-->Y)
     requires forall x :: f.requires(x)
     requires Math.injective(f)
     requires forall x :: x in xs <==> f(x) in ys
@@ -86,7 +86,7 @@ module Sets {
       var x :| x in xs;
       var xs' := xs - {x};
       var ys' := ys - {f(x)};
-      lemma_apply_cardinality(xs', ys', f);
+      lemma_apply_size(xs', ys', f);
     }
   }
 
@@ -101,16 +101,16 @@ module Sets {
     ensures |xs| == |ys|
   {
     var ys := set x | x in xs :: f(x);
-    lemma_apply_cardinality(xs, ys, f);
+    lemma_apply_size(xs, ys, f);
     ys
   }
 
   /**
    * If a set ys is constructed using elements of another set xs for which a
-   * function returns true, the cardinality of ys is less than or equal to the
-   * cardinality of xs.
+   * function returns true, the size of ys is less than or equal to the size of
+   * xs.
    */
-  lemma lemma_filter_cardinality<X>(xs: set<X>, ys: set<X>, f: X~>bool)
+  lemma lemma_filter_size<X>(xs: set<X>, ys: set<X>, f: X~>bool)
     requires forall x :: x in xs ==> f.requires(x)
     requires forall y :: y in ys ==> y in xs && f(y)
     ensures |ys| <= |xs|
@@ -120,7 +120,7 @@ module Sets {
       var y :| y in ys;
       var xs' := xs - {y};
       var ys' := ys - {y};
-      lemma_filter_cardinality(xs', ys', f);
+      lemma_filter_size(xs', ys', f);
     }
   }
 
@@ -135,15 +135,15 @@ module Sets {
     ensures |ys| <= |xs|
   {
     var ys := set x | x in xs && f(x);
-    lemma_filter_cardinality(xs, ys, f);
+    lemma_filter_size(xs, ys, f);
     ys
   }
 
   /**
-   * The cardinality of a union of two sets is greater than or equal to the
-   * cardinality of either individual set.
+   * The size of a union of two sets is greater than or equal to the size of
+   * either individual set.
    */
-  lemma lemma_union_cardinality<X>(xs: set<X>, ys: set<X>)
+  lemma lemma_union_size<X>(xs: set<X>, ys: set<X>)
     ensures |xs + ys| >= |xs|
     ensures |xs + ys| >= |ys|
   {
@@ -154,11 +154,11 @@ module Sets {
         var xr := xs - {y};
         var yr := ys - {y};
         assert xr + yr == xs + ys - {y};
-        lemma_union_cardinality(xr, yr);
+        lemma_union_size(xr, yr);
       } else {
         var yr := ys - {y};
         assert xs + yr == xs + ys - {y};
-        lemma_union_cardinality(xs, yr);
+        lemma_union_size(xs, yr);
       }
     }
   }
@@ -187,10 +187,10 @@ module Sets {
   }
 
   /**
-   * If a set solely contains integers in the range [a, b), then its cardinality
-   * is bounded by b - a.
+   * If a set solely contains integers in the range [a, b), then its size is
+   * bounded by b - a.
    */
-  lemma lemma_bounded_set_cardinality(x: set<int>, a: int, b: int)
+  lemma lemma_bounded_set_size(x: set<int>, a: int, b: int)
     requires forall i :: i in x ==> a <= i < b
     requires a <= b
     ensures |x| <= b - a
@@ -201,7 +201,7 @@ module Sets {
     {
     }
     assert x <= range;
-    lemma_subset_cardinality(x, range);
+    lemma_subset_size(x, range);
   }
 
 }
