@@ -4,29 +4,28 @@ module Math__mul_auto_proofs_i {
 
   import opened Math__mul_nonlinear_i
 
-  lemma lemma_mul_induction_helper(f:int->bool, x:int)
-  // is assume f(x) okay?
+  lemma lemma_mul_induction_helper(f:int->bool, i:int)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
     requires forall i {:trigger f(i), f(i - 1)} :: i <= 0 && f(i) ==> f(i - 1)
-    ensures  f(x)
-    decreases if x >= 0 then x else -x
+    ensures  f(i)
+    decreases if i >= 0 then i else -i
   {
-    if (x == 0)
+    if (i > 0)
     {
-      assert f(0);
+      assert f(i - 1) by {
+        lemma_mul_induction_helper(f, i - 1);
+      }
+      var x := i - 1;
+      assert f(x) ==> f(x + 1);
     }
-    else if (x > 0)
+    else if (i < 0)
     {
-      lemma_mul_induction_helper(f, x - 1);
-      assume f(x);
-      assert f((x - 1) + 1);
-    }
-    else if (x < 0)
-    {
-      lemma_mul_induction_helper(f, x + 1);
-      assume f(x);
-      assert f((x + 1) - 1);
+      assert f(i + 1) by {
+        lemma_mul_induction_helper(f, i + 1);
+      }
+      var x := i + 1;
+      assert f(x) ==> f(x - 1);
     }
   }
 
