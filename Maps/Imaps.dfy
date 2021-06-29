@@ -6,9 +6,17 @@ include "../Options.dfy"
 module Imaps {
   import opened Options
 
-  function method {:opaque} get<X, Y>(m: imap<X, Y>, x: X): Option<Y> {
+  function method {:opaque} get_option<X, Y>(m: imap<X, Y>, x: X): Option<Y> {
 	  if x in m then Some(m[x]) else None
 	}
+
+  function {:opaque} remove_iset<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>)
+    ensures forall x :: x in m && x !in xs ==> x in m'
+    ensures forall x :: x in m' ==> x in m && x !in xs && m'[x] == m[x]
+    ensures m'.Keys == m.Keys - xs
+  {
+    imap x | x in m && x !in xs :: m[x]
+  }
 
   function {:opaque} remove<X, Y>(m:imap<X, Y>, x: X): (m': imap<X, Y>)
     ensures m'.Keys == m.Keys - iset{x}
@@ -17,41 +25,38 @@ module Imaps {
     imap i | i in m && i != x :: m[i]
   }
 
-  function {:opaque} remove_iset<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>)
-    ensures m'.Keys == m.Keys - xs
-    ensures forall x :: x in m' ==> m'[x] == m[x]
-  {
-    imap x | x in m && x !in xs :: m[x]
-  }
-
   predicate {:opaque} contains<X(!new), Y>(m: imap<X, Y>, x: X, y: Y) {
     x in m && m[x] == y
   }
 
-  predicate {:opaque} equals<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>, x: X) {
+  predicate {:opaque} equals_on_key<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>, x: X) {
     (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
   }
 
+  predicate {:opaque} equals<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>) {
+    (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
+  }
+
   predicate {:opaque} is_subset<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>) {
-    m.Keys <= m'.Keys && (forall x :: x in m.Keys ==> equals(m, m', x))
+    m.Keys <= m'.Keys && (forall x :: x in m ==> equals_on_key(m, m', x))
   }
 
   function {:opaque} union_prefer_first<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
     ensures m''.Keys == m.Keys + m'.Keys
-    ensures forall k :: k in m.Keys ==> m''[k] == m[k]
+    ensures forall k :: k in m ==> m''[k] == m[k]
     ensures forall k :: k in m'.Keys - m.Keys ==> m''[k] == m'[k]
-    ensures forall k :: k in m'.Keys && !(k in m.Keys) ==> m''[k] == m'[k]
+    ensures forall k :: k in m' && k !in m ==> m''[k] == m'[k]
   {
-    imap x | (x in m.Keys + m'.Keys) :: if x in m then m[x] else m'[x]
+    imap x | x in m.Keys + m'.Keys :: if x in m then m[x] else m'[x]
   }
 
   function {:opaque} union_prefer_second<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
     ensures m''.Keys == m.Keys + m'.Keys
-    ensures forall k :: k in m'.Keys ==> m''[k] == m'[k]
+    ensures forall k :: k in m' ==> m''[k] == m'[k]
     ensures forall k :: k in m.Keys - m'.Keys ==> m''[k] == m[k]
-    ensures forall k :: k in m.Keys && !(k in m'.Keys) ==> m''[k] == m[k]
+    ensures forall k :: k in m && k !in m' ==> m''[k] == m[k]
   {
-    imap x | (x in m.Keys + m'.Keys) :: if x in m' then m'[x] else m[x]
+    imap x | x in m.Keys + m'.Keys :: if x in m' then m'[x] else m[x]
   }
 
   function {:opaque} union<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
@@ -64,7 +69,16 @@ module Imaps {
 		union_prefer_first(m, m')
 	}
 
-  function {:opaque} restrict<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>) {
+  lemma lemma_is_union<X, Y>(m: imap<X, Y>, m': imap<X, Y>, m'': imap<X, Y>)
+    requires m.Keys !! m'.Keys
+    requires forall x :: x in m ==> x in m'' && m''[x] == m[x]
+    requires forall x :: x in m' ==> x in m'' && m''[x] == m'[x]
+    requires forall x :: x in m'' ==> x in m || x in m'
+    ensures m'' == union(m, m')
+	{
+	}
+
+  function {:opaque} restrict<X, Y>(m: imap<X, Y>, xs: iset<X>): imap<X, Y> {
     imap x | x in xs && x in m :: m[x]
   }
 
@@ -72,7 +86,7 @@ module Imaps {
     forall x, x' | x != x' && x in m && x' in m :: m[x] != m[x']
   }
 
-  function {:opaque} invert<X, Y(!new)>(m: imap<X, Y>): (m': imap<Y, X>) {
+  function {:opaque} invert<X, Y(!new)>(m: imap<X, Y>): imap<Y, X> {
     imap y | y in m.Values :: var x :| x in m && m[x] == y; x
   }
 

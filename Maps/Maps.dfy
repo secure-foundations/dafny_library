@@ -1,8 +1,18 @@
-module Maps {
+// Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
+// SPDX-License-Identifier: BSD-2-Clause
 
-  predicate {:opaque} is_equal<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
-    (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
-  }
+include "../Options.dfy"
+
+module Maps {
+  import opened Options
+
+  function method {:opaque} get_option<X, Y>(m: map<X, Y>, x: X): Option<Y> {
+	  if x in m then Some(m[x]) else None
+	}
+
+  function to_imap<X, Y>(m: map<X, Y>): imap<X, Y> {
+	  imap x | x in m :: m[x]
+	}
 
   function method {:opaque} domain<X(!new), Y>(m: map<X, Y>): set<X>
     ensures forall x :: x in domain(m) <==> x in m
@@ -10,31 +20,10 @@ module Maps {
     set x | x in m
   }
 
-  function method {:opaque} range<X, Y(!new)>(m: map<X, Y>) : set<Y>
+  function method {:opaque} range<X, Y(!new)>(m: map<X, Y>): set<Y>
     ensures forall y :: y in range(m) <==> exists x :: x in m && m[x] == y
   {
     set x | x in m :: m[x]
-  }
-
-  function method {:opaque} union<X(!new), Y>(m: map<X, Y>, m': map<X, Y>): map<X, Y>
-    requires m.Keys !! m'.Keys
-    ensures forall x :: x in union(m, m') <==> x in m || x in m'
-    ensures forall x :: x in m ==> union(m, m')[x] == m[x]
-    ensures forall x :: x in m' ==> union(m, m')[x] == m'[x]
-  {
-    map x | x in (domain(m) + domain(m')) :: if x in m then m[x] else m'[x]
-  }
-
-  function method {:opaque} remove<X(!new), Y(!new)>(m: map<X, Y>, x: X) : map<X, Y>
-    requires x in m
-    decreases |m|
-    ensures |remove(m, x)| == |m| - 1
-    ensures !(x in remove(m, x))
-    ensures forall i :: i in remove(m, x) <==> i in m && i != x
-  {
-    var m' := map x' | x' in m && x' != x :: m[x'];
-    lemma_remove_one(m, m', x);
-    m'
   }
 
   lemma lemma_size_is_domain_size<X(!new), Y(!new)>(dom: set<X>,
@@ -50,6 +39,25 @@ module Maps {
       lemma_size_is_domain_size(dom', m');
       assert m == m'[x := m[x]];
     }
+  }
+
+  function method {:opaque} remove_set<X, Y>(m: map<X, Y>, xs: set<X>): (m': map<X, Y>)
+    ensures forall x :: x in m && x !in xs ==> x in m'
+    ensures forall x :: x in m' ==> x in m && x !in xs && m'[x] == m[x]
+    ensures m'.Keys == m.Keys - xs
+  {
+    map x | x in m && x !in xs :: m[x]
+  }
+
+  function method {:opaque} remove<X(!new), Y(!new)>(m: map<X, Y>, x: X): (m': map<X, Y>)
+    requires x in m
+    ensures forall i :: i in m && i != x ==> i in m'
+    ensures forall i :: i in m' <==> i in m && i != x && m'[i] == m[i]
+    ensures |m'| == |m| - 1
+  {
+    var m' := map x' | x' in m && x' != x :: m[x'];
+    lemma_remove_one(m, m', x);
+    m'
   }
 
   lemma lemma_remove_decreases_size<X(!new), Y(!new)>(before: map<X, Y>,
@@ -87,5 +95,79 @@ module Maps {
 
     assert domain_after + {item_removed} == domain_before;
   }
- 
+
+  predicate {:opaque} contains<X(!new), Y>(m: map<X, Y>, x: X, y: Y) {
+    x in m && m[x] == y
+  }
+
+  predicate {:opaque} equals_on_key<X(!new), Y>(m: map<X, Y>, m': map<X, Y>, x: X) {
+    (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
+  }
+
+  predicate {:opaque} equals<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
+    (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
+  }
+
+  predicate {:opaque} is_subset<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
+    m.Keys <= m'.Keys && (forall x :: x in m ==> equals_on_key(m, m', x))
+  }
+
+  function method {:opaque} union_prefer_first<X, Y>(m: map<X, Y>, m': map<X, Y>): (m'': map<X, Y>)
+    ensures m''.Keys == m.Keys + m'.Keys
+    ensures forall k :: k in m ==> m''[k] == m[k]
+    ensures forall k :: k in m'.Keys - m.Keys ==> m''[k] == m'[k]
+    ensures forall k :: k in m' && k !in m ==> m''[k] == m'[k]
+  {
+    map x | x in m.Keys + m'.Keys :: if x in m then m[x] else m'[x]
+  }
+
+  function method {:opaque} union_prefer_second<X, Y>(m: map<X, Y>, m': map<X, Y>): (m'': map<X, Y>)
+    ensures m''.Keys == m.Keys + m'.Keys
+    ensures forall k :: k in m' ==> m''[k] == m'[k]
+    ensures forall k :: k in m.Keys - m'.Keys ==> m''[k] == m[k]
+    ensures forall k :: k in m && k !in m' ==> m''[k] == m[k]
+  {
+    map x | x in m.Keys + m'.Keys :: if x in m' then m'[x] else m[x]
+  }
+
+  function method {:opaque} union<X, Y>(m: map<X, Y>, m': map<X, Y>): (m'': map<X, Y>)
+		ensures m''.Keys == m.Keys + m'.Keys
+		ensures forall k :: k in m.Keys - m'.Keys ==> m[k] == m''[k]
+		ensures forall k :: k in m'.Keys - m.Keys ==> m'[k] == m''[k]
+		ensures forall k :: k in m.Keys * m'.Keys ==>	m'[k] == m''[k] ||
+                                                  m[k] == m''[k]
+	{
+		union_prefer_first(m, m')
+	}
+
+  lemma lemma_is_union<X, Y>(m: map<X, Y>, m': map<X, Y>, m'': map<X, Y>)
+    requires m.Keys !! m'.Keys
+    requires forall x :: x in m ==> x in m'' && m''[x] == m[x]
+    requires forall x :: x in m' ==> x in m'' && m''[x] == m'[x]
+    requires forall x :: x in m'' ==> x in m || x in m'
+    ensures m'' == union(m, m')
+	{
+	}
+
+  function method {:opaque} union_disjoint<X, Y>(m: map<X, Y>, m': map<X, Y>): (m'': map<X, Y>)
+		requires m.Keys !! m'.Keys
+		ensures m''.Keys == m.Keys + m'.Keys
+		ensures forall k :: k in m ==> m[k] == m''[k]
+		ensures forall k :: k in m' ==> m'[k] == m''[k]
+	{
+		map x | x in m.Keys + m'.Keys :: if x in m then m[x] else m'[x]
+	}
+
+  lemma lemma_union_disjoint_cardinality<X, Y>(m: map<X, Y>, m': map<X, Y>)
+    requires m.Keys !! m'.Keys
+    ensures |union_disjoint(m, m')| == |m| + |m'|
+  {
+    var u := union_disjoint(m, m');
+    assert |u.Keys| == |m.Keys| + |m'.Keys|;
+  }
+
+  function method {:opaque} restrict<X, Y>(m: map<X, Y>, xs: set<X>): map<X, Y> {
+    map x | x in xs && x in m :: m[x]
+  }
+
 }
