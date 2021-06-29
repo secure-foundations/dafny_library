@@ -93,12 +93,12 @@ module Sets {
   /**
    * Apply an injective function to each element of a set.
    */
-  function method {:opaque} apply<X(!new), Y>(xs: set<X>, f: X-->Y): set<Y>
+  function method {:opaque} apply<X(!new), Y>(xs: set<X>, f: X-->Y): (ys: set<Y>)
     reads f.reads
     requires forall x :: f.requires(x)
     requires Math.injective(f)
-    ensures forall x :: x in xs <==> f(x) in apply(xs, f)
-    ensures |xs| == |apply(xs, f)|
+    ensures forall x :: x in xs <==> f(x) in ys
+    ensures |xs| == |ys|
   {
     var ys := set x | x in xs :: f(x);
     lemma_apply_cardinality(xs, ys, f);
@@ -128,11 +128,11 @@ module Sets {
    * Construct a set using elements of another set for which a function returns
    * true.
    */
-  function method {:opaque} filter<X(!new)>(xs: set<X>, f: X~>bool): set<X>
+  function method {:opaque} filter<X(!new)>(xs: set<X>, f: X~>bool): (ys: set<X>)
     reads f.reads
     requires forall x :: x in xs ==> f.requires(x)
-    ensures forall y :: y in filter(xs, f) <==> y in xs && f(y)
-    ensures |filter(xs, f)| <= |xs|
+    ensures forall y :: y in ys <==> y in xs && f(y)
+    ensures |ys| <= |xs|
   {
     var ys := set x | x in xs && f(x);
     lemma_filter_cardinality(xs, ys, f);
@@ -166,11 +166,10 @@ module Sets {
   /**
    * Construct a set with all integers in the range [a, b).
    */
-  function method {:opaque} set_range(a: int, b: int): set<int>
+  function method {:opaque} set_range(a: int, b: int): (s: set<int>)
     requires a <= b
-    ensures forall i :: a <= i < b <==> i
-            in set_range(a, b)
-    ensures |set_range(a, b)| == b - a
+    ensures forall i :: a <= i < b <==> i in s
+    ensures |s| == b - a
     decreases b - a
   {
     if a == b then {} else {a} + set_range(a + 1, b)
@@ -179,10 +178,10 @@ module Sets {
   /**
    * Construct a set with all integers in the range [0, n).
    */
-  function method {:opaque} set_range_zero_bound(n: int): set<int>
+  function method {:opaque} set_range_zero_bound(n: int): (s: set<int>)
     requires n >= 0
-    ensures forall i :: 0 <= i < n <==> i in set_range_zero_bound(n)
-    ensures |set_range_zero_bound(n)| == n
+    ensures forall i :: 0 <= i < n <==> i in s
+    ensures |s| == n
   {
     set_range(0, n)
   }
