@@ -128,7 +128,7 @@ module Sets {
    * Construct a set using elements of another set for which a function returns
    * true.
    */
-  function {:opaque} filter<X(!new)>(xs: set<X>, f: X~>bool): set<X>
+  function method {:opaque} filter<X(!new)>(xs: set<X>, f: X~>bool): set<X>
     reads f.reads
     requires forall x :: x in xs ==> f.requires(x)
     ensures forall y :: y in filter(xs, f) <==> y in xs && f(y)

@@ -1,22 +1,22 @@
 module Maps {
 
-  predicate is_equal<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
+  predicate {:opaque} is_equal<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
     (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
   }
 
-  function method domain<X(!new), Y>(m: map<X, Y>): set<X>
+  function method {:opaque} domain<X(!new), Y>(m: map<X, Y>): set<X>
     ensures forall x :: x in domain(m) <==> x in m
   {
     set x | x in m
   }
 
-  function method range<X, Y(!new)>(m: map<X, Y>) : set<Y>
+  function method {:opaque} range<X, Y(!new)>(m: map<X, Y>) : set<Y>
     ensures forall y :: y in range(m) <==> exists x :: x in m && m[x] == y
   {
     set x | x in m :: m[x]
   }
 
-  function method union<X(!new), Y>(m: map<X, Y>, m': map<X, Y>): map<X, Y>
+  function method {:opaque} union<X(!new), Y>(m: map<X, Y>, m': map<X, Y>): map<X, Y>
     requires m.Keys !! m'.Keys
     ensures forall x :: x in union(m, m') <==> x in m || x in m'
     ensures forall x :: x in m ==> union(m, m')[x] == m[x]
@@ -25,7 +25,7 @@ module Maps {
     map x | x in (domain(m) + domain(m')) :: if x in m then m[x] else m'[x]
   }
 
-  function method remove<X(!new), Y(!new)>(m: map<X, Y>, x: X) : map<X, Y>
+  function method {:opaque} remove<X(!new), Y(!new)>(m: map<X, Y>, x: X) : map<X, Y>
     requires x in m
     decreases |m|
     ensures |remove(m, x)| == |m| - 1
