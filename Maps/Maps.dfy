@@ -10,7 +10,7 @@ module Maps {
 	  if x in m then Some(m[x]) else None
 	}
 
-  function method to_imap<X, Y>(m: map<X, Y>): imap<X, Y> {
+  function method {:opaque} to_imap<X, Y>(m: map<X, Y>): imap<X, Y> {
 	  imap x | x in m :: m[x]
 	}
 
@@ -198,9 +198,7 @@ module Maps {
    * Swaps map keys and values. Values are not required to be unique; no
    * promises on which key is chosen on the intersection.
    */
-  function {:opaque} invert<X, Y(!new)>(m: map<X, Y>): map<Y, X>
-    requires |m.Values| == |m|
-  {
+  function {:opaque} invert<X(!new), Y(!new)>(m: map<X, Y>): map<Y, X> {
     map y | y in m.Values :: var x :| x in m.Keys && m[x] == y; x
   }
 
@@ -208,7 +206,6 @@ module Maps {
    * Inverted maps are injective.
    */
   lemma lemma_invert_is_injective<X, Y>(m: map<X, Y>)
-    requires |m.Values| == |m|
     ensures injective(invert(m))
   {
     reveal_injective();

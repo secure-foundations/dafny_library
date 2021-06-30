@@ -6,7 +6,7 @@ include "../Options.dfy"
 module Imaps {
   import opened Options
 
-  function method {:opaque} get_option<X, Y>(m: imap<X, Y>, x: X): Option<Y> {
+  function {:opaque} get_option<X, Y>(m: imap<X, Y>, x: X): Option<Y> {
 	  if x in m then Some(m[x]) else None
 	}
 
