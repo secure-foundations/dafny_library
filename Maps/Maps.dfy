@@ -10,7 +10,7 @@ module Maps {
 	  if x in m then Some(m[x]) else None
 	}
 
-  function to_imap<X, Y>(m: map<X, Y>): imap<X, Y> {
+  function method to_imap<X, Y>(m: map<X, Y>): imap<X, Y> {
 	  imap x | x in m :: m[x]
 	}
 
@@ -185,6 +185,85 @@ module Maps {
   {
     var u := disjoint_union(m, m');
     assert |u.Keys| == |m.Keys| + |m'.Keys|;
+  }
+
+  /**
+   * Returns true if a map is injective.
+   */
+  predicate {:opaque} injective<X(!new), Y>(m: map<X, Y>) {
+    forall x, x' | x != x' && x in m && x' in m :: m[x] != m[x']
+  }
+
+  /**
+   * Swaps map keys and values. Values are not required to be unique; no
+   * promises on which key is chosen on the intersection.
+   */
+  function {:opaque} invert<X, Y(!new)>(m: map<X, Y>): map<Y, X>
+    requires |m.Values| == |m|
+  {
+    map y | y in m.Values :: var x :| x in m.Keys && m[x] == y; x
+  }
+
+  /**
+   * Inverted maps are injective.
+   */
+  lemma lemma_invert_is_injective<X, Y>(m: map<X, Y>)
+    requires |m.Values| == |m|
+    ensures injective(invert(m))
+  {
+    reveal_injective();
+    reveal_invert();
+  }
+
+  /**
+   * Returns true if a map contains all valid keys.
+   */
+  predicate {:opaque} total<X(!new), Y>(m: map<X, Y>) {
+    forall i :: i in m
+  }
+
+  /**
+   * Returns true if a map is monotonic.
+   */
+  predicate {:opaque} monotonic(m: map<int, int>) {
+    forall x, x' :: x in m && x' in m && x <= x' ==> m[x] <= m[x']
+  }
+
+  /**
+   * Returns true if a map is monotonic. Only considers keys greater than or
+   * equal to start.
+   */
+  predicate {:opaque} monotonic_from(start: int, m: map<int, int>) {
+    forall x, x' :: x in m && x' in m && start <= x <= x' ==> m[x] <= m[x']
+  }
+
+  /**
+   * Returns true if the composite mapping m' ∘ m is monotonic.
+   */
+  predicate {:opaque} monotonic_double_mapping<X>(m: map<int, X>, m': map<X, int>)
+    requires total(m)
+    requires total(m')
+  {
+    reveal_total();
+    forall x, x' :: x <= x' ==> m'[m[x]] <= m'[m[x']]
+  }
+
+  /**
+   * Suppose a map contains (start, true), and for all indices i in the range
+   * [start, end), if m[i] is true then m[i + 1] is true. Then the map contains
+   * (end, true).
+   */
+  lemma lemma_induction_range(start: int, end: int, m: map<int, bool>)
+    requires start <= end
+    requires forall i :: start <= i <= end ==> i in m
+    requires forall i :: start <= i < end && m[i] ==> m[i + 1]
+    requires m[start]
+    ensures m[end]
+    decreases end - start
+  {
+    if start < end {
+      lemma_induction_range(start + 1, end, m);
+    }
   }
 
 }

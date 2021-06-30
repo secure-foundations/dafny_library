@@ -138,7 +138,7 @@ module Imaps {
   }
 
   /**
-   * Swaps imap keys and values. imap values are not required to be disjoint; no
+   * Swaps imap keys and values. Values are not required to be unique; no
    * promises on which key is chosen on the intersection.
    */
   function {:opaque} invert<X, Y(!new)>(m: imap<X, Y>): imap<Y, X> {
@@ -180,7 +180,7 @@ module Imaps {
   /**
    * Returns true if the composite mapping m' ∘ m is monotonic.
    */
-  predicate {:opaque} is_monotonic_double_mapping<X>(m: imap<int, X>, m': imap<X, int>)
+  predicate {:opaque} monotonic_double_mapping<X>(m: imap<int, X>, m': imap<X, int>)
     requires total(m)
     requires total(m')
   {
