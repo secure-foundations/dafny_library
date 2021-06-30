@@ -60,9 +60,9 @@ module Maps {
   /**
    * Removing a map item decreases map size by 1.
    */
-  lemma lemma_remove_one<X(!new), Y(!new)>(before: map<X, Y>,
-                                           after: map<X, Y>,
-                                           item_removed: X)
+  lemma lemma_remove_one<X, Y>(before: map<X, Y>,
+                               after: map<X, Y>,
+                               item_removed: X)
     requires item_removed in before
     requires after == map i | i in before && i != item_removed :: before[i]
     ensures |after| + 1 == |before|
@@ -149,6 +149,18 @@ module Maps {
                                                   m[k] == m''[k]
 	{
 		union_prefer_first(m, m')
+	}
+
+  /**
+   * m'' is the union of maps m and m'. Requires disjoint domains.
+   */
+  lemma lemma_is_union<X, Y>(m: map<X, Y>, m': map<X, Y>, m'': map<X, Y>)
+    requires m.Keys !! m'.Keys
+    requires forall x :: x in m ==> x in m'' && m''[x] == m[x]
+    requires forall x :: x in m' ==> x in m'' && m''[x] == m'[x]
+    requires forall x :: x in m'' ==> x in m || x in m'
+    ensures m'' == union(m, m')
+	{
 	}
 
   /**
