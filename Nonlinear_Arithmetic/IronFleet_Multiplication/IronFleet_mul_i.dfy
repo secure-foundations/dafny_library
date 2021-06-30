@@ -415,6 +415,7 @@ module Math__mul_i {
     }
   }
 
+  /*  */
   lemma lemma_mul_one_to_one_forall()
     ensures forall m:int, x:int, y:int {:trigger m*x, m*y} :: (m!=0 && m*x == m*y) ==> x==y
   {
@@ -425,6 +426,7 @@ module Math__mul_i {
     }
   }
 
+  /* any integer multiplied by 0 results in a product of 0 */
   lemma lemma_mul_by_zero_is_zero_forall()
     ensures forall x: int {:trigger 0*x} {:trigger x*0} :: x*0 == 0*x == 0
   {
@@ -475,12 +477,14 @@ module Math__mul_i {
     lemma_mul_increases_forall();
   }
 
+  /* multiplying two negative integers, -a and -b, is equivalent to multiplying a and b */
   lemma lemma_mul_cancels_negatives(a:int, b:int)
     ensures a*b == (-a)*(-b);
   {
     lemma_mul_properties();
   
   }
+
   //- Kept for legacy reasons:
   function method INTERNAL_mul_recursive(x:int, y:int) : int { mul_recursive(x, y) }
 

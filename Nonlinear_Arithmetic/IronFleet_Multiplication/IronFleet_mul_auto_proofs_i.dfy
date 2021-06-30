@@ -4,6 +4,7 @@ module Math__mul_auto_proofs_i {
 
   import opened Math__mul_nonlinear_i
 
+  /* aids in the process of induction for multiplication*/
   lemma lemma_mul_induction_helper(f:int->bool, i:int)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
