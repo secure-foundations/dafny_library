@@ -101,7 +101,7 @@ module Seq {
     var r2 := r1[s2..e2];
     var r3 := s[s1+s2..s1+e2];
     assert |r2| == |r3|;
-    forall i | 0 <= i < |r2| ensures r2[i] == r3[i];
+    forall i {:trigger r2[i], r3[i]}| 0 <= i < |r2| ensures r2[i] == r3[i];
     {
     }
   }
@@ -137,7 +137,7 @@ module Seq {
   /* is true if there are no duplicate values in the sequence */
   predicate {:opaque} has_no_duplicates<T>(s: seq<T>) 
   {
-    (forall i, j :: 0 <= i < |s| && 0 <= j < |s| && i != j ==> s[i] != s[j])
+    (forall i, j {:trigger s[i], s[j]}:: 0 <= i < |s| && 0 <= j < |s| && i != j ==> s[i] != s[j])
   }
 
   /* if sequence a and b don't have duplicates, then the concatenated sequence of a + b
@@ -151,7 +151,7 @@ module Seq {
     reveal_has_no_duplicates();
     var c := a + b;
     if |c| > 1 {
-      assert forall i, j :: i != j && 0 <= i < |a| && |a| <= j < |c| ==>
+      assert forall i, j {:trigger c[i], c[j]}:: i != j && 0 <= i < |a| && |a| <= j < |c| ==>
         c[i] in multiset(a) && c[j] in multiset(b) && c[i] != c[j]; 
     }
   }
@@ -173,7 +173,7 @@ module Seq {
   /* proves that there are no duplicate values in the multiset version of the sequence */
   lemma lemma_multiset_has_no_duplicates<T>(s: seq<T>)
     requires has_no_duplicates(s)
-    ensures forall x | x in multiset(s):: multiset(s)[x] == 1
+    ensures forall x {:trigger multiset(s)[x]} | x in multiset(s):: multiset(s)[x] == 1
   {
     if |s| == 0 {
     } else {
@@ -201,8 +201,8 @@ module Seq {
   function method {:opaque} remove<T>(s: seq<T>, pos: nat): seq<T>
     requires pos < |s|
     ensures |remove(s, pos)| == |s| - 1
-    ensures forall i | 0 <= i < pos :: remove(s, pos)[i] == s[i]
-    ensures forall i | pos <= i < |s| - 1 :: remove(s, pos)[i] == s[i+1]
+    ensures forall i {:trigger remove(s, pos)[i], s[i]} | 0 <= i < pos :: remove(s, pos)[i] == s[i]
+    ensures forall i {:trigger remove(s, pos)[i]} | pos <= i < |s| - 1 :: remove(s, pos)[i] == s[i+1]
   {
     s[.. pos] + s[pos + 1 ..] 
   }
@@ -224,8 +224,8 @@ module Seq {
   function method {:opaque} insert<T>(s: seq<T>, a: T, pos: nat): seq<T>
     requires pos <= |s|;
     ensures |insert(s,a,pos)| == |s| + 1;
-    ensures forall i :: 0 <= i < pos ==> insert(s, a, pos)[i] == s[i];
-    ensures forall i :: pos <= i < |s| ==> insert(s, a, pos)[i+1] == s[i];
+    ensures forall i {:trigger insert(s, a, pos)[i], s[i]}:: 0 <= i < pos ==> insert(s, a, pos)[i] == s[i];
+    ensures forall i {:trigger s[i]} :: pos <= i < |s| ==> insert(s, a, pos)[i+1] == s[i];
     ensures insert(s, a, pos)[pos] == a;
     ensures multiset(insert(s, a, pos)) == multiset(s) + multiset{a}
   {
@@ -235,7 +235,7 @@ module Seq {
     
   function method {:opaque} repeat<T>(v: T, length: nat): (s: seq<T>)
     ensures |s| == length
-    ensures forall i: nat | i < |s| :: s[i] == v
+    ensures forall i: nat {:trigger s[i]} | i < |s| :: s[i] == v
   {
     if length == 0 then
       []
@@ -282,7 +282,7 @@ module Seq {
   /* finds the maximum integer value in the sequence */
   function method {:opaque} max(s: seq<int>): int
     requires 0 < |s|
-    ensures forall k {:trigger max(s)}:: k in s ==> max(s) >= k
+    ensures forall k {:trigger k in s}:: k in s ==> max(s) >= k
     ensures max(s) in s
   {
     assert s == [s[0]] + s[1..];
@@ -295,7 +295,7 @@ module Seq {
     requires 0 < |a| && 0 < |b|
     ensures max(a+b) >= max(a)
     ensures max(a+b) >= max(b)
-    ensures forall i :: i in a+b ==> max(a+b) >= i
+    ensures forall i {:trigger i in [max(a + b)]} :: i in a+b ==> max(a+b) >= i
   {
     reveal_max();
     if |a| == 1 {
@@ -308,7 +308,7 @@ module Seq {
   /* finds the minimum integer value in the sequence */
   function method {:opaque} min(s: seq<int>): int
     requires 0 < |s|
-    ensures forall k :: k in s ==> min(s) <= k
+    ensures forall k {:trigger k in s}:: k in s ==> min(s) <= k
     ensures min(s) in s
   {
     assert s == [s[0]] + s[1..];
@@ -321,7 +321,7 @@ module Seq {
     requires 0 < |a| && 0 < |b|
     ensures min(a+b) <= min(a)
     ensures min(a+b) <= min(b)
-    ensures forall i :: i  in a+b ==> min(a+b) <= i
+    ensures forall i {:trigger i in a+b}:: i  in a+b ==> min(a+b) <= i
   {
     reveal_min();
     if |a| == 1 {
@@ -335,12 +335,12 @@ module Seq {
   the full sequence */
   lemma lemma_subseq_max(s: seq<int>, from: nat, to: nat)
     requires from < to <= |s|
-    ensures max(s[from .. to]) <= max(s)
+    ensures max(s[from..to]) <= max(s)
   {
-    var subseq := s[from .. to];
+    var subseq := s[from.. to];
     if max(subseq) > max(s) {
       var k :| 0 <= k < |subseq| && subseq[k] == max(subseq);
-      assert s[seq(|subseq|, i requires 0 <= i < |subseq| => i + from)[k]] in s;
+      assert s[seq(|subseq|, i requires 0 <= i < |subseq| => i + from)[k] ] in s;
       assert false;
     }
   }
@@ -354,7 +354,7 @@ module Seq {
     var subseq := s[from..to];
     if min(subseq) < min (s) {
       var k :| 0 <= k < |subseq| && subseq[k] == min(subseq);
-      assert s[seq(|subseq|, i requires 0<=i<|subseq| => i + from)[k]] in s;
+      assert s[seq(|subseq|, i requires 0<=i<|subseq| => i + from)[k] ] in s;
     }
   }
 
@@ -454,8 +454,9 @@ module Seq {
   /* the length of concatenating sequence in a sequence together will be no longer 
   than the length of the original sequence of sequences multiplied by the length of 
   the longest sequence */
+  // added trigger
   lemma lemma_flatten_length_le_mul<T>(s: seq<seq<T>>, j: int)
-    requires forall i | 0 <= i < |s| :: |s[i]| <= j
+    requires forall i {:trigger s[i]} | 0 <= i < |s| :: |s[i]| <= j
     ensures |flatten_reverse(s)| <= |s| * j
   {
     if |s| == 0 {
@@ -473,18 +474,18 @@ module Seq {
 
   /* applies a transformation function on the sequence; this acts as "map" in other languages */
   function method {:opaque} apply<T,R>(f: (T ~> R), s: seq<T>): (result: seq<R>)
-    requires forall i :: 0 <= i < |s| ==> f.requires(s[i])
+    requires forall i {:trigger s[i]} :: 0 <= i < |s| ==> f.requires(s[i])
     ensures |result| == |s|
-    ensures forall i :: 0 <= i < |s| ==> result[i] == f(s[i]);
-    reads set i, o | 0 <= i < |s| && o in f.reads(s[i]):: o
+    ensures forall i {:trigger result[i]}:: 0 <= i < |s| ==> result[i] == f(s[i]);
+    reads set i, o {:trigger o in f.reads(s[i])} | 0 <= i < |s| && o in f.reads(s[i]):: o
   {
     if |s| == 0 then []
     else  [f(s[0])] + apply(f, s[1..])
   }
 
   lemma {:opaque} lemma_apply_concat<T,R>(f: (T ~> R), a: seq<T>, b: seq<T>)
-    requires forall i :: 0 <= i < |a| ==> f.requires(a[i])
-    requires forall j :: 0 <= j < |b| ==> f.requires(b[j])
+    requires forall i {:trigger a[i]}:: 0 <= i < |a| ==> f.requires(a[i])
+    requires forall j {:trigger b[j]}:: 0 <= j < |b| ==> f.requires(b[j])
     ensures apply(f, a + b) == apply(f, a) + apply(f, b)
   {
     reveal_apply();
@@ -506,7 +507,7 @@ module Seq {
   function method {:opaque} filter<T>(f: (T ~> bool), s: seq<T>): (result: seq<T>)
     requires forall i :: 0 <= i < |s| ==> f.requires(s[i])
     ensures |result| <= |s|
-    ensures forall i: nat :: i < |result| && f.requires(result[i]) ==> f(result[i])
+    ensures forall i: nat {:trigger result[i]} :: i < |result| && f.requires(result[i]) ==> f(result[i])
     reads f.reads
   {
     if |s| == 0 then []
@@ -514,8 +515,8 @@ module Seq {
   }
 
   lemma {:opaque} lemma_filter_concat<T>(f: (T ~> bool), a: seq<T>, b: seq<T>)
-    requires forall i :: 0 <= i < |a| ==> f.requires(a[i])
-    requires forall j :: 0 <= j < |b| ==> f.requires(b[j])
+    requires forall i {:trigger a[i]}:: 0 <= i < |a| ==> f.requires(a[i])
+    requires forall j {:trigger b[j]}:: 0 <= j < |b| ==> f.requires(b[j])
     ensures filter(f, a + b) == filter(f, a) + filter(f, b)
   {
     reveal_filter();
@@ -547,6 +548,8 @@ module Seq {
     if |a| == 0 {
       assert a + b == b;
     } else {
+      assert |a| >= 1;
+      assert ([a[0]] + a[1..] + b)[0] == a[0];
       calc {
         fold_left(f, fold_left(f, init, a), b);
         fold_left(f, fold_left(f, f(init, a[0]), a[1..]), b);
@@ -567,23 +570,42 @@ module Seq {
   }
 
   lemma {:opaque} lemma_fold_right_concat<A,T>(f: (A, T) -> A, init: A, a: seq<T>, b: seq<T>)
-    //ensures fold_right(f, init, a + b) == fold_right(f, init, a) + fold_right(f, init, b)
-  {
-  }
+  //   requires 0 <= |a + b|
+  //   ensures fold_right(f, init, a + b) == fold_right(f, fold_right(f, init, a), b)
+  // {
+  //   reveal_fold_right();
+  //   if  |a| == 0 {
+  //     assert a + b == b;
+  //   }
+  //   else if |a + b| == 0
+  //   {
+  //   }
+  //   else {
+  //     assert last((a + drop_last(b) + [last(b)])) == last(b);
+  //     calc {
+  //       // fold_right(f, fold_right(f, init, a), b);
+  //       // fold_right(f, fold_right(f(init, a, drop_last(b)), [last(b)]);
+  //       // fold_right(f, fold_right(f, f(init, a), drop_last(b)));
+  //       // fold_right(f, init, a + b);
+  //     }
+  //   }
+  // }
 
-  lemma {:opaque} lemma_apply_then_fold_right_same_as_fold_right_then_apply<T>
-                  (f1: (T, T) -> T, f2: (T -> T), init: T, s: seq<T>)
-    // requires f2(init) == init
-    // ensures f2(fold_right(f1, init, s)) == fold_right(f1, init, apply(f2, s))
-  {
+
+  // lemma {:opaque} lemma_apply_then_fold_right_same_as_fold_right_then_apply<T>
+  //                 (f1: (T, T) -> T, f2: (T -> T), init: T, s: seq<T>)
+  //   requires f2(init) == init
+  //   ensures f2(fold_right(f1, init, s)) == fold_right(f1, init, apply(f2, s))
+  // {
   //   reveal_fold_right();
   //   reveal_apply();
   //   if |s| != 0 {
   //     calc {
+  //       fold_right(f1, init, apply(f2, s));
+  //       {  }
   //       f2(fold_right(f1, init, s));
-
   //     }
   //   } 
-  }
+  // }
 
 }
