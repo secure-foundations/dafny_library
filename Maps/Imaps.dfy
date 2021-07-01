@@ -11,7 +11,7 @@ module Imaps {
 	}
 
   /**
-   * Remove all imap items with keys that are elements of an iset.
+   * Remove all key-value pairs where keys are elements of an iset.
    */
   function {:opaque} remove_iset<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>)
     ensures forall x :: x in m && x !in xs ==> x in m'
@@ -22,9 +22,9 @@ module Imaps {
   }
 
   /**
-   * Remove an imap item.
+   * Remove a key-value pair.
    */
-  function {:opaque} remove<X, Y>(m:imap<X, Y>, x: X): (m': imap<X, Y>)
+  function {:opaque} remove<X(!new), Y>(m: imap<X, Y>, x: X): (m': imap<X, Y>)
     ensures m'.Keys == m.Keys - iset{x}
     ensures forall x' :: x' in m' ==> m'[x'] == m[x']
   {
@@ -32,7 +32,7 @@ module Imaps {
   }
 
   /**
-   * Keep all imap items with keys that are elements of a set.
+   * Keep all key-value pairs where keys are elements of a set.
    */
   function {:opaque} restrict<X, Y>(m: imap<X, Y>, xs: iset<X>): imap<X, Y> {
     imap x | x in xs && x in m :: m[x]
@@ -41,14 +41,14 @@ module Imaps {
   /**
    * Returns true if an imap contains the key-value pair (x, y).
    */
-  predicate {:opaque} contains<X(!new), Y>(m: imap<X, Y>, x: X, y: Y) {
+  predicate {:opaque} contains<X, Y>(m: imap<X, Y>, x: X, y: Y) {
     x in m && m[x] == y
   }
 
   /**
    * Returns true if two imaps are equal for intersecting keys.
    */
-  predicate {:opaque} equals_on_key<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>, x: X) {
+  predicate {:opaque} equals_on_key<X, Y>(m: imap<X, Y>, m': imap<X, Y>, x: X) {
     (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
   }
 
@@ -133,7 +133,7 @@ module Imaps {
   /**
    * Returns true if an imap is injective.
    */
-  predicate {:opaque} injective<X(!new), Y>(m: imap<X, Y>) {
+  predicate {:opaque} injective<X, Y>(m: imap<X, Y>) {
     forall x, x' | x != x' && x in m && x' in m :: m[x] != m[x']
   }
 
@@ -141,7 +141,7 @@ module Imaps {
    * Swaps imap keys and values. Values are not required to be unique; no
    * promises on which key is chosen on the intersection.
    */
-  function {:opaque} invert<X, Y(!new)>(m: imap<X, Y>): imap<Y, X> {
+  function {:opaque} invert<X, Y>(m: imap<X, Y>): imap<Y, X> {
     imap y | y in m.Values :: var x :| x in m && m[x] == y; x
   }
 
@@ -189,7 +189,7 @@ module Imaps {
   }
 
   /**
-   * Suppose an imap contains (start, true), and for all indices i in the range
+   * Suppose an imap contains (start, true), and for all i in the range
    * [start, end), if m[i] is true then m[i + 1] is true. Then the imap contains
    * (end, true).
    */

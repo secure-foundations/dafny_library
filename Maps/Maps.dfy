@@ -17,8 +17,7 @@ module Maps {
   /**
    * The size of a map is equal to the size of its domain.
    */
-  lemma lemma_size_is_domain_size<X(!new), Y(!new)>(dom: set<X>,
-                                                    m: map<X, Y>)
+  lemma lemma_size_is_domain_size<X, Y>(dom: set<X>, m: map<X, Y>)
     requires dom == m.Keys
     ensures |m| == |dom|
   {
@@ -33,7 +32,7 @@ module Maps {
   }
 
   /**
-   * Remove all map items with keys that are elements of a set.
+   * Remove all key-value pairs where keys are elements of a set.
    */
   function method {:opaque} remove_set<X, Y>(m: map<X, Y>, xs: set<X>): (m': map<X, Y>)
     ensures forall x :: x in m && x !in xs ==> x in m'
@@ -44,9 +43,9 @@ module Maps {
   }
 
   /**
-   * Remove a map item.
+   * Remove a key-value pair.
    */
-  function method {:opaque} remove<X(!new), Y(!new)>(m: map<X, Y>, x: X): (m': map<X, Y>)
+  function method {:opaque} remove<X(!new), Y>(m: map<X, Y>, x: X): (m': map<X, Y>)
     requires x in m
     ensures forall i :: i in m && i != x ==> i in m'
     ensures forall i :: i in m' <==> i in m && i != x && m'[i] == m[i]
@@ -58,7 +57,7 @@ module Maps {
   }
 
   /**
-   * Removing a map item decreases map size by 1.
+   * Removing a key-value pair decreases map size by 1.
    */
   lemma lemma_remove_one<X, Y>(before: map<X, Y>,
                                after: map<X, Y>,
@@ -77,7 +76,7 @@ module Maps {
   }
 
   /**
-   * Keep all map items with keys that are elements of a set.
+   * Keep all key-value pairs where keys are elements of a set.
    */
   function method {:opaque} restrict<X, Y>(m: map<X, Y>, xs: set<X>): map<X, Y> {
     map x | x in xs && x in m :: m[x]
@@ -86,14 +85,14 @@ module Maps {
   /**
    * Returns true if a map contains the key-value pair (x, y).
    */
-  predicate {:opaque} contains<X(!new), Y>(m: map<X, Y>, x: X, y: Y) {
+  predicate {:opaque} contains<X, Y>(m: map<X, Y>, x: X, y: Y) {
     x in m && m[x] == y
   }
 
   /**
    * Returns true if two maps are equal for intersecting keys.
    */
-  predicate {:opaque} equals_on_key<X(!new), Y>(m: map<X, Y>, m': map<X, Y>, x: X) {
+  predicate {:opaque} equals_on_key<X, Y>(m: map<X, Y>, m': map<X, Y>, x: X) {
     (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
   }
 
@@ -107,7 +106,7 @@ module Maps {
   /**
    * Returns true if m.Keys is a subset of m'.Keys.
    */
-  predicate {:opaque} is_subset<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
+  predicate {:opaque} is_subset<X, Y>(m: map<X, Y>, m': map<X, Y>) {
     m.Keys <= m'.Keys && (forall x :: x in m ==> equals_on_key(m, m', x))
   }
 
@@ -176,8 +175,7 @@ module Maps {
 	}
 
   /**
-   * The size of the disjoint union is equal to the sum of the sizes of
-   * individual maps.
+   * The size of the disjoint union is equal to the sum of individual map sizes.
    */
   lemma lemma_disjoint_union_size<X, Y>(m: map<X, Y>, m': map<X, Y>)
     requires m.Keys !! m'.Keys
@@ -190,7 +188,7 @@ module Maps {
   /**
    * Returns true if a map is injective.
    */
-  predicate {:opaque} injective<X(!new), Y>(m: map<X, Y>) {
+  predicate {:opaque} injective<X, Y>(m: map<X, Y>) {
     forall x, x' | x != x' && x in m && x' in m :: m[x] != m[x']
   }
 
@@ -198,7 +196,7 @@ module Maps {
    * Swaps map keys and values. Values are not required to be unique; no
    * promises on which key is chosen on the intersection.
    */
-  function {:opaque} invert<X(!new), Y(!new)>(m: map<X, Y>): map<Y, X> {
+  function {:opaque} invert<X, Y>(m: map<X, Y>): map<Y, X> {
     map y | y in m.Values :: var x :| x in m.Keys && m[x] == y; x
   }
 
@@ -246,7 +244,7 @@ module Maps {
   }
 
   /**
-   * Suppose a map contains (start, true), and for all indices i in the range
+   * Suppose a map contains (start, true), and for all i in the range
    * [start, end), if m[i] is true then m[i + 1] is true. Then the map contains
    * (end, true).
    */
