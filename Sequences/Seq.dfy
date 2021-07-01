@@ -558,55 +558,34 @@ module Seq {
         fold_left(f, f(init, a[0]), a[1..] + b);
         { assert (a + b)[0] == a[0]; }
         { assert (a + b)[1..] == a[1..] + b; }
-        { assert fold_left(f, init, a + b) == fold_left(f, f(init, a[0]), a[1..] + b); }
         fold_left(f, init, a + b);
       }
     }
   }
 
-  function method {:opaque} fold_right<A,T>(f: (A, T) -> A, init: A, s: seq<T>): A
+  function method {:opaque} fold_right<A,T>(f: (T, A) -> A, s: seq<T>, init: A): A
   {
     if |s| == 0 then init
-    else f(fold_right(f, init, s[1..]), s[0])
+    else f(s[0], fold_right(f, s[1..], init))
   }
 
-  lemma {:opaque} lemma_fold_right_concat<A,T>(f: (A, T) -> A, init: A, a: seq<T>, b: seq<T>)
-  //   requires 0 <= |a + b|
-  //   ensures fold_right(f, init, a + b) == fold_right(f, fold_right(f, init, a), b)
-  // {
-  //   reveal_fold_right();
-  //   if  |a| == 0 {
-  //     assert a + b == b;
-  //   }
-  //   else if |a + b| == 0
-  //   {
-  //   }
-  //   else {
-  //     assert last((a + drop_last(b) + [last(b)])) == last(b);
-  //     calc {
-  //       // fold_right(f, fold_right(f, init, a), b);
-  //       // fold_right(f, fold_right(f(init, a, drop_last(b)), [last(b)]);
-  //       // fold_right(f, fold_right(f, f(init, a), drop_last(b)));
-  //       // fold_right(f, init, a + b);
-  //     }
-  //   }
-  // }
-
-
-  // lemma {:opaque} lemma_apply_then_fold_right_same_as_fold_right_then_apply<T>
-  //                 (f1: (T, T) -> T, f2: (T -> T), init: T, s: seq<T>)
-  //   requires f2(init) == init
-  //   ensures f2(fold_right(f1, init, s)) == fold_right(f1, init, apply(f2, s))
-  // {
-  //   reveal_fold_right();
-  //   reveal_apply();
-  //   if |s| != 0 {
-  //     calc {
-  //       fold_right(f1, init, apply(f2, s));
-  //       {  }
-  //       f2(fold_right(f1, init, s));
-  //     }
-  //   } 
-  // }
+  lemma {:opaque} lemma_fold_right_concat<A,T>(f: (T, A) -> A, init: A, a: seq<T>, b: seq<T>)
+    requires 0 <= |a + b|
+    ensures fold_right(f, a + b, init) == fold_right(f, a, fold_right(f, b, init))
+  {
+    reveal_fold_right();
+    if |a| == 0 {
+      assert a + b == b;
+    } else {
+      calc {
+        fold_right(f, a, fold_right(f, b, init));
+        f(a[0], fold_right(f, a[1..], fold_right(f, b, init)));
+        f(a[0], fold_right(f, a[1..] + b, init));
+        { assert (a + b)[0] == a[0]; }
+        { assert (a + b)[1..] == a[1..] + b; }
+        fold_right(f, a + b, init);
+      }
+    }
+  }
 
 }
