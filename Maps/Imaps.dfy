@@ -22,9 +22,9 @@ module Imaps {
   }
 
   /**
-   * Remove a key-value pair.
+   * Remove a key-value pair. Returns unmodified imap if key is not found.
    */
-  function {:opaque} remove<X(!new), Y>(m: imap<X, Y>, x: X): (m': imap<X, Y>)
+  function {:opaque} remove<X, Y>(m: imap<X, Y>, x: X): (m': imap<X, Y>)
     ensures m'.Keys == m.Keys - iset{x}
     ensures forall x' :: x' in m' ==> m'[x'] == m[x']
   {
@@ -46,7 +46,8 @@ module Imaps {
   }
 
   /**
-   * Returns true if two imaps are equal for intersecting keys.
+   * Returns true if two imaps contain the same key-value pairs for intersecting
+   * keys.
    */
   predicate {:opaque} equals_on_key<X, Y>(m: imap<X, Y>, m': imap<X, Y>, x: X) {
     (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
@@ -55,8 +56,10 @@ module Imaps {
   /**
    * Returns true if two imaps are equal.
    */
-  predicate {:opaque} equals<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>) {
-    (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
+  predicate {:opaque} equals<X, Y>(m: imap<X, Y>, m': imap<X, Y>) {
+    && (forall x :: x in m ==> x in m')
+    && (forall x' :: x' in m' ==> x' in m)
+    && (forall x :: x in m ==> m[x] == m'[x])
   }
 
   /**

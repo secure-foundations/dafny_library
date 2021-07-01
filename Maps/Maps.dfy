@@ -43,36 +43,18 @@ module Maps {
   }
 
   /**
-   * Remove a key-value pair.
+   * Remove a key-value pair. Returns unmodified map if key is not found.
    */
-  function method {:opaque} remove<X(!new), Y>(m: map<X, Y>, x: X): (m': map<X, Y>)
-    requires x in m
+  function method {:opaque} remove<X, Y>(m: map<X, Y>, x: X): (m': map<X, Y>)
     ensures forall i :: i in m && i != x ==> i in m'
-    ensures forall i :: i in m' <==> i in m && i != x && m'[i] == m[i]
-    ensures |m'| == |m| - 1
+    ensures forall i :: i in m' ==> i in m && i != x && m'[i] == m[i]
+    ensures |m'.Keys| <= |m.Keys|
+    ensures x in m ==> |m'| == |m| - 1
+    ensures x !in m ==> |m'| == |m|
   {
     var m' := map x' | x' in m && x' != x :: m[x'];
-    lemma_remove_one(m, m', x);
+    assert m'.Keys == m.Keys - {x};
     m'
-  }
-
-  /**
-   * Removing a key-value pair decreases map size by 1.
-   */
-  lemma lemma_remove_one<X, Y>(before: map<X, Y>,
-                               after: map<X, Y>,
-                               item_removed: X)
-    requires item_removed in before
-    requires after == map i | i in before && i != item_removed :: before[i]
-    ensures |after| + 1 == |before|
-  {
-    var domain_before := before.Keys;
-    var domain_after := after.Keys;
-
-    lemma_size_is_domain_size(domain_before, before);
-    lemma_size_is_domain_size(domain_after, after);
-
-    assert domain_after + {item_removed} == domain_before;
   }
 
   /**
@@ -90,17 +72,20 @@ module Maps {
   }
 
   /**
-   * Returns true if two maps are equal for intersecting keys.
+   * Returns true if two maps contain the same key-value pairs for intersecting
+   * keys.
    */
   predicate {:opaque} equals_on_key<X, Y>(m: map<X, Y>, m': map<X, Y>, x: X) {
     (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
   }
 
   /**
-   * Returns true if two maps are equal.
+   * Returns true if two maps contain the same key-value pairs.
    */
-  predicate {:opaque} equals<X(!new), Y>(m: map<X, Y>, m': map<X, Y>) {
-    (forall x :: x in m <==> x in m') && (forall x :: x in m ==> m[x] == m'[x])
+  predicate {:opaque} equals<X, Y>(m: map<X, Y>, m': map<X, Y>) {
+    && (forall x :: x in m ==> x in m')
+    && (forall x' :: x' in m' ==> x' in m)
+    && (forall x :: x in m ==> m[x] == m'[x])
   }
 
   /**
