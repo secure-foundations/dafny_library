@@ -6,16 +6,17 @@ include "../Options.dfy"
 module Imaps {
   import opened Options
 
-  function {:opaque} get_option<X, Y>(m: imap<X, Y>, x: X): Option<Y> {
+  function method get<X, Y>(m: imap<X, Y>, x: X): Option<Y>
+  {
 	  if x in m then Some(m[x]) else None
 	}
 
   /**
-   * Remove all key-value pairs where keys are elements of an iset.
+   * Remove all key-value pairs corresponding to the iset of keys provided.
    */
-  function {:opaque} remove_iset<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>)
-    ensures forall x :: x in m && x !in xs ==> x in m'
-    ensures forall x :: x in m' ==> x in m && x !in xs && m'[x] == m[x]
+  function {:opaque} remove_keys<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>)
+    ensures forall x {:trigger m'[x]} :: x in m && x !in xs ==> x in m' && m'[x] == m[x]
+    ensures forall x {:trigger x in m'} :: x in m' ==> x in m && x !in xs
     ensures m'.Keys == m.Keys - xs
   {
     imap x | x in m && x !in xs :: m[x]
@@ -25,131 +26,68 @@ module Imaps {
    * Remove a key-value pair. Returns unmodified imap if key is not found.
    */
   function {:opaque} remove<X, Y>(m: imap<X, Y>, x: X): (m': imap<X, Y>)
-    ensures m'.Keys == m.Keys - iset{x}
-    ensures forall x' :: x' in m' ==> m'[x'] == m[x']
+    ensures m' == remove_keys(m, iset{x})
+    ensures forall x' {:trigger m'[x']} :: x' in m' ==> m'[x'] == m[x']
   {
     imap i | i in m && i != x :: m[i]
   }
 
   /**
-   * Keep all key-value pairs where keys are elements of a set.
+   * Keep all key-value pairs corresponding to the iset of keys provided.
    */
-  function {:opaque} restrict<X, Y>(m: imap<X, Y>, xs: iset<X>): imap<X, Y> {
+  function {:opaque} restrict<X, Y>(m: imap<X, Y>, xs: iset<X>): (m': imap<X, Y>)
+    ensures m' == remove_keys(m, m.Keys - xs)
+  {
     imap x | x in xs && x in m :: m[x]
   }
 
   /**
-   * Returns true if an imap contains the key-value pair (x, y).
+   * True iff two imaps contain the same key-value pairs for intersecting keys.
    */
-  predicate {:opaque} contains<X, Y>(m: imap<X, Y>, x: X, y: Y) {
-    x in m && m[x] == y
-  }
-
-  /**
-   * Returns true if two imaps contain the same key-value pairs for intersecting
-   * keys.
-   */
-  predicate {:opaque} equals_on_key<X, Y>(m: imap<X, Y>, m': imap<X, Y>, x: X) {
+  predicate equal_on_key<X, Y>(m: imap<X, Y>, m': imap<X, Y>, x: X)
+  {
     (x !in m && x !in m') || (x in m && x in m' && m[x] == m'[x])
   }
 
   /**
-   * Returns true if two imaps are equal.
+   * True iff m is a subset of m'.
    */
-  predicate {:opaque} equals<X, Y>(m: imap<X, Y>, m': imap<X, Y>) {
-    && (forall x :: x in m ==> x in m')
-    && (forall x' :: x' in m' ==> x' in m)
-    && (forall x :: x in m ==> m[x] == m'[x])
+  predicate is_subset<X, Y>(m: imap<X, Y>, m': imap<X, Y>)
+  {
+    m.Keys <= m'.Keys && (forall x {:trigger x in m, equal_on_key(m, m', x)} :: x in m ==> equal_on_key(m, m', x))
   }
 
   /**
-   * Returns true if m.Keys is a subset of m'.Keys.
+   * Union of two imaps. Does not require disjoint domains; on the intersection,
+   * values from the first imap are chosen.
    */
-  predicate {:opaque} subset<X(!new), Y>(m: imap<X, Y>, m': imap<X, Y>) {
-    m.Keys <= m'.Keys && (forall x :: x in m ==> equals_on_key(m, m', x))
-  }
-
-  /**
-   * Finds the union of two imaps. Does not require disjoint domains; on the 
-   * intersection, values from the first imap are chosen.
-   */
-  function {:opaque} union_prefer_first<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
-    ensures m''.Keys == m.Keys + m'.Keys
-    ensures forall k :: k in m ==> m''[k] == m[k]
-    ensures forall k :: k in m'.Keys - m.Keys ==> m''[k] == m'[k]
-    ensures forall k :: k in m' && k !in m ==> m''[k] == m'[k]
+  function {:opaque} union<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (r: imap<X, Y>)
+    ensures r.Keys == m.Keys + m'.Keys
+    ensures forall x {:trigger r[x]} :: x in m ==> r[x] == m[x]
+    ensures forall x {:trigger r[x]} :: x in m' && x !in m ==> r[x] == m'[x]
   {
     imap x | x in m.Keys + m'.Keys :: if x in m then m[x] else m'[x]
   }
 
   /**
-   * Finds the union of two imaps. Does not require disjoint domains; on the 
-   * intersection, values from the second imap are chosen.
+   * True iff an imap is injective.
    */
-  function {:opaque} union_prefer_second<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
-    ensures m''.Keys == m.Keys + m'.Keys
-    ensures forall k :: k in m' ==> m''[k] == m'[k]
-    ensures forall k :: k in m.Keys - m'.Keys ==> m''[k] == m[k]
-    ensures forall k :: k in m && k !in m' ==> m''[k] == m[k]
+  predicate {:opaque} injective<X, Y>(m: imap<X, Y>)
   {
-    imap x | x in m.Keys + m'.Keys :: if x in m' then m'[x] else m[x]
+    forall x, x' {:trigger m[x], m[x']} :: x != x' && x in m && x' in m ==> m[x] != m[x']
   }
-
-  /**
-   * Finds the union of two imaps. Does not require disjoint domains; no
-   * promises on which value is chosen on the intersection.
-   */
-  function {:opaque} union<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
-		ensures m''.Keys == m.Keys + m'.Keys
-		ensures forall k :: k in m.Keys - m'.Keys ==> m[k] == m''[k]
-		ensures forall k :: k in m'.Keys - m.Keys ==> m'[k] == m''[k]
-		ensures forall k :: k in m.Keys * m'.Keys ==>	m'[k] == m''[k] ||
-                                                  m[k] == m''[k]
-	{
-		union_prefer_first(m, m')
-	}
-
-  /**
-   * m'' is the union of imaps m and m'. Requires disjoint domains.
-   */
-  lemma lemma_is_union<X, Y>(m: imap<X, Y>, m': imap<X, Y>, m'': imap<X, Y>)
-    requires m.Keys !! m'.Keys
-    requires forall x :: x in m ==> x in m'' && m''[x] == m[x]
-    requires forall x :: x in m' ==> x in m'' && m''[x] == m'[x]
-    requires forall x :: x in m'' ==> x in m || x in m'
-    ensures m'' == union(m, m')
-	{
-	}
-
-  /**
-   * Finds the union of two imaps. Requires disjoint domains.
-   */
-  function {:opaque} disjoint_union<X, Y>(m: imap<X, Y>, m': imap<X, Y>): (m'': imap<X, Y>)
-		requires m.Keys !! m'.Keys
-		ensures m''.Keys == m.Keys + m'.Keys
-		ensures forall k :: k in m ==> m[k] == m''[k]
-		ensures forall k :: k in m' ==> m'[k] == m''[k]
-	{
-		imap x | x in m.Keys + m'.Keys :: if x in m then m[x] else m'[x]
-	}
-
-  /**
-   * Returns true if an imap is injective.
-   */
-  predicate {:opaque} injective<X, Y>(m: imap<X, Y>) {
-    forall x, x' | x != x' && x in m && x' in m :: m[x] != m[x']
-  }
-
+  
   /**
    * Swaps imap keys and values. Values are not required to be unique; no
    * promises on which key is chosen on the intersection.
    */
-  function {:opaque} invert<X, Y>(m: imap<X, Y>): imap<Y, X> {
-    imap y | y in m.Values :: var x :| x in m && m[x] == y; x
+  function {:opaque} invert<X, Y>(m: imap<X, Y>): imap<Y, X>
+  {
+    imap y | y in m.Values :: var x :| x in m.Keys && m[x] == y; x
   }
 
   /**
-   * Inverted imaps are injective.
+   * Inverted maps are injective.
    */
   lemma lemma_invert_is_injective<X, Y>(m: imap<X, Y>)
     ensures injective(invert(m))
@@ -159,54 +97,28 @@ module Imaps {
   }
 
   /**
-   * Returns true if an imap contains all valid keys.
+   * True iff an imap contains all valid keys.
    */
-  predicate {:opaque} total<X(!new), Y>(m: imap<X, Y>) {
-    forall i :: i in m
+  predicate {:opaque} total<X(!new), Y>(m: imap<X, Y>)
+  {
+    forall i {:trigger m[i]}{:trigger i in m} :: i in m
   }
 
   /**
-   * Returns true if an imap is monotonic.
+   * True iff an imap is monotonic.
    */
-  predicate {:opaque} monotonic(m: imap<int, int>) {
-    forall x, x' :: x in m && x' in m && x <= x' ==> m[x] <= m[x']
+  predicate {:opaque} monotonic(m: imap<int, int>)
+  {
+    forall x, x' {:trigger m[x], m[x']} :: x in m && x' in m && x <= x' ==> m[x] <= m[x']
   }
 
   /**
-   * Returns true if an imap is monotonic. Only considers keys greater than or
+   * True iff an imap is monotonic. Only considers keys greater than or
    * equal to start.
    */
-  predicate {:opaque} monotonic_from(start: int, m: imap<int, int>) {
-    forall x, x' :: x in m && x' in m && start <= x <= x' ==> m[x] <= m[x']
-  }
-
-  /**
-   * Returns true if the composite mapping m' ∘ m is monotonic.
-   */
-  predicate {:opaque} monotonic_double_mapping<X>(m: imap<int, X>, m': imap<X, int>)
-    requires total(m)
-    requires total(m')
+  predicate {:opaque} monotonic_from(m: imap<int, int>, start: int)
   {
-    reveal_total();
-    forall x, x' :: x <= x' ==> m'[m[x]] <= m'[m[x']]
-  }
-
-  /**
-   * Suppose an imap contains (start, true), and for all i in the range
-   * [start, end), if m[i] is true then m[i + 1] is true. Then the imap contains
-   * (end, true).
-   */
-  lemma lemma_induction_range(start: int, end: int, m: imap<int, bool>)
-    requires start <= end
-    requires forall i :: start <= i <= end ==> i in m
-    requires forall i :: start <= i < end && m[i] ==> m[i + 1]
-    requires m[start]
-    ensures m[end]
-    decreases end - start
-  {
-    if start < end {
-      lemma_induction_range(start + 1, end, m);
-    }
+    forall x, x' {:trigger m[x], m[x']} :: x in m && x' in m && start <= x <= x' ==> m[x] <= m[x']
   }
 
 }
