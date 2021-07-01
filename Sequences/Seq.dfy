@@ -243,10 +243,11 @@ module Seq {
       [v] + repeat(v, length - 1)
   }
   
+  //???
   /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
   function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(s).0| == |unzip(s).1| == |s|
-    ensures forall i :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
+    ensures forall i {:trigger unzip(s).0[i]} {:trigger unzip(s).1[i]}:: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
   {
     if |s| == 0 then ([], [])
     else
@@ -259,7 +260,7 @@ module Seq {
   function method {:opaque} zip<A,B>(a: seq<A>, b: seq<B>): seq<(A,B)>
     requires |a| == |b|
     ensures |zip(a, b)| == |a|
-    ensures forall i :: 0 <= i < |zip(a, b)| ==> zip(a, b)[i] == (a[i], b[i])
+    ensures forall i {:trigger zip(a, b)[i]}:: 0 <= i < |zip(a, b)| ==> zip(a, b)[i] == (a[i], b[i])
     ensures unzip(zip(a, b)).0 == a;
     ensures unzip(zip(a, b)).1 == b;
   {
