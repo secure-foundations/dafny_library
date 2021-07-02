@@ -37,7 +37,7 @@ module MulInternals {
   }
 
   /* performs induction on multiplication */ 
-  lemma lemma_mul_induction_forall(f:int->bool)
+  lemma lemma_mul_induction(f:int->bool)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
     requires forall i {:trigger f(i), f(i - 1)} :: i <= 0 && f(i) ==> f(i - 1)
@@ -53,7 +53,7 @@ module MulInternals {
     forall x:int, y:int
       ensures x * y == y * x
     {
-      lemma_mul_induction_forall(i => x * i == i * x);
+      lemma_mul_induction(i => x * i == i * x);
     }
   }
 
@@ -89,8 +89,8 @@ module MulInternals {
       assert forall i {:trigger (x + (i - 1)) * z} :: (x + (i - 1)) * z == ((x + i) - 1) * z == (x + i) * z - z;
       assert forall i {:trigger (x - (i + 1)) * z} :: (x - (i + 1)) * z == ((x - i) - 1) * z == (x - i) * z - z;
       assert forall i {:trigger (x - (i - 1)) * z} :: (x - (i - 1)) * z == ((x - i) + 1) * z == (x - i) * z + z;
-      lemma_mul_induction_forall(f1);
-      lemma_mul_induction_forall(f2);
+      lemma_mul_induction(f1);
+      lemma_mul_induction(f2);
       assert f1(y);
       assert f2(y);
     }
@@ -130,10 +130,11 @@ module MulInternals {
     lemma_mul_auto_distributes();
     assert forall i {:trigger f(i)} :: is_le(0, i) && f(i) ==> f(i + 1);
     assert forall i {:trigger f(i)} :: is_le(i, 0) && f(i) ==> f(i - 1);
-    lemma_mul_induction_forall(f);
+    lemma_mul_induction(f);
     assert f(x);
   }
 
+  // not used at all in Mul.dfy...
   /* performs auto induction on multiplication for all i in f(i) */
   lemma lemma_mul_auto_induction_forall(f:int->bool)
     requires mul_auto() ==> f(0)
@@ -146,7 +147,10 @@ module MulInternals {
     lemma_mul_auto_distributes();
     assert forall i {:trigger f(i)} :: is_le(0, i) && f(i) ==> f(i + 1);
     assert forall i {:trigger f(i)} :: is_le(i, 0) && f(i) ==> f(i - 1);
-    lemma_mul_induction_forall(f);
+    lemma_mul_induction(f);
   }
-
+  
+  //- Kept for legacy reasons:
+  function method INTERNAL_mul_recursive(x:int, y:int) : int { mul_recursive(x, y) }
+  
 } 
