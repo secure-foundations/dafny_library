@@ -208,6 +208,7 @@ module Mul {
     lemma_mul_auto_induction(x, u => u > 0 ==> y < z ==> u*y < u*z);
   }
 
+  // reword
   /* when two integers, x and y, are each multiplied by a positive integer, z, the numerical order of the 
   products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_strict_inequality_auto_converse(x:int, y:int, z:int)
@@ -218,6 +219,7 @@ module Mul {
     lemma_mul_auto_induction(z, u => x * u < y * u && u >= 0 ==> x < y);
   }
 
+  // reword
   /* when any two integers, x and y, are each multiplied by a positive integer, z, the numerical order of 
   the products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_strict_inequality_auto_converse_auto()
@@ -230,7 +232,8 @@ module Mul {
       }
   }
 
-  /* when two integers, x and y, are each multiplied by a negative integer, z, the numerical order of the 
+  // reword
+  /* when two integers x and y are each multiplied by a negative integer z, the numerical order of the 
   products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_inequaliy_converse(x:int, y:int, z:int)
     requires x*z <= y*z
@@ -240,7 +243,8 @@ module Mul {
     lemma_mul_auto_induction(z, u => x * u <= y * u && u > 0 ==> x <= y);
   }
 
-  /* when any two integers, x and y, are each multiplied by a negative integer, z, the numerical order of 
+  // reword
+  /* when any two integers x and y are each multiplied by a negative integer z, the numerical order of 
   the products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_inequaliy_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z <= y*z && z>0 ==> x <= y
@@ -252,6 +256,9 @@ module Mul {
     }
   }
 
+  // reword
+  /* when any two integers x and y are each multiplied by a nonnegative integer z and their products are equal,
+  then x and y are equal */
   lemma lemma_mul_equality_converse(x:int, y:int, z:int)
     requires x*z == y*z
     requires 0 < z
@@ -260,7 +267,8 @@ module Mul {
     lemma_mul_auto_induction(z, u => x > y && 0 < u ==> x * u > y * u);
     lemma_mul_auto_induction(z, u => x < y && 0 < u ==> x * u < y * u);
   }
- 
+
+  /* for all integers, multiplication is distributive with addition in the form x * (y + z) */
   lemma lemma_mul_is_distributive_add_auto()
     ensures forall x:int, y:int, z:int {:trigger x*(y + z)} :: x*(y + z) == x*y + x*z
   {
@@ -271,18 +279,21 @@ module Mul {
     }
   }
 
+  /* for all integers, multiplication is distributive with addition in the form (y + z) * x */
   lemma lemma_mul_is_distributive_add_auto_other_way(x:int, y:int, z:int)
     ensures (y + z)*x == y*x + z*x
   {
     lemma_mul_auto();
   }
 
+  /* multiplication is distributive with subtraction */
   lemma lemma_mul_is_distributive_sub(x:int, y:int, z:int)
     ensures x*(y - z) == x*y - x*z
   {
     lemma_mul_auto();
   }
 
+  /* for all integers, multiplication is distributive with subtraction */
   lemma lemma_mul_is_distributive_sub_auto()
     ensures forall x:int, y:int, z:int {:trigger x*(y - z)} :: x*(y - z) == x*y - x*z
   {
@@ -293,7 +304,7 @@ module Mul {
     }
   }
 
-  /* proves the distributive nature of multiplication*/
+  /* proves the overall distributive nature of multiplication*/
   lemma lemma_mul_is_distributive(x:int, y:int, z:int)
     ensures x*(y + z) == x*y + x*z
     ensures x*(y - z) == x*y - x*z
@@ -307,6 +318,7 @@ module Mul {
     lemma_mul_auto();
   }
 
+  /* for all integers, multiplication is distributive */
   lemma lemma_mul_is_distributive_auto()
     ensures forall x:int, y:int, z:int {:trigger x*(y + z)} :: x*(y + z) == x*y + x*z
     ensures forall x:int, y:int, z:int {:trigger x*(y - z)} :: x*(y - z) == x*y - x*z
@@ -318,6 +330,7 @@ module Mul {
     lemma_mul_is_commutative_auto();
   }
 
+  /* multiplying any two positive integers will result in a positive integer */
   lemma lemma_mul_strictly_positive_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (0 < x*y)
   {
@@ -338,6 +351,8 @@ module Mul {
     lemma_mul_auto_induction(x, u => 1 < u ==> y < u * y);
   }
 
+  /* multiplying any positive integer by any integer greater than 1 will result in a product that 
+  is greater than the original integer */
   lemma lemma_mul_strictly_increases_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (1 < x && 0 < y) ==> (y < x*y)
   {
@@ -358,6 +373,8 @@ module Mul {
     lemma_mul_auto_induction(x, u => 0 < u ==> y <= u * y);
   }
 
+  /* multiplying any integer by any positive integer will result in a product thhat is greater than or
+  equal to the original integer */
   lemma lemma_mul_increases_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (y <= x*y)
   {
@@ -377,6 +394,7 @@ module Mul {
     lemma_mul_auto_induction(x, u => 0 <= u ==> 0 <= u * y);
   }
   
+  /* multiplying any two positive numbers will result in a positive product */
   lemma lemma_mul_nonnegative_auto()
     ensures forall x:int, y:int {:trigger x*y} :: 0 <= x && 0 <= y ==> 0 <= x*y
   {
@@ -387,12 +405,15 @@ module Mul {
     }
   }
 
+  /* shows the equivalent forms of using the unary negation operator */
   lemma lemma_mul_unary_negation(x:int, y:int)
     ensures (-x)*y == -(x*y) == x*(-y)
   {
     lemma_mul_auto_induction(x, u => (-u)*y == -(u*y) == u*(-y));
   }
 
+  //reword
+  /* shows the equivalent forms of using the unary negation operator for nonspecific integers*/
   lemma lemma_mul_unary_negation_auto()
     ensures forall x:int, y:int {:trigger (-x)*y}{:trigger x*(-y)} :: (-x)*y == -(x*y) == x*(-y)
   {
@@ -403,6 +424,8 @@ module Mul {
     }
   }
 
+  /* if two seperate integers are each multiplied by a common integer and the products are equal, the 
+  two original integers are equal */
   lemma lemma_mul_one_to_one(m:int, x:int, y:int)
     requires m!=0
     requires m*x == m*y
@@ -414,6 +437,8 @@ module Mul {
     lemma_mul_auto_induction(m, u => x < y && 0 > u ==> x * u > y * u);
   }
 
+  /* if any two seperate integers are each multiplied by a common integer and the products are equal, the 
+  two original integers are equal */
   lemma lemma_mul_one_to_one_auto()
     ensures forall m:int, x:int, y:int {:trigger m*x, m*y} :: (m!=0 && m*x == m*y) ==> x==y
   {
