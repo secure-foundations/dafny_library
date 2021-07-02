@@ -31,7 +31,7 @@ module Mul {
 
   /* the common syntax of multiplication results in the same product as multiplication 
   through recursive addition */
-  lemma lemma_mul_is_mul_recursive_helper(x:int, y:int)
+  lemma lemma_mul_is_mul_recursive(x:int, y:int)
     ensures x * y == mul_recursive(x, y)
   {
     if (x >= 0) { lemma_mul_is_mul_pos(x, y); }
@@ -39,13 +39,13 @@ module Mul {
     lemma_mul_auto();
   }
   
-  lemma lemma_mul_is_mul_recursive()
+  lemma lemma_mul_is_mul_recursive_auto()
     ensures forall x:int, y:int :: x * y == mul_recursive(x, y)
   {
     forall x:int, y:int
       ensures x * y == mul_recursive(x, y)
     {
-      lemma_mul_is_mul_recursive_helper(x, y);
+      lemma_mul_is_mul_recursive(x, y);
     }
   }
 
@@ -66,7 +66,7 @@ module Mul {
   //-////////////////////////////////////////////////////////////////////////////
 
   /* ensures that the basic properties of multiplication, including the identity and zero properties */
-  lemma lemma_mul_basics_helper(x:int)
+  lemma lemma_mul_basics(x:int)
     ensures 0*x == 0
     ensures x*0 == 0
     ensures 1*x == x
@@ -74,7 +74,7 @@ module Mul {
   {
   }
 
-  lemma lemma_mul_basics()
+  lemma lemma_mul_basics_auto()
     ensures forall x:int {:trigger 0*x} :: 0*x == 0
     ensures forall x:int {:trigger x*0} :: x*0 == 0
     ensures forall x:int {:trigger 1*x} :: 1*x == x
@@ -82,30 +82,61 @@ module Mul {
   {
   }
 
-  lemma lemma_mul_is_commutative_helper(x:int, y:int)
+  lemma lemma_mul_nonzero_auto()
+    ensures forall x:int, y:int {:trigger x*y} :: x*y != 0 <==> x != 0 && y != 0
+  {
+    forall (x:int, y:int)
+      ensures x*y != 0 <==> x != 0 && y != 0;
+    {
+      lemma_mul_nonzero(x,y);
+    }
+  }
+  
+  /* any integer multiplied by 0 results in a product of 0 */
+  lemma lemma_mul_by_zero_is_zero_auto()
+    ensures forall x: int {:trigger 0*x} {:trigger x*0} :: x*0 == 0*x == 0
+  {
+    forall x:int {:trigger 0*x} {:trigger x*0}
+      ensures x*0 == 0*x == 0
+    {
+      lemma_mul_by_zero_is_zero(x);
+    }
+  }
+  
+  lemma lemma_mul_is_associative_auto()
+    ensures forall x:int, y:int, z:int {:trigger x * (y * z)}{:trigger (x * y) * z} :: x * (y * z) == (x * y) * z
+  {
+    forall (x:int, y:int, z:int)
+      ensures x * (y * z) == (x * y) * z
+    {
+      lemma_mul_is_associative(x,y,z);
+    }
+  }
+
+  lemma lemma_mul_is_commutative(x:int, y:int)
     ensures x*y == y*x
   {
   }
 
-  lemma lemma_mul_is_commutative()
+  lemma lemma_mul_is_commutative_auto()
     ensures forall x:int, y:int {:trigger x*y} :: x*y == y*x
   {
   }
 
   /* the product of two positive integers is always greater than the individual value of either 
   multiplied integer */
-  lemma lemma_mul_ordering()
+  lemma lemma_mul_ordering_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y && 0 <= x*y) ==> x <= x*y && y <= x*y
   {
     forall x:int, y:int | 0 < x && 0 < y && 0 <= x*y
         ensures x <= x*y && y <= x*y
     {
-      lemma_mul_ordering_helper(x, y);
+      lemma_mul_ordering(x, y);
     }
   }
 
   /* two integers that are multiplied by a positive number will maintain their numberical order */
-  lemma lemma_mul_inequality_helper(x:int, y:int, z:int)
+  lemma lemma_mul_inequality(x:int, y:int, z:int)
     requires x <= y
     requires z >= 0
     ensures  x*z <= y*z
@@ -113,13 +144,23 @@ module Mul {
     lemma_mul_auto_induction(z, u => u >= 0 ==> x * u <= y * u);
   }
 
-  lemma lemma_mul_inequality()
+  lemma lemma_mul_inequality_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x <= y && z>=0 ==> x*z <= y*z
   {
     forall (x:int, y:int, z:int | x <= y && z>=0)
       ensures x*z <= y*z
     {
-      lemma_mul_inequality_helper(x, y, z);
+      lemma_mul_inequality(x, y, z);
+    }
+  }
+
+  lemma lemma_mul_strict_inequality_auto()
+    ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x < y && z>0 ==> x*z < y*z
+  {
+    forall (x:int, y:int, z:int | x < y && z>0)
+      ensures x*z < y*z
+    {
+      lemma_mul_strict_inequality(x, y, z);
     }
   }
 
@@ -131,8 +172,8 @@ module Mul {
     requires 0<=y
     ensures x*y <= x_bound * y_bound
   {
-    lemma_mul_inequality_helper(x, x_bound, y);
-    lemma_mul_inequality_helper(y, y_bound, x_bound);
+    lemma_mul_inequality(x, x_bound, y);
+    lemma_mul_inequality(y, y_bound, x_bound);
   }
 
   // "use with caution" --> remove?
@@ -159,7 +200,7 @@ module Mul {
     lemma_mul_auto_induction(x, u => u > 0 ==> y < z ==> u*y < u*z);
   }
 
-  lemma lemma_mul_strict_inequality_converse_helper(x:int, y:int, z:int)
+  lemma lemma_mul_strict_inequality_auto_converse(x:int, y:int, z:int)
     requires x*z < y*z
     requires z >= 0
     ensures  x < y
@@ -167,17 +208,17 @@ module Mul {
     lemma_mul_auto_induction(z, u => x * u < y * u && u >= 0 ==> x < y);
   }
 
-  lemma lemma_mul_strict_inequality_converse()
+  lemma lemma_mul_strict_inequality_auto_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z < y*z && z>=0 ==> x < y
   {
       forall (x:int, y:int, z:int | x*z < y*z && z>=0)
           ensures x < y;
       {
-          lemma_mul_strict_inequality_converse_helper(x,y,z);
+          lemma_mul_strict_inequality_auto_converse(x,y,z);
       }
   }
 
-  lemma lemma_mul_inequality_converse_helper(x:int, y:int, z:int)
+  lemma lemma_mul_inequaliy_converse(x:int, y:int, z:int)
     requires x*z <= y*z
     requires z > 0
     ensures  x <= y
@@ -185,13 +226,13 @@ module Mul {
     lemma_mul_auto_induction(z, u => x * u <= y * u && u > 0 ==> x <= y);
   }
 
-  lemma lemma_mul_inequaliy_converse()
+  lemma lemma_mul_inequaliy_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z <= y*z && z>0 ==> x <= y
   {
     forall (x:int, y:int, z:int | x*z <= y*z && z>0)
       ensures x <= y
     {
-      lemma_mul_inequality_converse_helper(x,y,z);
+      lemma_mul_inequaliy_converse(x,y,z);
     }
   }
 
@@ -204,30 +245,40 @@ module Mul {
     lemma_mul_auto_induction(z, u => x < y && 0 < u ==> x * u < y * u);
   }
  
-  lemma lemma_mul_is_distributive_add_other_way(x:int, y:int, z:int)
+  lemma lemma_mul_is_distributive_add_auto()
+    ensures forall x:int, y:int, z:int {:trigger x*(y + z)} :: x*(y + z) == x*y + x*z
+  {
+    forall (x:int, y:int, z:int)
+      ensures x*(y + z) == x*y + x*z
+    {
+      lemma_mul_is_distributive_add(x,y,z);
+    }
+  }
+
+  lemma lemma_mul_is_distributive_add_auto_other_way(x:int, y:int, z:int)
     ensures (y + z)*x == y*x + z*x
   {
     lemma_mul_auto();
   }
 
-  lemma lemma_mul_is_distributive_sub_helper(x:int, y:int, z:int)
+  lemma lemma_mul_is_distributive_sub(x:int, y:int, z:int)
     ensures x*(y - z) == x*y - x*z
   {
     lemma_mul_auto();
   }
 
-  lemma lemma_mul_is_distributive_sub()
+  lemma lemma_mul_is_distributive_sub_auto()
     ensures forall x:int, y:int, z:int {:trigger x*(y - z)} :: x*(y - z) == x*y - x*z
   {
     forall (x:int, y:int, z:int)
       ensures x*(y - z) == x*y - x*z;
     {
-      lemma_mul_is_distributive_sub_helper(x,y,z);
+      lemma_mul_is_distributive_sub(x,y,z);
     }
   }
 
   /* proves the distributive nature of multiplication*/
-  lemma lemma_mul_is_distributive_helper(x:int, y:int, z:int)
+  lemma lemma_mul_is_distributive(x:int, y:int, z:int)
     ensures x*(y + z) == x*y + x*z
     ensures x*(y - z) == x*y - x*z
     ensures (y + z)*x == y*x + z*x
@@ -240,20 +291,30 @@ module Mul {
     lemma_mul_auto();
   }
 
-  lemma lemma_mul_is_distributive()
+  lemma lemma_mul_is_distributive_auto()
     ensures forall x:int, y:int, z:int {:trigger x*(y + z)} :: x*(y + z) == x*y + x*z
     ensures forall x:int, y:int, z:int {:trigger x*(y - z)} :: x*(y - z) == x*y - x*z
     ensures forall x:int, y:int, z:int {:trigger (y + z)*x} :: (y + z)*x == y*x + z*x
     ensures forall x:int, y:int, z:int {:trigger (y - z)*x} :: (y - z)*x == y*x - z*x
   {
-    lemma_mul_is_distributive_add();
-    lemma_mul_is_distributive_sub();
-    lemma_mul_is_commutative();
+    lemma_mul_is_distributive_add_auto();
+    lemma_mul_is_distributive_sub_auto();
+    lemma_mul_is_commutative_auto();
+  }
+
+  lemma lemma_mul_strictly_positive_auto()
+    ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (0 < x*y)
+  {
+    forall (x:int, y:int | 0 < x && 0 < y)
+      ensures 0 < x*y
+    {
+      lemma_mul_strictly_positive(x,y);
+    }
   }
 
   /* multiplying a positive integer by an integer greater than 1 will result in a product that 
   is greater than the original integer */
-  lemma lemma_mul_strictly_increases_helper(x:int, y:int)
+  lemma lemma_mul_strictly_increases(x:int, y:int)
     requires 1 < x
     requires 0 < y
     ensures y < x*y
@@ -261,24 +322,34 @@ module Mul {
     lemma_mul_auto_induction(x, u => 1 < u ==> y < u * y);
   }
 
-  lemma lemma_mul_strictly_increases()
+  lemma lemma_mul_strictly_increases_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (1 < x && 0 < y) ==> (y < x*y)
   {
     forall (x:int, y:int | 1 < x && 0 < y)
       ensures y < x*y
     {
-      lemma_mul_strictly_increases_helper(x,y);
+      lemma_mul_strictly_increases(x,y);
     }
   }
 
   /* multiplying an integer by a positive integer will result in a product thhat is greater than or
   equal to the original integer */
-  lemma lemma_mul_increases_helper(x:int, y:int)
+  lemma lemma_mul_increases(x:int, y:int)
     requires 0<x
     requires 0<y
     ensures y <= x*y
   {
     lemma_mul_auto_induction(x, u => 0 < u ==> y <= u * y);
+  }
+
+  lemma lemma_mul_increases_auto()
+    ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (y <= x*y)
+  {
+    forall (x:int, y:int | 0 < x && 0 < y)
+      ensures y <= x*y
+    {
+      lemma_mul_increases(x,y);
+    }
   }
 
   /* multiplying two positive numbers will result in a positive product */
@@ -289,24 +360,34 @@ module Mul {
   {
     lemma_mul_auto_induction(x, u => 0 <= u ==> 0 <= u * y);
   }
+  
+  lemma lemma_mul_nonnegative_auto()
+    ensures forall x:int, y:int {:trigger x*y} :: 0 <= x && 0 <= y ==> 0 <= x*y
+  {
+    forall (x:int, y:int | 0 <= x && 0 <= y)
+      ensures 0 <= x*y
+    {
+      lemma_mul_nonnegative(x,y);
+    }
+  }
 
-  lemma lemma_mul_unary_negation_helper(x:int, y:int)
+  lemma lemma_mul_unary_negation(x:int, y:int)
     ensures (-x)*y == -(x*y) == x*(-y)
   {
     lemma_mul_auto_induction(x, u => (-u)*y == -(u*y) == u*(-y));
   }
 
-  lemma lemma_mul_unary_negation()
+  lemma lemma_mul_unary_negation_auto()
     ensures forall x:int, y:int {:trigger (-x)*y}{:trigger x*(-y)} :: (-x)*y == -(x*y) == x*(-y)
   {
     forall (x:int, y:int) 
       ensures (-x)*y == -(x*y) == x*(-y)
     {
-      lemma_mul_unary_negation_helper(x,y);
+      lemma_mul_unary_negation(x,y);
     }
   }
 
-  lemma lemma_mul_one_to_one_helper(m:int, x:int, y:int)
+  lemma lemma_mul_one_to_one(m:int, x:int, y:int)
     requires m!=0
     requires m*x == m*y
     ensures x == y
@@ -317,97 +398,13 @@ module Mul {
     lemma_mul_auto_induction(m, u => x < y && 0 > u ==> x * u > y * u);
   }
 
-  lemma lemma_mul_one_to_one()
+  lemma lemma_mul_one_to_one_auto()
     ensures forall m:int, x:int, y:int {:trigger m*x, m*y} :: (m!=0 && m*x == m*y) ==> x==y
   {
     forall (m:int, x:int, y:int | m!=0 && m*x == m*y)
       ensures x==y
     {
-      lemma_mul_one_to_one_helper(m, x, y);
-    }
-  }
-
-  /**************************************************************************************
-  * Forall lemmas corresponding to lemmas in Mul-Nonlinear.dfy
-  **************************************************************************************/
-  lemma lemma_mul_strict_inequality()
-    ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x < y && z>0 ==> x*z < y*z
-  {
-    forall (x:int, y:int, z:int | x < y && z>0)
-      ensures x*z < y*z
-    {
-      lemma_mul_strict_inequality_helper(x, y, z);
-    }
-  }
-
-  lemma lemma_mul_is_distributive_add()
-    ensures forall x:int, y:int, z:int {:trigger x*(y + z)} :: x*(y + z) == x*y + x*z
-  {
-    forall (x:int, y:int, z:int)
-      ensures x*(y + z) == x*y + x*z
-    {
-      lemma_mul_is_distributive_add_helper(x,y,z);
-    }
-  }
-
-  lemma lemma_mul_is_associative()
-    ensures forall x:int, y:int, z:int {:trigger x * (y * z)}{:trigger (x * y) * z} :: x * (y * z) == (x * y) * z
-  {
-    forall (x:int, y:int, z:int)
-      ensures x * (y * z) == (x * y) * z
-    {
-      lemma_mul_is_associative_helper(x,y,z);
-    }
-  }
-
-  lemma lemma_mul_nonzero()
-    ensures forall x:int, y:int {:trigger x*y} :: x*y != 0 <==> x != 0 && y != 0
-  {
-    forall (x:int, y:int)
-      ensures x*y != 0 <==> x != 0 && y != 0;
-    {
-      lemma_mul_nonzero_helper(x,y);
-    }
-  }
-
-  lemma lemma_mul_nonnegative()
-    ensures forall x:int, y:int {:trigger x*y} :: 0 <= x && 0 <= y ==> 0 <= x*y
-  {
-    forall (x:int, y:int | 0 <= x && 0 <= y)
-      ensures 0 <= x*y
-    {
-      lemma_mul_nonnegative_helper(x,y);
-    }
-  }
-
-  lemma lemma_mul_increases()
-    ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (y <= x*y)
-  {
-    forall (x:int, y:int | 0 < x && 0 < y)
-      ensures y <= x*y
-    {
-      lemma_mul_increases_helper(x,y);
-    }
-  }
-
-  lemma lemma_mul_strictly_positive()
-    ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (0 < x*y)
-  {
-    forall (x:int, y:int | 0 < x && 0 < y)
-      ensures 0 < x*y
-    {
-      lemma_mul_strictly_positive_helper(x,y);
-    }
-  }
-
-  /* any integer multiplied by 0 results in a product of 0 */
-  lemma lemma_mul_by_zero_is_zero()
-    ensures forall x: int {:trigger 0*x} {:trigger x*0} :: x*0 == 0*x == 0
-  {
-    forall x:int {:trigger 0*x} {:trigger x*0}
-      ensures x*0 == 0*x == 0
-    {
-      lemma_mul_by_zero_is_zero_helper(x);
+      lemma_mul_one_to_one(m, x, y);
     }
   }
 
@@ -439,15 +436,15 @@ module Mul {
     ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (y <= x*y)
     ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (0 < x*y)
   {
-    lemma_mul_strict_inequality();
-    lemma_mul_inequality();
-    lemma_mul_is_distributive();
-    lemma_mul_is_associative();
-    lemma_mul_ordering();
-    lemma_mul_nonzero();
-    lemma_mul_nonnegative();
-    lemma_mul_strictly_increases();
-    lemma_mul_increases();
+    lemma_mul_strict_inequality_auto();
+    lemma_mul_inequality_auto();
+    lemma_mul_is_distributive_auto();
+    lemma_mul_is_associative_auto();
+    lemma_mul_ordering_auto();
+    lemma_mul_nonzero_auto();
+    lemma_mul_nonnegative_auto();
+    lemma_mul_strictly_increases_auto();
+    lemma_mul_increases_auto();
   }
 
   /* multiplying two negative integers, -a and -b, is equivalent to multiplying a and b */
@@ -455,10 +452,6 @@ module Mul {
     ensures a*b == (-a)*(-b);
   {
     lemma_mul_properties();
-  
   }
-
-  //- Kept for legacy reasons:
-  function method INTERNAL_mul_recursive(x:int, y:int) : int { mul_recursive(x, y) }
-
+  
 } 
