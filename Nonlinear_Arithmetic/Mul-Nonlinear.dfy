@@ -11,7 +11,7 @@ module MulNonlinear {
   ensures (0 < x && 0 < y) ==> (0 < x*y)
   {}
 
-  /* multiplying two nonzero numbers will never result in 0 as the poduct */
+  /* multiplying two nonzero integers will never result in 0 as the poduct */
   lemma lemma_mul_nonzero(x:int, y:int)
   ensures x*y != 0 <==> x != 0 && y != 0
   {}
