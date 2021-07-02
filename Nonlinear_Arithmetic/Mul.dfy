@@ -49,7 +49,7 @@ module Mul {
     }
   }
 
-  /* the common syntax of multiplication two positive integers results in the same product as 
+  /* the common syntax of multiplying two positive integers results in the same product as 
   mul_pos, which is achieved by recursive addition */ 
   lemma lemma_mul_is_mul_pos(x:int, y:int)
     requires x >= 0
@@ -82,6 +82,7 @@ module Mul {
   {
   }
 
+  /* multiplying any two nonzero integers will never result in 0 as the poduct */
   lemma lemma_mul_nonzero_auto()
     ensures forall x:int, y:int {:trigger x*y} :: x*y != 0 <==> x != 0 && y != 0
   {
@@ -103,6 +104,7 @@ module Mul {
     }
   }
   
+  /* multiplication is always associative for all integers*/
   lemma lemma_mul_is_associative_auto()
     ensures forall x:int, y:int, z:int {:trigger x * (y * z)}{:trigger (x * y) * z} :: x * (y * z) == (x * y) * z
   {
@@ -113,11 +115,13 @@ module Mul {
     }
   }
 
+  /* multiplcation is commutative */
   lemma lemma_mul_is_commutative(x:int, y:int)
     ensures x*y == y*x
   {
   }
 
+  /* multiplication is always commutative for all integers */
   lemma lemma_mul_is_commutative_auto()
     ensures forall x:int, y:int {:trigger x*y} :: x*y == y*x
   {
@@ -135,7 +139,7 @@ module Mul {
     }
   }
 
-  /* two integers that are multiplied by a positive number will maintain their numberical order */
+  /* two integers that are multiplied by a positive number will maintain their numerical order */
   lemma lemma_mul_inequality(x:int, y:int, z:int)
     requires x <= y
     requires z >= 0
@@ -144,6 +148,7 @@ module Mul {
     lemma_mul_auto_induction(z, u => u >= 0 ==> x * u <= y * u);
   }
 
+  /* any two integers that are multiplied by a positive number will maintain their numerical order */
   lemma lemma_mul_inequality_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x <= y && z>=0 ==> x*z <= y*z
   {
@@ -154,6 +159,7 @@ module Mul {
     }
   }
 
+  /* multiplying by a positive integer preserves inequality for all integers*/
   lemma lemma_mul_strict_inequality_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x < y && z>0 ==> x*z < y*z
   {
@@ -191,6 +197,8 @@ module Mul {
     lemma_mul_auto_induction(y_bound, u => 1 <= u ==> x * u < x_bound * u);
   }
 
+  // different than lemma_mul_inequality?
+  /* any two integers that are multiplied by a positive number will maintain their numerical order */
   lemma lemma_mul_left_inequality(x:int, y:int, z:int)
     requires x > 0
     ensures y <= z ==> x*y <= x*z
@@ -200,6 +208,8 @@ module Mul {
     lemma_mul_auto_induction(x, u => u > 0 ==> y < z ==> u*y < u*z);
   }
 
+  /* when two integers, x and y, are each multiplied by a positive integer, z, the numerical order of the 
+  products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_strict_inequality_auto_converse(x:int, y:int, z:int)
     requires x*z < y*z
     requires z >= 0
@@ -208,6 +218,8 @@ module Mul {
     lemma_mul_auto_induction(z, u => x * u < y * u && u >= 0 ==> x < y);
   }
 
+  /* when any two integers, x and y, are each multiplied by a positive integer, z, the numerical order of 
+  the products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_strict_inequality_auto_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z < y*z && z>=0 ==> x < y
   {
@@ -218,6 +230,8 @@ module Mul {
       }
   }
 
+  /* when two integers, x and y, are each multiplied by a negative integer, z, the numerical order of the 
+  products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_inequaliy_converse(x:int, y:int, z:int)
     requires x*z <= y*z
     requires z > 0
@@ -226,6 +240,8 @@ module Mul {
     lemma_mul_auto_induction(z, u => x * u <= y * u && u > 0 ==> x <= y);
   }
 
+  /* when any two integers, x and y, are each multiplied by a negative integer, z, the numerical order of 
+  the products x*z and y*z will also hold true for x and y alone */
   lemma lemma_mul_inequaliy_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z <= y*z && z>0 ==> x <= y
   {
@@ -453,5 +469,5 @@ module Mul {
   {
     lemma_mul_properties();
   }
-  
+
 } 
