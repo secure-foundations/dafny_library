@@ -65,7 +65,8 @@ module Maps {
    */
   predicate is_subset<X, Y>(m: map<X, Y>, m': map<X, Y>)
   {
-    m.Keys <= m'.Keys && (forall x {:trigger x in m, equal_on_key(m, m', x)} :: x in m ==> equal_on_key(m, m', x))
+    && m.Keys <= m'.Keys
+    && forall x {:trigger equal_on_key(m, m', x)}{:trigger x in m} :: x in m ==> equal_on_key(m, m', x)
   }
 
   /**

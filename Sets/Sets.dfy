@@ -8,7 +8,7 @@ module Sets {
    * If all elements in set x are in set y, x is a subset of y.
    */
   lemma lemma_subset<T>(x: set<T>, y: set<T>)
-    requires forall e | e in x :: e in y
+    requires forall e {:trigger e in y} :: e in x ==> e in y
     ensures x <= y
   {
   }
@@ -76,10 +76,10 @@ module Sets {
    * another set, the two sets have the same size. 
    */
   lemma lemma_apply_size<X(!new), Y>(xs: set<X>, ys: set<Y>, f: X-->Y)
-    requires forall x :: f.requires(x)
+    requires forall x {:trigger f.requires(x)} :: f.requires(x)
     requires Math.injective(f)
-    requires forall x :: x in xs <==> f(x) in ys
-    requires forall y :: y in ys ==> exists x :: x in xs && y == f(x)
+    requires forall x {:trigger f(x)} :: x in xs <==> f(x) in ys
+    requires forall y {:trigger y in ys} :: y in ys ==> exists x :: x in xs && y == f(x)
     ensures |xs| == |ys|
   {
     if xs != {} {
@@ -95,9 +95,9 @@ module Sets {
    */
   function method {:opaque} apply<X(!new), Y>(xs: set<X>, f: X-->Y): (ys: set<Y>)
     reads f.reads
-    requires forall x :: f.requires(x)
+    requires forall x {:trigger f.requires(x)} :: f.requires(x)
     requires Math.injective(f)
-    ensures forall x :: x in xs <==> f(x) in ys
+    ensures forall x {:trigger f(x)} :: x in xs <==> f(x) in ys
     ensures |xs| == |ys|
   {
     var ys := set x | x in xs :: f(x);
@@ -111,8 +111,8 @@ module Sets {
    * xs.
    */
   lemma lemma_filter_size<X>(xs: set<X>, ys: set<X>, f: X~>bool)
-    requires forall x :: x in xs ==> f.requires(x)
-    requires forall y :: y in ys ==> y in xs && f(y)
+    requires forall x {:trigger f.requires(x)} {:trigger x in xs} :: x in xs ==> f.requires(x)
+    requires forall y {:trigger f(y)}{:trigger y in xs} :: y in ys ==> y in xs && f(y)
     ensures |ys| <= |xs|
     decreases xs, ys
   {
@@ -130,8 +130,8 @@ module Sets {
    */
   function method {:opaque} filter<X(!new)>(xs: set<X>, f: X~>bool): (ys: set<X>)
     reads f.reads
-    requires forall x :: x in xs ==> f.requires(x)
-    ensures forall y :: y in ys <==> y in xs && f(y)
+    requires forall x {:trigger f.requires(x)} {:trigger x in xs} :: x in xs ==> f.requires(x)
+    ensures forall y {:trigger f(y)}{:trigger y in xs} :: y in ys <==> y in xs && f(y)
     ensures |ys| <= |xs|
   {
     var ys := set x | x in xs && f(x);
@@ -168,7 +168,7 @@ module Sets {
    */
   function method {:opaque} set_range(a: int, b: int): (s: set<int>)
     requires a <= b
-    ensures forall i :: a <= i < b <==> i in s
+    ensures forall i {:trigger i in s} :: a <= i < b <==> i in s
     ensures |s| == b - a
     decreases b - a
   {
@@ -180,7 +180,7 @@ module Sets {
    */
   function method {:opaque} set_range_zero_bound(n: int): (s: set<int>)
     requires n >= 0
-    ensures forall i :: 0 <= i < n <==> i in s
+    ensures forall i {:trigger i in s} :: 0 <= i < n <==> i in s
     ensures |s| == n
   {
     set_range(0, n)
@@ -191,12 +191,12 @@ module Sets {
    * bounded by b - a.
    */
   lemma lemma_bounded_set_size(x: set<int>, a: int, b: int)
-    requires forall i :: i in x ==> a <= i < b
+    requires forall i {:trigger i in x} :: i in x ==> a <= i < b
     requires a <= b
     ensures |x| <= b - a
   {
     var range := set_range(a, b);
-    forall e | e in x
+    forall e {:trigger e in range}{:trigger e in x} | e in x
       ensures e in range;
     {
     }
