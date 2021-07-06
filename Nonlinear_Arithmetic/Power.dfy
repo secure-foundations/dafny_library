@@ -14,12 +14,14 @@ module Power {
       b*power(b,e-1)
   }
 
+  /* A number raised to the power of 0 equals 1. */
   lemma lemma_power_0(b:int)
     ensures power(b,0) == 1
   {
     reveal power();
   }
 
+  /* A number raised to the power of 1 equals the number itself. */
   lemma lemma_power_1(b:int)
     ensures power(b,1) == b
   {
@@ -34,6 +36,7 @@ module Power {
     }
   }
 
+  /* 0 raised to a positive power equals 0. */
   lemma lemma_0_power(e:nat)
     requires e > 0
     ensures power(0,e) == 0
@@ -46,6 +49,7 @@ module Power {
     }
   }
 
+  /* 1 raised to any power equals 1. */
   lemma lemma_1_power(e:nat)
     ensures power(1,e) == 1
   {
@@ -57,6 +61,7 @@ module Power {
     }
   }
 
+  /* Add exponents when multiplying powers with the same base. */
   lemma lemma_power_adds(b:int, e1:nat, e2:nat)
     decreases e1
     ensures power(b,e1)*power(b,e2) == power(b,e1+e2)
@@ -87,6 +92,7 @@ module Power {
     }
   }
 
+  /* Multiply exponents to find the power of a power. */
   lemma lemma_power_multiplies(a:int,b:nat,c:nat)
     decreases c
     ensures 0<=b*c
@@ -130,6 +136,7 @@ module Power {
     }
   }
 
+  /* Distribute the power to each factor of a product. */
   lemma lemma_power_distributes(a:int, b:int, e:nat)
     decreases e
     ensures power(a*b, e) == power(a, e) * power(b, e)
@@ -154,7 +161,7 @@ module Power {
   lemma lemma_power_auto()
     ensures  forall x:int {:trigger power(x, 0)} :: power(x, 0) == 1
     ensures  forall x:int {:trigger power(x, 1)} :: power(x, 1) == x
-    ensures  forall x:int, y:int {:trigger power(x, y)} :: y == 0 ==> power(x, y) == 1 // REVIEW: because of Dafny's LitInt special treatment, these are not the same as the two ensures above
+    ensures  forall x:int, y:int {:trigger power(x, y)} :: y == 0 ==> power(x, y) == 1
     ensures  forall x:int, y:int {:trigger power(x, y)} :: y == 1 ==> power(x, y) == x // ...
     ensures  forall x:int, y:int {:trigger x * y} :: 0 < x && 0 < y ==> x <= x * y
     ensures  forall x:int, y:int {:trigger x * y} :: 0 < x && 1 < y ==> x < x * y
@@ -162,7 +169,7 @@ module Power {
     ensures  forall x:int, y:nat, z:nat {:trigger power(x, y - z)} :: y >= z ==> power(x, y - z) * power(x, z) == power(x, y)
     ensures  forall x:int, y:int, z:nat {:trigger power(x * y, z)} :: power(x * y, z) == power(x, z) * power(y, z)
   {
-    reveal power(); // This has to be revealed to allow power to be used in triggers
+    reveal power();
 
     forall x:int
       ensures power(x, 0) == 1
@@ -207,6 +214,7 @@ module Power {
     }
   }
 
+  /* A positive number raised to any power is positive. */
   lemma lemma_power_positive(b:int, e:nat)
     requires 0<b
     ensures  0<power(b,e)
@@ -215,6 +223,7 @@ module Power {
     lemma_mul_auto_induction(e, u => 0 <= u ==> 0 < power(b, u));
   }
 
+  /* A positive number raised to a power increases as the power increases. */
   lemma lemma_power_increases(b:nat,e1:nat,e2:nat)
     requires 0<b
     requires e1 <= e2
@@ -239,6 +248,8 @@ module Power {
     lemma_mul_auto_induction(e2 - e1, f);
   }
 
+  /* A positive number raised to a power strictly increases as the power
+  strictly increases. */
   lemma lemma_power_strictly_increases(b:nat,e1:nat,e2:nat)
     requires 1<b
     requires e1 < e2
@@ -263,6 +274,7 @@ module Power {
     lemma_mul_auto_induction(e2 - e1, f);
   }
 
+  /* Squaring a number is equal to raising the number to a power of 2. */
   lemma lemma_square_is_power_2(x:nat)
     ensures power(x,2) == x*x
   {
