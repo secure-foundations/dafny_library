@@ -31,6 +31,8 @@ DAFNY_VERIFY := $(DAFNY) \
 	/compile:0 \
 	/allocated:3 \
 	/printVerifiedProceduresCount:0 \
+	/noNLarith \
+	/proverOpt:O:smt.arith.nl=true \
 	$(DAFNY_ADDITIONAL_ARGS)
 
 ifneq ($(TIMELIMIT),)
