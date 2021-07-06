@@ -6,12 +6,14 @@ module ModNonlinear {
   /* WARNING: Think three times before adding to this file, as nonlinear verification
   is highly unstable! */
 
+  /* the remainder of 0 divided by an integer is 0 */
   lemma lemma_mod_of_zero_is_zero(m:int)
     requires 0 < m
     ensures 0 % m == 0
   { 
   }
 
+  /* describes fundementals of the modulus operator */
   lemma lemma_fundamental_div_mod(x:int, d:int)
     requires d != 0
     ensures x == d * (x/d) + (x%d)
