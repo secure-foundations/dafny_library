@@ -4,19 +4,15 @@ module Sets {
 
   import Math = Mathematics
 
-  /**
-   * If all elements in set x are in set y, x is a subset of y.
-   */
+  /* If all elements in set x are in set y, x is a subset of y. */
   lemma lemma_subset<T>(x: set<T>, y: set<T>)
     requires forall e {:trigger e in y} :: e in x ==> e in y
     ensures x <= y
   {
   }
 
-  /**
-   * If x is a subset of y, then the size of x is less than or equal to the
-   * size of y.
-   */
+  /* If x is a subset of y, then the size of x is less than or equal to the
+  size of y. */
   lemma lemma_subset_size<T>(x: set<T>, y: set<T>)
     ensures x < y ==> |x| < |y|
     ensures x <= y ==> |x| <= |y|
@@ -27,10 +23,8 @@ module Sets {
     }
   }
 
-  /**
-   * If x is a subset of y and the size of x is equal to the size of y, x is
-   * equal to y.
-   */
+  /* If x is a subset of y and the size of x is equal to the size of y, x is
+  equal to y. */
   lemma lemma_subset_equality<T>(x: set<T>, y: set<T>)
     requires x <= y
     requires |x| == |y|
@@ -44,18 +38,14 @@ module Sets {
     }
   }
 
-  /**
-   * A singleton set has a size of 1.
-   */
+  /* A singleton set has a size of 1. */
   lemma lemma_singleton_size<T>(x: set<T>, e: T)
     requires x == {e}
     ensures |x| == 1
   {
   }
 
-  /**
-   * Elements in a singleton set are equal to each other.
-   */
+  /* Elements in a singleton set are equal to each other. */
   lemma lemma_singleton_equality<T>(x: set<T>, a: T, b: T)
     requires |x| == 1
     requires a in x
@@ -71,10 +61,8 @@ module Sets {
     }
   }
 
-  /**
-   * If an injective function is applied to each element of a set to construct
-   * another set, the two sets have the same size. 
-   */
+  /* If an injective function is applied to each element of a set to construct
+  another set, the two sets have the same size.  */
   lemma lemma_apply_size<X(!new), Y>(xs: set<X>, ys: set<Y>, f: X-->Y)
     requires forall x {:trigger f.requires(x)} :: f.requires(x)
     requires Math.injective(f)
@@ -90,9 +78,7 @@ module Sets {
     }
   }
 
-  /**
-   * Apply an injective function to each element of a set.
-   */
+  /* Apply an injective function to each element of a set. */
   function method {:opaque} apply<X(!new), Y>(xs: set<X>, f: X-->Y): (ys: set<Y>)
     reads f.reads
     requires forall x {:trigger f.requires(x)} :: f.requires(x)
@@ -105,11 +91,9 @@ module Sets {
     ys
   }
 
-  /**
-   * If a set ys is constructed using elements of another set xs for which a
-   * function returns true, the size of ys is less than or equal to the size of
-   * xs.
-   */
+  /* If a set ys is constructed using elements of another set xs for which a
+  function returns true, the size of ys is less than or equal to the size of
+  xs. */
   lemma lemma_filter_size<X>(xs: set<X>, ys: set<X>, f: X~>bool)
     requires forall x {:trigger f.requires(x)} {:trigger x in xs} :: x in xs ==> f.requires(x)
     requires forall y {:trigger f(y)}{:trigger y in xs} :: y in ys ==> y in xs && f(y)
@@ -124,10 +108,8 @@ module Sets {
     }
   }
 
-  /**
-   * Construct a set using elements of another set for which a function returns
-   * true.
-   */
+  /* Construct a set using elements of another set for which a function returns
+  true. */
   function method {:opaque} filter<X(!new)>(xs: set<X>, f: X~>bool): (ys: set<X>)
     reads f.reads
     requires forall x {:trigger f.requires(x)} {:trigger x in xs} :: x in xs ==> f.requires(x)
@@ -139,10 +121,8 @@ module Sets {
     ys
   }
 
-  /**
-   * The size of a union of two sets is greater than or equal to the size of
-   * either individual set.
-   */
+  /* The size of a union of two sets is greater than or equal to the size of
+  either individual set. */
   lemma lemma_union_size<X>(xs: set<X>, ys: set<X>)
     ensures |xs + ys| >= |xs|
     ensures |xs + ys| >= |ys|
@@ -163,9 +143,7 @@ module Sets {
     }
   }
 
-  /**
-   * Construct a set with all integers in the range [a, b).
-   */
+  /* Construct a set with all integers in the range [a, b). */
   function method {:opaque} set_range(a: int, b: int): (s: set<int>)
     requires a <= b
     ensures forall i {:trigger i in s} :: a <= i < b <==> i in s
@@ -175,9 +153,7 @@ module Sets {
     if a == b then {} else {a} + set_range(a + 1, b)
   }
 
-  /**
-   * Construct a set with all integers in the range [0, n).
-   */
+  /* Construct a set with all integers in the range [0, n). */
   function method {:opaque} set_range_zero_bound(n: int): (s: set<int>)
     requires n >= 0
     ensures forall i {:trigger i in s} :: 0 <= i < n <==> i in s
@@ -186,10 +162,8 @@ module Sets {
     set_range(0, n)
   }
 
-  /**
-   * If a set solely contains integers in the range [a, b), then its size is
-   * bounded by b - a.
-   */
+  /* If a set solely contains integers in the range [a, b), then its size is
+  bounded by b - a. */
   lemma lemma_bounded_set_size(x: set<int>, a: int, b: int)
     requires forall i {:trigger i in x} :: i in x ==> a <= i < b
     requires a <= b

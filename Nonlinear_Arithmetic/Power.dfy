@@ -274,7 +274,7 @@ module Power {
     lemma_mul_auto_induction(e2 - e1, f);
   }
 
-  /* Squaring a number is equal to raising the number to a power of 2. */
+  /* Squaring a number is equal to raising the number to the power of 2. */
   lemma lemma_square_is_power_2(x:nat)
     ensures power(x,2) == x*x
   {
