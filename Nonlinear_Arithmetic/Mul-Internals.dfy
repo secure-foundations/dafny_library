@@ -1,9 +1,3 @@
-/************************************************
-* Insert functions/lemmas in the following format:
-* mul-prop(x, y, ...)
-* mul-prop-auto()
-*************************************************/
-
 include "Mul-Nonlinear.dfy"
 
 module MulInternals {
@@ -47,7 +41,7 @@ module MulInternals {
   }
 
   /* proves that multiplication is always commutative */
-  lemma lemma_mul_auto_commutes()
+  lemma {:timeLimitMultiplier 3} lemma_mul_auto_commutes()
     ensures  forall x:int, y:int {:trigger x * y} :: x * y == y * x
   {
     forall x:int, y:int
@@ -74,7 +68,7 @@ module MulInternals {
   }
 
   /* proves the distributive property of multiplication */
-  lemma lemma_mul_auto_distributes()
+  lemma {:timeLimitMultiplier 3} lemma_mul_auto_distributes()
     ensures  forall x:int, y:int, z:int {:trigger (x + y) * z} :: (x + y) * z == x * z + y * z
     ensures  forall x:int, y:int, z:int {:trigger (x - y) * z} :: (x - y) * z == x * z - y * z
   {
@@ -149,8 +143,23 @@ module MulInternals {
     assert forall i {:trigger f(i)} :: is_le(i, 0) && f(i) ==> f(i - 1);
     lemma_mul_induction(f);
   }
+
+  /* performs multiplication for positive integers using recursive addition */
+  function method {:opaque} mul_pos(x:int, y:int) : int
+    requires x >= 0
+  {
+    if x == 0 then 0
+    else y + mul_pos(x - 1, y)
+  }
+
+  /* performs multiplication for both positive and negative integers */ 
+  function method mul_recursive(x:int, y:int) : int
+  {
+    if x >= 0 then mul_pos(x, y)
+    else -1*mul_pos(-1*x, y)
+  }
   
   //- Kept for legacy reasons:
   function method INTERNAL_mul_recursive(x:int, y:int) : int { mul_recursive(x, y) }
-  
+
 } 
