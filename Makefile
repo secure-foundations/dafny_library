@@ -16,7 +16,8 @@
 # Useful parameters
 #
 # - DAFNY: Path to dafny executable
-# - DAFNY_ADDITIONAL_ARGS: Additional arguments to pass to dafny
+# - DAFNY_ADDITIONAL_ARGS: Additional arguments to pass to dafny. Use 
+#     /noNLarith for NL files.
 # - TIMELIMIT: Set a different default timelimit (default: 30s)
 # - PROFILE: Turn on SMT profiling during verification
 
@@ -29,10 +30,6 @@ TIMELIMIT?=
 
 DAFNY_VERIFY := $(DAFNY) \
 	/compile:0 \
-	/allocated:3 \
-	/printVerifiedProceduresCount:0 \
-	/noNLarith \
-	/proverOpt:O:smt.arith.nl=true \
 	$(DAFNY_ADDITIONAL_ARGS)
 
 ifneq ($(TIMELIMIT),)
