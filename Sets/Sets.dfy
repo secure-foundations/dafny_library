@@ -95,7 +95,7 @@ module Sets {
   function returns true, the size of ys is less than or equal to the size of
   xs. */
   lemma lemma_filter_size<X>(xs: set<X>, ys: set<X>, f: X~>bool)
-    requires forall x {:trigger f.requires(x)} {:trigger x in xs} :: x in xs ==> f.requires(x)
+    requires forall x {:trigger f.requires(x)}{:trigger x in xs} :: x in xs ==> f.requires(x)
     requires forall y {:trigger f(y)}{:trigger y in xs} :: y in ys ==> y in xs && f(y)
     ensures |ys| <= |xs|
     decreases xs, ys
