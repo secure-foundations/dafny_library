@@ -20,7 +20,7 @@ module DivNonlinear {
   { 
   }
 
-  /* dividing an integer by a smaller integer results in a quotient of 0  */
+  /* dividing a smaller integer by a larger integer results in a quotient of 0  */
   lemma lemma_small_div()
     ensures forall x, d {:trigger x / d} :: 0 <= x < d && d > 0 ==> x / d == 0
   { 

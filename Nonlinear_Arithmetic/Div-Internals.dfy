@@ -5,9 +5,10 @@ module DivInternals {
   import opened ModInternals
   import opened ModNonlinear
   import opened DivNonlinear
-  import m = MulInternals
+  import opened MulInternals
 
-  lemma lemma_div_basics_auto(n:int)
+  /*  */
+  lemma lemma_div_basics(n:int)
     requires n > 0
     ensures  n / n == -((-n) / n) == 1
     ensures  forall x:int {:trigger x / n} :: 0 <= x < n <==> x / n == 0
@@ -25,7 +26,7 @@ module DivInternals {
     }
   }
 
-  predicate DivAuto(n:int)
+  predicate div_auto(n:int)
     requires n > 0 // TODO: allow n < 0
   {
   && mod_auto(n)
@@ -43,10 +44,10 @@ module DivInternals {
 
   lemma lemma_div_auto(n:int)
     requires n > 0
-    ensures  DivAuto(n)
+    ensures  div_auto(n)
   {
     lemma_mod_auto(n);
-    lemma_div_basics_auto(n);
+    lemma_div_basics(n);
     assert (0 + n) / n == 1;
     assert (0 - n) / n == -1;
     forall x:int, y:int {:trigger (x + y) / n}
@@ -113,34 +114,34 @@ module DivInternals {
     }
   }
 
-  lemma lemma_div_auto_induction(n:int, x:int, f:int->bool)
+  lemma lemma_div_induction_auto(n:int, x:int, f:int->bool)
     requires n > 0
-    requires DivAuto(n) ==> && (forall i {:trigger m.is_le(0, i)} :: m.is_le(0, i) && i < n ==> f(i))
-                          && (forall i {:trigger m.is_le(0, i)} :: m.is_le(0, i) && f(i) ==> f(i + n))
-                          && (forall i {:trigger m.is_le(i + 1, n)} :: m.is_le(i + 1, n) && f(i) ==> f(i - n))
-    ensures  DivAuto(n)
+    requires div_auto(n) ==> && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && i < n ==> f(i))
+                          && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + n))
+                          && (forall i {:trigger is_le(i + 1, n)} :: is_le(i + 1, n) && f(i) ==> f(i - n))
+    ensures  div_auto(n)
     ensures  f(x)
   {
     lemma_div_auto(n);
-    assert forall i :: m.is_le(0, i) && i < n ==> f(i);
-    assert forall i {:trigger f(i), f(i + n)} :: m.is_le(0, i) && f(i) ==> f(i + n);
-    assert forall i {:trigger f(i), f(i - n)} :: m.is_le(i + 1, n) && f(i) ==> f(i - n);
+    assert forall i :: is_le(0, i) && i < n ==> f(i);
+    assert forall i {:trigger f(i), f(i + n)} :: is_le(0, i) && f(i) ==> f(i + n);
+    assert forall i {:trigger f(i), f(i - n)} :: is_le(i + 1, n) && f(i) ==> f(i - n);
     lemma_mod_induction_forall(n, f);
     assert f(x);
   }
 
-  lemma lemma_div_auto_induction_forall(n:int, f:int->bool)
+  lemma lemma_div_induction_auto_forall(n:int, f:int->bool)
     requires n > 0
-    requires DivAuto(n) ==> && (forall i {:trigger m.is_le(0, i)} :: m.is_le(0, i) && i < n ==> f(i))
-                          && (forall i {:trigger m.is_le(0, i)} :: m.is_le(0, i) && f(i) ==> f(i + n))
-                          && (forall i {:trigger m.is_le(i + 1, n)} :: m.is_le(i + 1, n) && f(i) ==> f(i - n))
-    ensures  DivAuto(n)
+    requires div_auto(n) ==> && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && i < n ==> f(i))
+                          && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + n))
+                          && (forall i {:trigger is_le(i + 1, n)} :: is_le(i + 1, n) && f(i) ==> f(i - n))
+    ensures  div_auto(n)
     ensures  forall i {:trigger f(i)} :: f(i)
   {
     lemma_div_auto(n);
-    assert forall i :: m.is_le(0, i) && i < n ==> f(i);
-    assert forall i {:trigger f(i), f(i + n)} :: m.is_le(0, i) && f(i) ==> f(i + n);
-    assert forall i {:trigger f(i), f(i - n)} :: m.is_le(i + 1, n) && f(i) ==> f(i - n);
+    assert forall i :: is_le(0, i) && i < n ==> f(i);
+    assert forall i {:trigger f(i), f(i + n)} :: is_le(0, i) && f(i) ==> f(i + n);
+    assert forall i {:trigger f(i), f(i - n)} :: is_le(i + 1, n) && f(i) ==> f(i - n);
     lemma_mod_induction_forall(n, f);
   }
 

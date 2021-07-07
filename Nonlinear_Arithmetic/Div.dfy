@@ -5,16 +5,16 @@ include "Div-Nonlinear.dfy"
 include "Div-Internals.dfy"
 
 module Div {
-  
-  import opened Math__power_s
-  import opened Math__power_i
-  import opened Math__mod_auto_i
-  import opened Math__mul_auto_i
-  import opened Math__mul_nonlinear_i
-  import opened Math__mul_i
-  import opened Math__div_def_i
-  import opened Math__div_nonlinear_i
-  import opened Math__div_auto_i
+
+  import opened Power
+  import opened ModInternals
+  import opened ModNonlinear
+  import opened MulInternals
+  import opened MulNonlinear
+  import opened Mul
+  import opened DivDef
+  import opened DivNonlinear
+  import opened DivInternals
 
   //-////////////////////////////////////////////////////////////////////////////
   //-
@@ -22,8 +22,8 @@ module Div {
   //-
   //-////////////////////////////////////////////////////////////////////////////
 
-  lemma lemma_div_by_one_is_identity(x:int) {}
-
+  /* ensures the basic propoerties of division: 0 divided by any integer is 0; any integer 
+  divided by 1 is itself; any integer divided by itself is 1 */
   lemma lemma_div_basics(x:int)
     ensures x != 0 ==> 0 / x == 0
     ensures x / 1 == x
@@ -34,109 +34,9 @@ module Div {
       lemma_div_of_0(x);
     }
   }
-
-
-  lemma lemma_small_div_converse()
-    ensures forall x, d {:trigger x/d} :: 0<=x && 0<d && x/d==0 ==> x < d
-  {
-    forall x, d | 0<=x && 0<d && x/d==0
-      ensures x < d
-    {
-      lemma_div_auto_induction(d, x, u => 0<=u && 0<d && u/d==0 ==> u < d);
-    }
-  }
-
-
-  lemma lemma_div_is_ordered_by_denominator(x:int, y:int, z:int)
-    requires x >= 0
-    requires 1 <= y <= z
-    ensures x / y >= x / z
-    decreases x
-  {
-    lemma_div_is_div_recursive_forall();
-    assert forall u:int, d:int {:trigger u / d}{:trigger my_div_recursive(u, d)} :: d > 0 ==> my_div_recursive(u, d) == u / d;
-
-    if (x < z)
-    {
-      lemma_div_is_ordered(0, x, y);
-    }
-    else
-    {
-      lemma_div_is_ordered(x-z, x-y, y);
-      lemma_div_is_ordered_by_denominator(x-z, y, z);
-    }
-  }
-
-  lemma lemma_div_is_strictly_ordered_by_denominator(x:int, d:int)
-    requires 0 < x
-    requires 1 < d
-    ensures x/d < x
-    decreases x
-  {
-    lemma_div_auto_induction(d, x, u => 0 < u ==> u / d < u);
-  }
-
-  lemma lemma_dividing_sums(a:int, b:int, d:int, R:int)
-    requires 0<d
-    requires R == a%d + b%d - (a+b)%d
-    ensures d*((a+b)/d) - R == d*(a/d) + d*(b/d)
-  {
-    calc ==> {
-      a%d + b%d == R + (a+b)%d;
-      (a+b)-(a+b)%d - R == a-(a%d) + b - (b%d);
-        {
-          lemma_fundamental_div_mod(a+b,d);
-          lemma_fundamental_div_mod(a,d);
-          lemma_fundamental_div_mod(b,d);
-        }
-      d*((a+b)/d) - R == d*(a/d) + d*(b/d);
-    }
-  }
-
-
-  //-static lemma lemma_negative_divisor(x:int, d:int)
-  //-  requires d < 0
-  //-  ensures x / (-1*d) == -1*(x / d)
-  //-{
-  //-  var q := x / (-1*d);
-  //-  var r := x % (-1*d);
-  //-    
-  //-  calc {
-  //-    x;
-  //-      { lemma_fundamental_div_mod(x, -1*d); }
-  //-    q * (-1*d) + r;
-  //-      { lemma_mul_is_associative(q, -1, d); }
-  //-    (q*-1)*d + r;
-  //-      { lemma_mul_is_commutative(q, -1); }
-  //-    (-q) * d + r;
-  //-  }
-  //-  lemma_mod_range(x, -1*d);
-  //-  lemma_fundamental_div_mod_converse(x, d, -q, r);
-  //-  assert x / d == -q;
-  //-  assert -1*(x/d) == q;
-  //-}
-
-
-  lemma lemma_div_pos_is_pos(x:int, divisor:int)
-    requires 0 <= x
-    requires 0 < divisor
-    ensures x / divisor >= 0
-  {
-    lemma_div_auto_induction(divisor, x, u => 0 <= u ==> u / divisor >= 0);
-  }
-  //-////////////////////////////////////////////////////////////////////////////
-  //-
-  //- Forall lemmas: these restate the core lemmas with foralls,
-  //- so callers needn't name the specific expressions to manipulate.
-  //-
-  //- These are all boilerplate transformations of args/requires/ensures
-  //- into forall args :: requires ==> ensures, with a correpsonding
-  //- mechanically generated forall proof that invokes the core lemma.
-  // So don't bother reading them.
-  //-
-  //-////////////////////////////////////////////////////////////////////////////
-
-  lemma lemma_div_basics_forall()
+    
+  /* ensures the basic propoerties of division for all integers */
+  lemma lemma_div_basics_auto()
     ensures forall x {:trigger 0 / x} :: x != 0 ==> 0 / x == 0
     ensures forall x {:trigger x / 1} :: x / 1 == x
     ensures forall x, y {:trigger x/y} :: x >= 0 && y > 0 ==> x/y >= 0
@@ -157,23 +57,79 @@ module Div {
     }
   }
 
-  //////////////////////////////////////////////////////////////////////////////
-  //
-  // I'm not sure how useful this is. I wrote it to try to bring
-  // negative numerators to the positive side for trying to prove
-  // the negative half of lemma_fundamental_div_mod. That turned out
-  // to be the wrong idea, so maybe these are just useless.
-
-  lemma lemma_div_neg_neg(x:int, d:int)
-    requires d > 0
-    ensures x/d == -((-x+d-1)/d)
+  /* if a dividend is a whole number and the divisor is a natural number and their
+  quotient is 0, this implies that the dividend is smaller than the divisor */
+  lemma lemma_small_div_converse()
+    ensures forall x, d {:trigger x/d} :: 0<=x && 0<d && x/d==0 ==> x < d
   {
-    lemma_div_auto(d);
+    forall x, d | 0<=x && 0<d && x/d==0
+      ensures x < d
+    {
+      lemma_div_induction_auto(d, x, u => 0<=u && 0<d && u/d==0 ==> u < d);
+    }
   }
 
+  /* given two fractions with the same numerator, the order of numbers is determined by 
+  the denominators. However, if the numerator is 0, the fractions are equal regardless of 
+  the denominators' values */
+  lemma lemma_div_is_ordered_by_denominator(x:int, y:int, z:int)
+    requires x >= 0
+    requires 1 <= y <= z
+    ensures x / y >= x / z
+    decreases x
+  {
+    lemma_div_is_div_recursive_forall();
+    assert forall u:int, d:int {:trigger u / d}{:trigger my_div_recursive(u, d)} :: d > 0 ==> my_div_recursive(u, d) == u / d;
 
-  //-
-  //-////////////////////////////////////////////////////////////////////////////
+    if (x < z)
+    {
+      lemma_div_is_ordered(0, x, y);
+    }
+    else
+    {
+      lemma_div_is_ordered(x-z, x-y, y);
+      lemma_div_is_ordered_by_denominator(x-z, y, z);
+    }
+  }
+
+  /* given two fractions with the same numerator, the order of numbers is strictly determined by 
+  the denominators.*/
+  lemma lemma_div_is_strictly_ordered_by_denominator(x:int, d:int)
+    requires 0 < x
+    requires 1 < d
+    ensures x/d < x
+    decreases x
+  {
+    lemma_div_induction_auto(d, x, u => 0 < u ==> u / d < u);
+  }
+
+  /*  */
+  lemma lemma_dividing_sums(a:int, b:int, d:int, R:int)
+    requires 0<d
+    requires R == a%d + b%d - (a+b)%d
+    ensures d*((a+b)/d) - R == d*(a/d) + d*(b/d)
+  {
+    calc ==> {
+      a%d + b%d == R + (a+b)%d;
+      (a+b)-(a+b)%d - R == a-(a%d) + b - (b%d);
+        {
+          lemma_fundamental_div_mod(a+b,d);
+          lemma_fundamental_div_mod(a,d);
+          lemma_fundamental_div_mod(b,d);
+        }
+      d*((a+b)/d) - R == d*(a/d) + d*(b/d);
+    }
+  }
+
+  /* dividing a whole number by a natural number will result in a quotient that is 
+  greater than or equal to 0 */
+  lemma lemma_div_pos_is_pos(x:int, divisor:int)
+    requires 0 <= x
+    requires 0 < divisor
+    ensures x / divisor >= 0
+  {
+    lemma_div_induction_auto(divisor, x, u => 0 <= u ==> u / divisor >= 0);
+  }
 
 
   /*******************************
@@ -181,24 +137,10 @@ module Div {
   *******************************/
 
   ////////////////////////////////////////////////
-  //  No longer needed.  Here for legacy reasons
-  ////////////////////////////////////////////////
-
-  lemma lemma_mod_2(x:int) {}
-  lemma lemma_mod2_plus(x:int) {}
-  lemma lemma_mod2_plus2(x:int) {}
-  lemma lemma_mod32(x:int) {}
-  lemma lemma_mod_remainder_neg_specific(x:int, m:int) {}
-  lemma lemma_mod_remainder_neg() {}
-  lemma lemma_mod_remainder_pos_specific(x:int, m:int) {}
-  lemma lemma_mod_remainder_pos() {}
-  lemma lemma_mod_remainder_specific(x:int, m:int) {}
-  lemma lemma_mod_remainder() {}
-
-  ////////////////////////////////////////////////
   // Actual useful lemmas
   ////////////////////////////////////////////////
 
+  /*  */
   lemma lemma_mod_basics()
     ensures forall m:int {:trigger m % m} :: m > 0 ==> m % m == 0
     ensures forall x:int, m:int {:trigger (x%m) % m} :: m > 0 ==> (x%m) % m == x%m
@@ -229,8 +171,9 @@ module Div {
     }
   }
 
+  /* the remainder of*/
   lemma lemma_mod_decreases(x:nat, d:nat)
-    requires 0<d
+    requires 0 < d
     ensures x%d <= x
   {
     lemma_mod_auto(d);
@@ -256,7 +199,7 @@ module Div {
     ensures (m*a + b) % m == b % m
   {
     lemma_mod_auto(m);
-    lemma_mul_auto_induction(a, u => (m*u + b) % m == b % m);
+    lemma_mul_induction_auto(a, u => (m*u + b) % m == b % m);
   }
 
   lemma lemma_add_mod_noop(x:int, y:int, m:int)
@@ -311,10 +254,10 @@ module Div {
     {
       lemma_mod_auto(d);
       var f := i => (x - i * d) % d == x % d;
-      assert  MulAuto() ==> && f(0)
-                            && (forall i {:trigger TMulAutoLe(0, i)} :: TMulAutoLe(0, i) && f(i) ==> f(i + 1))
-                            && (forall i {:trigger TMulAutoLe(i, 0)} :: TMulAutoLe(i, 0) && f(i) ==> f(i - 1));
-      lemma_mul_auto_induction(x, f);
+      assert  mul_auto() ==> && f(0)
+                            && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
+                            && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1));
+      lemma_mul_induction_auto(x, f);
     }
     lemma_mul_auto();
   }
@@ -327,12 +270,8 @@ module Div {
     ensures r == x%d
   {
     lemma_div_auto(d);
-    lemma_mul_auto_induction(q, u => u == (u * d + r) / d);
-    lemma_mul_auto_induction(q, u => r == (u * d + r) % d);
-
-  // REVIEW: this is a plausible alternative, but it times out:
-  //  lemma_mul_auto();
-  //  lemma_div_auto_induction(d, x, x => x == q * d + r ==> q == x/d && r == x%d);
+    lemma_mul_induction_auto(q, u => u == (u * d + r) / d);
+    lemma_mul_induction_auto(q, u => r == (u * d + r) % d);
   }
 
   lemma lemma_mod_pos_bound(x:int, m:int)
@@ -350,7 +289,7 @@ module Div {
     ensures (x % m)*y % m == x*y % m
   {
     lemma_mod_auto(m);
-    lemma_mul_auto_induction(y, u => (x % m)*u % m == x*u % m);
+    lemma_mul_induction_auto(y, u => (x % m)*u % m == x*u % m);
   }
 
   lemma lemma_mul_mod_noop_right(x:int, y:int, m:int)
@@ -358,7 +297,7 @@ module Div {
     ensures x*(y % m) % m == (x*y) % m
   {
     lemma_mod_auto(m);
-    lemma_mul_auto_induction(x, u => u*(y % m) % m == (u*y) % m);
+    lemma_mul_induction_auto(x, u => u*(y % m) % m == (u*y) % m);
   }
 
   lemma lemma_mul_mod_noop_general(x:int, y:int, m:int)
@@ -426,7 +365,7 @@ module Div {
       x;
         { lemma_fundamental_div_mod(x,d*k); }
       x%(d*k) + (d*k)*(x/(d*k));
-        { lemma_mul_is_associative_forall(); }
+        { lemma_mul_is_associative_auto(); }
       x%(d*k) + d*(k*(x/(d*k)));
     }
     calc {
@@ -435,7 +374,7 @@ module Div {
       (x%d) % d;
         { lemma_mod_multiples_vanish(x/d - k*(x/(d*k)), x%d, d); }
       (x%d + d*(x/d - k*(x/(d*k)))) % d;
-        { lemma_mul_is_distributive_sub_forall(); }
+        { lemma_mul_is_distributive_sub_auto(); }
       (x%d + d*(x/d) - d*(k*(x/(d*k)))) % d;
       (x%(d*k)) % d;
         <= { lemma_mod_properties();
@@ -443,21 +382,6 @@ module Div {
       x%(d*k);
     }
   }
-
-  //////////////////////////////////////////////////////////////////////////////
-  //
-  // more probably-dead code
-
-  lemma lemma_mod_multiples_basic(x:int, m:int)
-    requires m > 0
-    ensures  (x * m) % m == 0
-  {
-    lemma_mod_auto(m);
-    lemma_mul_auto_induction(x, u => (u * m) % m == 0);
-  }
-
-  //-
-  //-////////////////////////////////////////////////////////////////////////////
 
 
   /************************************************************
@@ -488,20 +412,20 @@ module Div {
     ensures 0<a*b
     ensures (x%(a*b))%a == x%a
   {
-    lemma_mul_strictly_positive_forall();
+    lemma_mul_strictly_positive_auto();
     calc {
       x;
         { lemma_fundamental_div_mod(x, a*b); }
       (a*b)*(x/(a*b)) + x % (a*b);
-        { lemma_mul_is_associative_forall(); }
+        { lemma_mul_is_associative_auto(); }
       a*(b*(x/(a*b))) + x % (a*b);
         { lemma_fundamental_div_mod(x%(a*b), a); }
       a*(b*(x/(a*b))) + a*(x%(a*b)/a) + (x%(a*b))%a;
-        { lemma_mul_is_distributive_forall(); }
+        { lemma_mul_is_distributive_auto(); }
       a*(b*(x/(a*b)) + x%(a*b)/a) + (x%(a*b))%a;
     }
     lemma_mod_properties();
-    lemma_mul_is_commutative_forall();
+    lemma_mul_is_commutative_auto();
     lemma_fundamental_div_mod_converse(x, a, b*(x/(a*b)) + x%(a*b)/a, (x%(a*b))%a);
   }
 
@@ -509,7 +433,7 @@ module Div {
     requires d > 0
     ensures my_div_recursive(x, d) == x / d
   {
-    lemma_div_auto_induction(d, x, u => my_div_recursive(u, d) == u / d);
+    lemma_div_induction_auto(d, x, u => my_div_recursive(u, d) == u / d);
 
   // Omitted rather than prove lemma_negative_divisor
   //
@@ -604,7 +528,7 @@ module Div {
     requires z > 0
     ensures x / z <= y / z
   {
-    lemma_div_auto_induction(z, x - y, xy => xy <= 0 ==> (xy + y) / z <= y / z);
+    lemma_div_induction_auto(z, x - y, xy => xy <= 0 ==> (xy + y) / z <= y / z);
   }
 
   lemma lemma_div_decreases(x:int, d:int)
@@ -612,7 +536,7 @@ module Div {
     requires 1<d
     ensures x/d < x
   {
-    lemma_div_auto_induction(d, x, u => 0<u ==> u/d < u);
+    lemma_div_induction_auto(d, x, u => 0<u ==> u/d < u);
   }
 
   lemma lemma_div_nonincreasing(x:int, d:int)
@@ -620,7 +544,7 @@ module Div {
     requires 0<d
     ensures x/d <= x
   {
-    lemma_div_auto_induction(d, x, u => 0<=u ==> u/d <= u);
+    lemma_div_induction_auto(d, x, u => 0<=u ==> u/d <= u);
   }
 
   lemma lemma_breakdown(a:int, b:int, c:int)
@@ -630,7 +554,7 @@ module Div {
     ensures 0<b*c
     ensures a%(b*c) == b * ((a/b)%c) + a%b
   {
-    lemma_mul_strictly_positive_forall();
+    lemma_mul_strictly_positive_auto();
     lemma_div_pos_is_pos(a,b);
     assert 0<=a/b;
 
@@ -641,7 +565,7 @@ module Div {
   //-    b;
   //-      <    { lemma_mul_strictly_increases(c,b); }
   //-    c*b;
-  //-           { lemma_mul_is_commutative_forall(); }
+  //-           { lemma_mul_is_commutative_auto(); }
   //-    b*c;
   //-  }
   //-  lemma_mod_properties();
@@ -653,9 +577,9 @@ module Div {
       b*(c-1) + (a%b) % (b*c);
         <    { lemma_part_bound2(a, b, c); }
       b*(c-1) + b;
-            { lemma_mul_basics_forall(); }
+            { lemma_mul_basics_auto(); }
       b*(c-1) + mul(b,1);
-            { lemma_mul_is_distributive_forall(); }
+            { lemma_mul_is_distributive_auto(); }
       b*(c-1+1);
       b*c;
     }
@@ -675,7 +599,7 @@ module Div {
             {
               lemma_mod_properties();
               lemma_mul_increases(c,b);
-              lemma_mul_is_commutative_forall();
+              lemma_mul_is_commutative_auto();
               assert a%b<b<=b*c;
               lemma_small_mod(a%b,b*c);
               assert (a%b) % (b*c) == a%b;
@@ -692,7 +616,7 @@ module Div {
     ensures   x - divisor < x / divisor * divisor
   {
     lemma_mul_auto();
-    lemma_div_auto_induction(divisor, x, u => 0 <= u ==> u - divisor < u / divisor * divisor);
+    lemma_div_induction_auto(divisor, x, u => 0 <= u ==> u - divisor < u / divisor * divisor);
   }
 
   lemma lemma_remainder_lower(x:int, divisor:int)
@@ -701,7 +625,7 @@ module Div {
     ensures  x >= x / divisor * divisor
   {
     lemma_mul_auto();
-    lemma_div_auto_induction(divisor, x, u => 0 <= u ==> u >= u / divisor * divisor);
+    lemma_div_induction_auto(divisor, x, u => 0 <= u ==> u >= u / divisor * divisor);
   }
 
   lemma lemma_remainder(x:int, divisor:int)
@@ -710,7 +634,7 @@ module Div {
     ensures  0 <= x - x / divisor * divisor < divisor
   {
     lemma_mul_auto();
-    lemma_div_auto_induction(divisor, x, u => 0 <= u - u / divisor * divisor < divisor);
+    lemma_div_induction_auto(divisor, x, u => 0 <= u - u / divisor * divisor < divisor);
   }
 
 
@@ -721,7 +645,7 @@ module Div {
     ensures c * d != 0
     ensures (x/c)/d == x / (c*d)
   {
-    lemma_mul_strictly_positive_forall();
+    lemma_mul_strictly_positive_auto();
     //-assert 0 < c*d;
     var R := x % (c*d);
     lemma_mod_properties();
@@ -733,14 +657,14 @@ module Div {
       lemma_fundamental_div_mod(R, c);
   //-      assert R >= c*(R/c);
       lemma_mul_inequality(d, R/c, c);
-      lemma_mul_is_commutative_forall();
+      lemma_mul_is_commutative_auto();
   //-      assert c*(R/c) >= c*d;
   //-      assert R >= c*d;
       assert false;
     }
     assert R/c < d;
 
-    lemma_mul_basics_forall();
+    lemma_mul_basics_auto();
     lemma_fundamental_div_mod_converse(R/c, d, 0, R/c);
     assert (R/c) % d == R/c;
 
@@ -757,7 +681,7 @@ module Div {
 
     calc {
       c*((x/c)%d) + x%c;
-        { lemma_mod_multiples_vanish(-k, x/c, d); lemma_mul_is_commutative_forall(); }
+        { lemma_mod_multiples_vanish(-k, x/c, d); lemma_mul_is_commutative_auto(); }
       c*((x/c+(-k)*d) % d) + x%c;
         { lemma_hoist_over_denominator(x, (-k)*d, c); }
       c*(((x+(((-k)*d)*c))/c) % d) + x%c;
@@ -769,8 +693,8 @@ module Div {
       c*(((x+(-(k*d*c)))/c) % d) + x%c;
       c*(((x-k*d*c)/c) % d) + x%c;
         {
-          lemma_mul_is_associative_forall();
-          lemma_mul_is_commutative_forall();
+          lemma_mul_is_associative_auto();
+          lemma_mul_is_commutative_auto();
         }
       c*((R/c) % d) + x%c;
       c*(R/c) + x%c;
@@ -798,9 +722,9 @@ module Div {
         { lemma_fundamental_div_mod(x/c,d); }
       d*((x/c)/d) == x/c - ((x/c)%d);
       c*(d*((x/c)/d)) == c*(x/c - ((x/c)%d));
-        { lemma_mul_is_associative_forall(); }
+        { lemma_mul_is_associative_auto(); }
       (c*d)*((x/c)/d) == c*(x/c - ((x/c)%d));
-        { lemma_mul_is_distributive_forall(); }
+        { lemma_mul_is_distributive_auto(); }
       (c*d)*((x/c)/d) == c*(x/c) - c*((x/c)%d);
       (c*d)*((x/c)/d) == x - R;
         { lemma_fundamental_div_mod(x, c*d); }
@@ -820,15 +744,15 @@ module Div {
       (x*y)/z;
         { lemma_fundamental_div_mod(y, z); }
       (x*(z*(y/z)+y%z))/z;
-        { lemma_mul_is_distributive_forall(); }
+        { lemma_mul_is_distributive_auto(); }
       (x*(z*(y/z))+x*(y%z))/z;
         >=  {
             lemma_mod_properties();
             lemma_mul_nonnegative(x, y%z);
             lemma_div_is_ordered(x*(z*(y/z)), x*(z*(y/z))+x*(y%z), z); }
       (x*(z*(y/z)))/z;
-          { lemma_mul_is_associative_forall();
-            lemma_mul_is_commutative_forall(); }
+          { lemma_mul_is_associative_auto();
+            lemma_mul_is_commutative_auto(); }
       (z*(x*(y/z)))/z;
           { lemma_div_multiples_vanish(x*(y/z), z); }
       x*(y/z);
@@ -840,7 +764,7 @@ module Div {
     requires 0 <= a - a%d <= b < a + d - a%d
     ensures a/d == b/d
   {
-    lemma_div_auto_induction(d, a - b, ab => var u := ab + b; 0 <= u - u%d <= b < u + d - u%d ==> u/d == b/d);
+    lemma_div_induction_auto(d, a - b, ab => var u := ab + b; 0 <= u - u%d <= b < u + d - u%d ==> u/d == b/d);
   }
 
   lemma lemma_truncate_middle(x:int, b:int, c:int)
@@ -850,15 +774,15 @@ module Div {
     ensures 0<b*c
     ensures (b*x)%(b*c) == b*(x%c)
   {
-    lemma_mul_strictly_positive_forall();
-    lemma_mul_nonnegative_forall();
+    lemma_mul_strictly_positive_auto();
+    lemma_mul_nonnegative_auto();
     calc {
       b*x;
         { lemma_fundamental_div_mod(b*x,b*c); }
       (b*c)*((b*x)/(b*c)) + (b*x)%(b*c);
         { lemma_div_denominator(b*x,b,c); }
       (b*c)*(((b*x)/b)/c) + (b*x)%(b*c);
-        { lemma_mul_is_commutative_forall(); lemma_div_by_multiple(x,b); }
+        { lemma_mul_is_commutative_auto(); lemma_div_by_multiple(x,b); }
       (b*c)*(x/c) + (b*x)%(b*c);
     }
     calc ==> {
@@ -866,9 +790,9 @@ module Div {
         { lemma_fundamental_div_mod(x,c); }
       x == c*(x/c) + x%c;
       b*x == b*(c*(x/c) + x%c);
-        { lemma_mul_is_distributive_forall(); }
+        { lemma_mul_is_distributive_auto(); }
       b*x == b*(c*(x/c)) + b*(x%c);
-        { lemma_mul_is_associative_forall(); }
+        { lemma_mul_is_associative_auto(); }
       b*x == (b*c)*(x/c) + b*(x%c);
     }
   }
@@ -899,7 +823,7 @@ module Div {
     ensures a==d*((a+r)/d)
   {
     lemma_mul_auto();
-    lemma_div_auto_induction(d, a, u => u%d == 0 ==> u==d*((u+r)/d));
+    lemma_div_induction_auto(d, a, u => u%d == 0 ==> u==d*((u+r)/d));
   }
 
 
@@ -910,7 +834,7 @@ module Div {
   {
     lemma_div_auto(d);
     var f := u => (d*u + b)/d == u;
-    lemma_mul_auto_induction(x, f);
+    lemma_mul_induction_auto(x, f);
     assert f(x);
   }
 
@@ -930,6 +854,13 @@ module Div {
     lemma_div_multiples_vanish(b,d);
   }
 
+  lemma lemma_mod_multiples_basic(x:int, m:int)
+    requires m > 0
+    ensures  (x * m) % m == 0
+  {
+    lemma_mod_auto(m);
+    lemma_mul_induction_auto(x, u => (u * m) % m == 0);
+  }
 
   lemma lemma_div_by_multiple_is_strongly_ordered(x:int, y:int, m:int, z:int)
     requires x < y
@@ -938,7 +869,7 @@ module Div {
     ensures  x / z < y / z
   {
     lemma_mod_multiples_basic(m, z);
-    lemma_div_auto_induction(z, y - x, yx => var u := yx + x; x < u && u % z == 0 ==> x / z < u / z);
+    lemma_div_induction_auto(z, y - x, yx => var u := yx + x; x < u && u % z == 0 ==> x / z < u / z);
   }
 
   lemma lemma_multiply_divide_le(a:int, b:int, c:int)
@@ -947,7 +878,7 @@ module Div {
     ensures  a / b <= c
   {
     lemma_mod_multiples_basic(c, b);
-    lemma_div_auto_induction(b, b * c - a, i => 0 <= i && (i + a) % b == 0 ==> a / b <= (i + a) / b);
+    lemma_div_induction_auto(b, b * c - a, i => 0 <= i && (i + a) % b == 0 ==> a / b <= (i + a) / b);
     lemma_div_multiples_vanish(c, b);
   }
 
@@ -957,7 +888,7 @@ module Div {
     ensures  a / b < c
   {
     lemma_mod_multiples_basic(c, b);
-    lemma_div_auto_induction(b, b * c - a, i => 0 < i && (i + a) % b == 0 ==> a / b < (i + a) / b);
+    lemma_div_induction_auto(b, b * c - a, i => 0 < i && (i + a) % b == 0 ==> a / b < (i + a) / b);
     lemma_div_multiples_vanish(c, b);
   }
 
@@ -966,7 +897,7 @@ module Div {
     ensures x/d + j == (x+j*d) / d
   {
     lemma_div_auto(d);
-    lemma_mul_auto_induction(j, u => x/d + u == (x+u*d) / d);
+    lemma_mul_induction_auto(j, u => x/d + u == (x+u*d) / d);
   }
 
   lemma lemma_part_bound1(a:int, b:int, c:int)
@@ -976,14 +907,14 @@ module Div {
     ensures 0<b*c
     ensures (b*(a/b) % (b*c)) <= b*(c-1)
   {
-    lemma_mul_strictly_positive_forall();
+    lemma_mul_strictly_positive_auto();
     calc {
       b*(a/b) % (b*c);
         { lemma_fundamental_div_mod(b*(a/b),b*c); }
       b*(a/b) - (b*c)*((b*(a/b))/(b*c));
-        { lemma_mul_is_associative_forall(); }
+        { lemma_mul_is_associative_auto(); }
       b*(a/b) - b*(c*((b*(a/b))/(b*c)));
-        { lemma_mul_is_distributive_forall(); }
+        { lemma_mul_is_distributive_auto(); }
       b*((a/b) - (c*((b*(a/b))/(b*c))));
     }
 
@@ -992,10 +923,10 @@ module Div {
         { lemma_mod_properties(); }
       b*(a/b) % (b*c) < b*c;
       b*((a/b) - (c*((b*(a/b))/(b*c)))) < b*c;
-        { lemma_mul_is_commutative_forall(); lemma_mul_strict_inequality_converse_forall(); }
+        { lemma_mul_is_commutative_auto(); lemma_mul_strict_inequality_converse_auto(); }
       ((a/b) - (c*((b*(a/b))/(b*c)))) < c;
       ((a/b) - (c*((b*(a/b))/(b*c)))) <= c-1;
-        { lemma_mul_is_commutative_forall(); lemma_mul_inequality_forall(); }
+        { lemma_mul_is_commutative_auto(); lemma_mul_inequality_auto(); }
       b*((a/b) - (c*((b*(a/b))/(b*c)))) <= b*(c-1);
       b*(a/b) % (b*c) <= b*(c-1);
     }
@@ -1008,11 +939,11 @@ module Div {
     ensures 0<b*c
     ensures (a%b)%(b*c) < b
   {
-    lemma_mul_strictly_positive_forall();
+    lemma_mul_strictly_positive_auto();
     lemma_mod_properties();
     assert a%b < b;
-    lemma_mul_increases_forall();
-    lemma_mul_is_commutative_forall();
+    lemma_mul_increases_auto();
+    lemma_mul_is_commutative_auto();
     assert b <= b * c;
     assert 0 <= a%b < b * c;
     lemma_mod_properties();
@@ -1027,7 +958,7 @@ module Div {
     ensures 0<b*c
     ensures a%(b*c) == b * ((a/b)%c) + a%b
   {
-    lemma_mul_strictly_positive_forall();
+    lemma_mul_strictly_positive_auto();
     lemma_div_pos_is_pos(a,b);
     assert 0<=a/b;
 
@@ -1037,9 +968,9 @@ module Div {
       b*(c-1) + (a%b) % (b*c);
         <    { lemma_part_bound2(a, b, c); }
       b*(c-1) + b;
-            { lemma_mul_basics_forall(); }
+            { lemma_mul_basics_auto(); }
       b*(c-1) + mul(b,1);
-            { lemma_mul_is_distributive_forall(); }
+            { lemma_mul_is_distributive_auto(); }
       b*(c-1+1);
       b*c;
     }
@@ -1059,7 +990,7 @@ module Div {
             {
               lemma_mod_properties();
               lemma_mul_increases(c,b);
-              lemma_mul_is_commutative_forall();
+              lemma_mul_is_commutative_auto();
               assert a%b<b<=b*c;
               lemma_small_mod(a%b,b*c);
               assert (a%b) % (b*c) == a%b;
@@ -1075,7 +1006,7 @@ module Div {
     ensures forall c:nat,d:nat {:trigger c * d} :: 0 < c && 0 < d ==> c * d != 0
     ensures forall x:int,c:nat,d:nat {:trigger (x/c)/d} :: 0 <= x && 0 < c && 0 < d ==> (x/c)/d == x/(c*d)
   {
-    lemma_mul_nonzero_forall();
+    lemma_mul_nonzero_auto();
     forall x:int,c:nat,d:nat | 0 <= x && 0 < c && 0 < d
       ensures (x/c)/d == x/(c*d)
     {
