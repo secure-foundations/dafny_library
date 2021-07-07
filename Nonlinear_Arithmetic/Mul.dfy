@@ -174,9 +174,9 @@ module Mul {
   lemma lemma_mul_strict_upper_bound(x:int, x_bound:int, y:int, y_bound:int)
     requires x < x_bound
     requires y < y_bound
-    requires 0<=x
-    requires 0<=y
-    ensures x*y < x_bound * y_bound
+    requires 0<x
+    requires 0<y
+    ensures x*y <= (x_bound - 1) * (y_bound - 1)
   {
     lemma_mul_induction_auto(x, u => 0 <= u ==> u * y <= u * y_bound);
     lemma_mul_induction_auto(y_bound, u => 1 <= u ==> x * u < x_bound * u);
