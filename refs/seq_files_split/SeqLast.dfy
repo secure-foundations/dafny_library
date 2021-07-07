@@ -1,6 +1,6 @@
 module SeqLast {
 
-  /* returns the last element in the sequence */
+  /* finds the last element in the sequence */
   function method last<T>(s: seq<T>): T
     requires |s| > 0;
   {
@@ -20,5 +20,13 @@ module SeqLast {
     ensures  drop_last(s) + [last(s)] == s;
   {
   }
+
+  /* the last element in an appended sequence will be the last element of the latter sequence */
+  lemma lemma_append_last<T>(a: seq<T>, b: seq<T>)
+    requires 0 < |a + b| && 0 < |b|
+    ensures last(a + b) == last(b)
+  {
+  }
+
 
 }

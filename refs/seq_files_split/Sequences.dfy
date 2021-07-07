@@ -163,6 +163,17 @@ module Seq {
   {
   }
   
+  /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
+  function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
+    ensures |unzip(s).0| == |unzip(s).1| == |s|
+    ensures forall i :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
+  {
+    if |s| == 0 then ([], [])
+    else
+      var (a, b):= unzip(drop_last(s));
+      (a + [last(s).0], b + [last(s).1])
+  }
+
   /* takes two sequences, a and b, and combines then to form one sequence in which
   each position contains an ordered pair from a and b */
   function method {:opaque} zip<A,B>(a: seq<A>, b: seq<B>): seq<(A,B)>
@@ -176,23 +187,9 @@ module Seq {
     else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
-  /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
-  function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
-    ensures |unzip(s).0| == |unzip(s).1| == |s|
-    ensures forall i :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
-    //ensures zip(unzip(s).0, unzip(s).1) == s
-  {
-    if |s| == 0 then ([], [])
-    else
-      var (a, b):= unzip(drop_last(s));
-      (a + [last(s).0], b + [last(s).1])
-  }
-  
-  /* if a zipped sequence is unzipped, this results in two seperate sequences */
-  lemma lemma_unzip_of_zip<A,B>(a: seq<A>, b: seq<B>)
-    requires |a| == |b|
-    ensures unzip(zip(a, b)).0 == a
-    ensures unzip(zip(a, b)).1 == b
+  // if a sequence is unzipped and then zipped, it forms the original sequence
+  lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
+    ensures zip(unzip(s).0, unzip(s).1) == s
   {
   }
 
