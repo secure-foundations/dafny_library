@@ -1,6 +1,7 @@
 include "Mul-Internals.dfy"
 include "Mul.dfy"
 include "Mod-Nonlinear.dfy"
+include "Div-Nonlinear.dfy"
 
 module ModInternals {
 
@@ -8,6 +9,7 @@ module ModInternals {
   import opened MulNonlinear
   import opened MulInternals
   import opened ModNonlinear
+  import opened DivNonlinear
 
   /* aids in the process of induction for modulus */
   lemma lemma_mod_induction_helper(n:int, f:int->bool, x:int)
@@ -41,7 +43,8 @@ module ModInternals {
     forall i ensures f(i) { lemma_mod_induction_helper(n, f, i); }
   }
 
-  /*  */
+  /* given an integer x and divisor n, the remainder of x%n is equivalent to the remainder of (x+m)%n
+  where m is a multiple of n */
   lemma lemma_mod_induction_forall2(n:int, f:(int,int)->bool)
     requires n > 0
     requires forall i, j :: 0 <= i < n && 0 <= j < n ==> f(i, j)
@@ -104,6 +107,141 @@ module ModInternals {
       if (zm > 0) { lemma_mul_inequality(1, zm, n); }
       if (zm < 0) { lemma_mul_inequality(zm, -1, n); }
     }
+  }
+
+
+  /* true if x%n and y%n are equal */
+  predicate is_mod_equivalent(x:int, y:int, n:int)
+    requires n > 0
+  {
+    (x - y) % n == 0 // same as x % n == y % n, but easier to do induction on x - y than x and y separately
+  }
+
+  /* proves the quotient remainder theorem */
+  lemma lemma_unique_quotient_and_remainder(x:int, q:int, r:int, n:int)
+    requires n > 0
+    requires 0 <= r < n
+    requires x == q * n + r
+    ensures  q == x / n
+    ensures  r == x % n
+    decreases if q > 0 then q else -q
+  {
+    lemma_mod_basics(n);
+    lemma_mul_is_commutative_auto();
+    lemma_mul_is_distributive_add_auto();
+    lemma_mul_is_distributive_sub_auto();
+
+    if q > 0 {
+      assert q * n + r == (q - 1) * n + n + r;
+      lemma_unique_quotient_and_remainder(x - n, q - 1, r, n);
+    }
+    else if q < 0 {
+      assert q * n + r == (q + 1) * n - n + r;
+      lemma_unique_quotient_and_remainder(x + n, q + 1, r, n);
+    }
+    else {
+      lemma_small_div();
+      assert r / n == 0;
+    }
+  }
+
+  /* automates the modulus operator process */
+  predicate mod_auto(n:int)
+      requires n > 0;
+  {
+  && (n % n == (-n) % n == 0)
+  && (forall x:int {:trigger (x % n) % n} :: (x % n) % n == x % n)
+  && (forall x:int {:trigger x % n} :: 0 <= x < n <==> x % n == x)
+  && (forall x:int, y:int {:trigger (x + y) % n} ::
+                  (var z := (x % n) + (y % n);
+                      (  (0 <= z < n     && (x + y) % n == z)
+                      || (n <= z < n + n && (x + y) % n == z - n))))
+  && (forall x:int, y:int {:trigger (x - y) % n} ::
+                  (var z := (x % n) - (y % n);
+                      (   (0 <= z < n && (x - y) % n == z)
+                      || (-n <= z < 0 && (x - y) % n == z + n))))
+  }
+
+/* ensures that mod_auto is true */
+  lemma lemma_mod_auto(n:int)
+    requires n > 0
+    ensures  mod_auto(n)
+  {
+    lemma_mod_basics(n);
+    lemma_mul_is_commutative_auto();
+    lemma_mul_is_distributive_add_auto();
+    lemma_mul_is_distributive_sub_auto();
+
+    forall x:int, y:int {:trigger (x + y) % n}
+      ensures var z := (x % n) + (y % n);
+              || (0 <= z < n && (x + y) % n == z)
+              || (n <= z < 2 * n && (x + y) % n == z - n)
+    {
+      var xq, xr := x / n, x % n;
+      lemma_fundamental_div_mod(x, n);
+      assert x == xq * n + xr;
+      var yq, yr := y / n, y % n;
+      lemma_fundamental_div_mod(y, n);
+      assert y == yq * n + yr;
+      if xr + yr < n {
+        lemma_unique_quotient_and_remainder(x + y, xq + yq, xr + yr, n);
+      }
+      else {
+        lemma_unique_quotient_and_remainder(x + y, xq + yq + 1, xr + yr - n, n);
+      }
+    }
+
+    forall x:int, y:int {:trigger (x - y) % n}
+      ensures var z := (x % n) - (y % n);
+              || (0 <= z < n && (x - y) % n == z)
+              || (-n <= z < 0 && (x - y) % n == z + n)
+    {
+      var xq, xr := x / n, x % n;
+      lemma_fundamental_div_mod(x, n);
+      assert x == xq * n + xr;
+      var yq, yr := y / n, y % n;
+      lemma_fundamental_div_mod(y, n);
+      assert y == yq * n + yr;
+      if xr - yr >= 0 {
+        lemma_unique_quotient_and_remainder(x - y, xq - yq, xr - yr, n);
+      }
+      else {
+        lemma_unique_quotient_and_remainder(x - y, xq - yq - 1, xr - yr + n, n);
+      }
+    }
+  }
+
+  /* performs auto induction for modulus */
+  lemma lemma_mod_induction_auto(n:int, x:int, f:int->bool)
+    requires n > 0
+    requires mod_auto(n) ==> && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && i < n ==> f(i))
+                          && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + n))
+                          && (forall i {:trigger is_le(i + 1, n)} :: is_le(i + 1, n) && f(i) ==> f(i - n))
+    ensures  mod_auto(n)
+    ensures  f(x)
+  {
+    lemma_mod_auto(n);
+    assert forall i :: is_le(0, i) && i < n ==> f(i);
+    assert forall i {:trigger f(i), f(i + n)} :: is_le(0, i) && f(i) ==> f(i + n);
+    assert forall i {:trigger f(i), f(i - n)} :: is_le(i + 1, n) && f(i) ==> f(i - n);
+    lemma_mod_induction_forall(n, f);
+    assert f(x);
+  }
+
+  /* performs auto induction on modulus for all i s.t. f(i) exists */
+  lemma lemma_mod_induction_auto_forall(n:int, f:int->bool)
+    requires n > 0
+    requires mod_auto(n) ==> && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && i < n ==> f(i))
+                          && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + n))
+                          && (forall i {:trigger is_le(i + 1, n)} :: is_le(i + 1, n) && f(i) ==> f(i - n))
+    ensures  mod_auto(n)
+    ensures  forall i {:trigger f(i)} :: f(i)
+  {
+    lemma_mod_auto(n);
+    assert forall i :: is_le(0, i) && i < n ==> f(i);
+    assert forall i {:trigger f(i), f(i + n)} :: is_le(0, i) && f(i) ==> f(i + n);
+    assert forall i {:trigger f(i), f(i - n)} :: is_le(i + 1, n) && f(i) ==> f(i - n);
+    lemma_mod_induction_forall(n, f);
   }
 
 } 
