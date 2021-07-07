@@ -196,7 +196,7 @@ module Mul {
   // reword
   /* when two integers, x and y, are each multiplied by a positive integer, z, the numerical order of the 
   products x*z and y*z will also hold true for x and y alone */
-  lemma lemma_mul_strict_inequality_auto_converse(x:int, y:int, z:int)
+  lemma lemma_mul_strict_inequality_converse(x:int, y:int, z:int)
     requires x*z < y*z
     requires z >= 0
     ensures  x < y
@@ -207,7 +207,7 @@ module Mul {
   // reword
   /* when any two integers, x and y, are each multiplied by a positive integer, z, the numerical order of 
   the products x*z and y*z will also hold true for x and y alone */
-  lemma lemma_mul_strict_inequality_auto_converse_auto()
+  lemma lemma_mul_strict_inequality_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z < y*z && z>=0 ==> x < y
   {
       forall (x:int, y:int, z:int | x*z < y*z && z>=0)
