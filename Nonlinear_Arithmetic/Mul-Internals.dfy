@@ -41,7 +41,7 @@ module MulInternals {
   }
 
   /* proves that multiplication is always commutative */
-  lemma {:timeLimitMultiplier 3} lemma_mul_auto_commutes()
+  lemma lemma_mul_commutes()
     ensures  forall x:int, y:int {:trigger x * y} :: x * y == y * x
   {
     forall x:int, y:int
@@ -53,11 +53,11 @@ module MulInternals {
 
   /* proves the distributive property of multiplication when multiplying an interger
   by (x +/- 1) */
-  lemma lemma_mul_auto_succ()
+  lemma lemma_mul_successor()
     ensures  forall x:int, y:int {:trigger (x + 1) * y} :: (x + 1) * y == x * y + y
     ensures  forall x:int, y:int {:trigger (x - 1) * y} :: (x - 1) * y == x * y - y
   {
-    lemma_mul_auto_commutes();
+    lemma_mul_commutes();
     forall x:int, y:int
       ensures  (x + 1) * y == x * y + y
       ensures  (x - 1) * y == x * y - y
@@ -68,11 +68,11 @@ module MulInternals {
   }
 
   /* proves the distributive property of multiplication */
-  lemma {:timeLimitMultiplier 3} lemma_mul_auto_distributes()
+  lemma lemma_mul_distributes()
     ensures  forall x:int, y:int, z:int {:trigger (x + y) * z} :: (x + y) * z == x * z + y * z
     ensures  forall x:int, y:int, z:int {:trigger (x - y) * z} :: (x - y) * z == x * z - y * z
   {
-    lemma_mul_auto_succ();
+    lemma_mul_successor();
     forall x:int, y:int, z:int
       ensures (x + y) * z == x * z + y * z
       ensures (x - y) * z == x * z - y * z
@@ -102,8 +102,8 @@ module MulInternals {
   lemma lemma_mul_auto()
     ensures  mul_auto()
   {
-    lemma_mul_auto_commutes();
-    lemma_mul_auto_distributes();
+    lemma_mul_commutes();
+    lemma_mul_distributes();
   }
 
   /* true if the first integer is less than or equal to the second integer */
@@ -113,15 +113,15 @@ module MulInternals {
   }
 
   /* performs auto induction for multiplication */
-  lemma lemma_mul_auto_induction(x:int, f:int->bool)
+  lemma lemma_mul_induction_auto(x:int, f:int->bool)
     requires mul_auto() ==> f(0)
                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
                           && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1))
     ensures  mul_auto()
     ensures  f(x)
   {
-    lemma_mul_auto_commutes();
-    lemma_mul_auto_distributes();
+    lemma_mul_commutes();
+    lemma_mul_distributes();
     assert forall i {:trigger f(i)} :: is_le(0, i) && f(i) ==> f(i + 1);
     assert forall i {:trigger f(i)} :: is_le(i, 0) && f(i) ==> f(i - 1);
     lemma_mul_induction(f);
@@ -129,20 +129,20 @@ module MulInternals {
   }
 
   // not used at all in Mul.dfy...
-  /* performs auto induction on multiplication for all i in f(i) */
-  lemma lemma_mul_auto_induction_forall(f:int->bool)
+  /* performs auto induction on multiplication for all i s.t. f(i) exists */
+  lemma lemma_mul_induction_auto_forall(f:int->bool)
     requires mul_auto() ==> f(0)
                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
                           && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1))
     ensures  mul_auto()
     ensures  forall i {:trigger f(i)} :: f(i)
   {
-    lemma_mul_auto_commutes();
-    lemma_mul_auto_distributes();
+    lemma_mul_commutes();
+    lemma_mul_distributes();
     assert forall i {:trigger f(i)} :: is_le(0, i) && f(i) ==> f(i + 1);
     assert forall i {:trigger f(i)} :: is_le(i, 0) && f(i) ==> f(i - 1);
     lemma_mul_induction(f);
-  }
+  } 
 
   /* performs multiplication for positive integers using recursive addition */
   function method {:opaque} mul_pos(x:int, y:int) : int

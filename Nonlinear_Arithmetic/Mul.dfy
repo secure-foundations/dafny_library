@@ -41,7 +41,7 @@ module Mul {
     ensures x * y == mul_pos(x, y)
   {
     reveal_mul_pos();
-    lemma_mul_auto_induction(x, u => u >= 0 ==> u * y == mul_pos(u, y));
+    lemma_mul_induction_auto(x, u => u >= 0 ==> u * y == mul_pos(u, y));
   }
 
   //-////////////////////////////////////////////////////////////////////////////
@@ -130,7 +130,7 @@ module Mul {
     requires z >= 0
     ensures  x*z <= y*z
   {
-    lemma_mul_auto_induction(z, u => u >= 0 ==> x * u <= y * u);
+    lemma_mul_induction_auto(z, u => u >= 0 ==> x * u <= y * u);
   }
 
   /* any two integers that are multiplied by a positive number will maintain their numerical order */
@@ -178,8 +178,8 @@ module Mul {
     requires 0<=y
     ensures x*y < x_bound * y_bound
   {
-    lemma_mul_auto_induction(x, u => 0 <= u ==> u * y <= u * y_bound);
-    lemma_mul_auto_induction(y_bound, u => 1 <= u ==> x * u < x_bound * u);
+    lemma_mul_induction_auto(x, u => 0 <= u ==> u * y <= u * y_bound);
+    lemma_mul_induction_auto(y_bound, u => 1 <= u ==> x * u < x_bound * u);
   }
 
   // different than lemma_mul_inequality?
@@ -189,8 +189,8 @@ module Mul {
     ensures y <= z ==> x*y <= x*z
     ensures y < z ==> x*y < x*z
   {
-    lemma_mul_auto_induction(x, u => u > 0 ==> y <= z ==> u*y <= u*z);
-    lemma_mul_auto_induction(x, u => u > 0 ==> y < z ==> u*y < u*z);
+    lemma_mul_induction_auto(x, u => u > 0 ==> y <= z ==> u*y <= u*z);
+    lemma_mul_induction_auto(x, u => u > 0 ==> y < z ==> u*y < u*z);
   }
 
   // reword
@@ -201,7 +201,7 @@ module Mul {
     requires z >= 0
     ensures  x < y
   {
-    lemma_mul_auto_induction(z, u => x * u < y * u && u >= 0 ==> x < y);
+    lemma_mul_induction_auto(z, u => x * u < y * u && u >= 0 ==> x < y);
   }
 
   // reword
@@ -225,7 +225,7 @@ module Mul {
     requires z > 0
     ensures  x <= y
   {
-    lemma_mul_auto_induction(z, u => x * u <= y * u && u > 0 ==> x <= y);
+    lemma_mul_induction_auto(z, u => x * u <= y * u && u > 0 ==> x <= y);
   }
 
   // reword
@@ -249,8 +249,8 @@ module Mul {
     requires 0 < z
     ensures x == y
   {
-    lemma_mul_auto_induction(z, u => x > y && 0 < u ==> x * u > y * u);
-    lemma_mul_auto_induction(z, u => x < y && 0 < u ==> x * u < y * u);
+    lemma_mul_induction_auto(z, u => x > y && 0 < u ==> x * u > y * u);
+    lemma_mul_induction_auto(z, u => x < y && 0 < u ==> x * u < y * u);
   }
 
   /* for all integers, multiplication is distributive with addition in the form x * (y + z) */
@@ -333,7 +333,7 @@ module Mul {
     requires 0 < y
     ensures y < x*y
   {
-    lemma_mul_auto_induction(x, u => 1 < u ==> y < u * y);
+    lemma_mul_induction_auto(x, u => 1 < u ==> y < u * y);
   }
 
   /* multiplying any positive integer by any integer greater than 1 will result in a product that 
@@ -355,7 +355,7 @@ module Mul {
     requires 0<y
     ensures y <= x*y
   {
-    lemma_mul_auto_induction(x, u => 0 < u ==> y <= u * y);
+    lemma_mul_induction_auto(x, u => 0 < u ==> y <= u * y);
   }
 
   /* multiplying any integer by any positive integer will result in a product thhat is greater than or
@@ -376,7 +376,7 @@ module Mul {
     requires 0 <= y
     ensures  0 <= x*y
   {
-    lemma_mul_auto_induction(x, u => 0 <= u ==> 0 <= u * y);
+    lemma_mul_induction_auto(x, u => 0 <= u ==> 0 <= u * y);
   }
   
   /* multiplying any two positive numbers will result in a positive product */
@@ -394,7 +394,7 @@ module Mul {
   lemma lemma_mul_unary_negation(x:int, y:int)
     ensures (-x)*y == -(x*y) == x*(-y)
   {
-    lemma_mul_auto_induction(x, u => (-u)*y == -(u*y) == u*(-y));
+    lemma_mul_induction_auto(x, u => (-u)*y == -(u*y) == u*(-y));
   }
 
   //reword
@@ -416,10 +416,10 @@ module Mul {
     requires m*x == m*y
     ensures x == y
   {
-    lemma_mul_auto_induction(m, u => x > y && 0 < u ==> x * u > y * u);
-    lemma_mul_auto_induction(m, u => x > y && 0 > u ==> x * u < y * u);
-    lemma_mul_auto_induction(m, u => x < y && 0 < u ==> x * u < y * u);
-    lemma_mul_auto_induction(m, u => x < y && 0 > u ==> x * u > y * u);
+    lemma_mul_induction_auto(m, u => x > y && 0 < u ==> x * u > y * u);
+    lemma_mul_induction_auto(m, u => x > y && 0 > u ==> x * u < y * u);
+    lemma_mul_induction_auto(m, u => x < y && 0 < u ==> x * u < y * u);
+    lemma_mul_induction_auto(m, u => x < y && 0 > u ==> x * u > y * u);
   }
 
   /* if any two seperate integers are each multiplied by a common integer and the products are equal, the 
@@ -440,7 +440,7 @@ module Mul {
   // it may produce a trigger storm. Whether it does seems to depend on
   // how complex the expressions being mul'ed are. If that happens,
   // fall back on specifying an individiual _forall lemma or use
-  // lemma_mul_auto/lemma_mul_auto_induction.
+  // lemma_mul_auto/lemma_mul_induction_auto.
   //
   //////////////////////////////////////////////////////////////////////////////
 
