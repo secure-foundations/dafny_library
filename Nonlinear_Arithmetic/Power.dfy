@@ -213,7 +213,7 @@ module Power {
     ensures  0 < power(b, e)
   {
     lemma_power_auto();
-    lemma_mul_auto_induction(e, u => 0 <= u ==> 0 < power(b, u));
+    lemma_mul_induction_auto(e, u => 0 <= u ==> 0 < power(b, u));
   }
 
   /* A positive number raised to a power increases as the power increases. */
@@ -238,7 +238,7 @@ module Power {
           power(b, e1+i+1);
       }
     }
-    lemma_mul_auto_induction(e2-e1, f);
+    lemma_mul_induction_auto(e2-e1, f);
   }
 
   /* A positive number raised to a power strictly increases as the power
@@ -264,7 +264,7 @@ module Power {
           power(b, e1+i+1);
       }
     }
-    lemma_mul_auto_induction(e2-e1, f);
+    lemma_mul_induction_auto(e2-e1, f);
   }
 
   /* Squaring a number is equal to raising the number to the power of 2. */
