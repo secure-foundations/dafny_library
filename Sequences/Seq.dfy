@@ -211,12 +211,14 @@ module Seq {
   function {:opaque} remove_value<T>(s: seq<T>, v: T): (s': seq<T>)
     ensures v !in s ==> s == s'
     ensures v in s ==> |multiset(s')| == |multiset(s)| - 1
+    ensures v in s ==> multiset(s')[v] == multiset(s)[v] - 1
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
   {
     reveal_has_no_duplicates();
     reveal_to_set();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
+    assert s == s[.. i] + [v] + s[i + 1 ..];
     s[.. i] + s[i + 1 ..]
   }
 
