@@ -171,7 +171,8 @@ module Div {
     }
   }
 
-  /* the remainder of*/
+  /* the remainder of a natural number x divided by a natural number d will be less
+  than or equal to x */
   lemma lemma_mod_decreases(x:nat, d:nat)
     requires 0 < d
     ensures x%d <= x
@@ -179,6 +180,8 @@ module Div {
     lemma_mod_auto(d);
   }
 
+  /* the remainder of adding the divisor m to the dividend b will be the same
+  as simply performing b % m */
   lemma lemma_mod_add_multiples_vanish(b:int, m:int)
     requires 0 < m
     ensures (m + b) % m == b % m
@@ -186,6 +189,8 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* the remainder of aubtracting the divisor m from the dividend b will be the same
+  as simply performing b % m */
   lemma lemma_mod_sub_multiples_vanish(b:int, m:int)
     requires 0 < m
     ensures (-m + b) % m == b % m
@@ -193,6 +198,8 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* the remainder of adding any multiple of the divisor m to the dividend b will be the same
+  as simply performing b % m */ 
   lemma lemma_mod_multiples_vanish(a:int, b:int, m:int)
     decreases if a>0 then a else -a
     requires 0 < m
@@ -202,6 +209,7 @@ module Div {
     lemma_mul_induction_auto(a, u => (m*u + b) % m == b % m);
   }
 
+  /*  */
   lemma lemma_add_mod_noop(x:int, y:int, m:int)
     requires 0 < m
     ensures ((x % m) + (y % m)) % m == (x+y) % m
@@ -216,6 +224,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* proves modulus equivalence in two forms */
   lemma lemma_mod_equivalence(x:int, y:int, m:int)
     requires 0 < m
     ensures x % m == y % m <==> (x - y) % m == 0
