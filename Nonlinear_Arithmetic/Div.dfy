@@ -78,7 +78,7 @@ module Div {
     ensures x / y >= x / z
     decreases x
   {
-    lemma_div_is_div_recursive_forall();
+    lemma_div_is_div_recursive_auto();
     assert forall u:int, d:int {:trigger u / d}{:trigger my_div_recursive(u, d)} :: d > 0 ==> my_div_recursive(u, d) == u / d;
 
     if (x < z)
@@ -171,7 +171,8 @@ module Div {
     }
   }
 
-  /* the remainder of*/
+  /* the remainder of a natural number x divided by a natural number d will be less
+  than or equal to x */
   lemma lemma_mod_decreases(x:nat, d:nat)
     requires 0 < d
     ensures x%d <= x
@@ -179,6 +180,8 @@ module Div {
     lemma_mod_auto(d);
   }
 
+  /* the remainder of adding the divisor m to the dividend b will be the same
+  as simply performing b % m */
   lemma lemma_mod_add_multiples_vanish(b:int, m:int)
     requires 0 < m
     ensures (m + b) % m == b % m
@@ -186,6 +189,8 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* the remainder of aubtracting the divisor m from the dividend b will be the same
+  as simply performing b % m */
   lemma lemma_mod_sub_multiples_vanish(b:int, m:int)
     requires 0 < m
     ensures (-m + b) % m == b % m
@@ -193,6 +198,8 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* the remainder of adding any multiple of the divisor m to the dividend b will be the same
+  as simply performing b % m */ 
   lemma lemma_mod_multiples_vanish(a:int, b:int, m:int)
     decreases if a>0 then a else -a
     requires 0 < m
@@ -202,6 +209,7 @@ module Div {
     lemma_mul_induction_auto(a, u => (m*u + b) % m == b % m);
   }
 
+  /* describes expanded and succinct version of modulus operator in relation to addition (read "ensures") */
   lemma lemma_add_mod_noop(x:int, y:int, m:int)
     requires 0 < m
     ensures ((x % m) + (y % m)) % m == (x+y) % m
@@ -209,6 +217,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* describes expanded and succinct version of modulus operator in relation to addition (read "ensures") */
   lemma lemma_add_mod_noop_right(x:int, y:int, m:int)
     requires 0 < m
     ensures (x + (y % m)) % m == (x+y) % m
@@ -216,6 +225,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* proves modulus equivalence in two forms */
   lemma lemma_mod_equivalence(x:int, y:int, m:int)
     requires 0 < m
     ensures x % m == y % m <==> (x - y) % m == 0
@@ -223,6 +233,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* describes expanded and succinct version of modulus operator in relation to subtraction (read "ensures") */
   lemma lemma_sub_mod_noop(x:int, y:int, m:int)
     requires 0 < m
     ensures ((x % m) - (y % m)) % m == (x-y) % m
@@ -230,6 +241,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /* describes expanded and succinct version of modulus operator in relation to subtraction (read "ensures") */
   lemma lemma_sub_mod_noop_right(x:int, y:int, m:int)
     requires 0 < m
     ensures (x - (y % m)) % m == (x-y) % m
@@ -237,6 +249,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
+  /*  */
   lemma lemma_mod_adds(a:int, b:int, d:int)
     requires 0<d
     ensures a%d + b%d == (a+b)%d + d*((a%d + b%d)/d)
@@ -282,7 +295,6 @@ module Div {
   {
     lemma_mod_auto(m);
   }
-
 
   lemma lemma_mul_mod_noop_left(x:int, y:int, m:int)
     requires 0 < m
@@ -352,6 +364,7 @@ module Div {
     lemma_mod_auto(d);
   }
 
+  /* the remainder can increase with a larger divisor */
   lemma lemma_mod_ordering(x:nat, k:nat, d:nat)
     requires 1<d
     requires 0<k
@@ -391,14 +404,18 @@ module Div {
   //-/////////////////////////////////////////////////////
   //- Proof that div is recursive div
   //-/////////////////////////////////////////////////////
+
+  /* dividing an integer and then adding 1 to the quotient is the same as adding 
+  the divisor and the integer, and then dividing that sum by the divisor */
   lemma lemma_div_plus_one(x:int, d:int)
     requires d > 0
-    //-requires x >= 0
     ensures 1 + x / d == (d + x) / d
   {
     lemma_div_auto(d);
   }
 
+  /* dividing an integer and then subtracting 1 from the quotient is the same as subtracting 
+  the divisor from the integer, and then dividing that difference by the divisor */
   lemma lemma_div_minus_one(x:int, d:int)
     requires d > 0
     ensures -1 + x / d == (-d + x) / d
@@ -406,6 +423,7 @@ module Div {
     lemma_div_auto(d);
   }
 
+  /*  */
   lemma lemma_mod_mod(x:int, a:int, b:int)
     requires 0<a
     requires 0<b
@@ -429,30 +447,18 @@ module Div {
     lemma_fundamental_div_mod_converse(x, a, b*(x/(a*b)) + x%(a*b)/a, (x%(a*b))%a);
   }
 
+  /* the common syntax of division gives the same quotient as performing division through recursion */
   lemma lemma_div_is_div_recursive(x:int, d:int)
     requires d > 0
     ensures my_div_recursive(x, d) == x / d
   {
     lemma_div_induction_auto(d, x, u => my_div_recursive(u, d) == u / d);
-
-  // Omitted rather than prove lemma_negative_divisor
-  //
-  //-  if d > 0 {
-  //-   lemma_div_is_div_pos(x, d); 
-  //-  } else {
-  //-    calc {
-  //-      my_div_recursive(x, d);
-  //-      -1 * my_div_pos(x, -1*d);
-  //-        { lemma_div_is_div_pos(x, -1*d); }
-  //-      -1 * (x / (-1*d));
-  //-        { lemma_negative_divisor(x, d); }
-  //-      x / d;
-  //-    }
-  //-  }
   }
 
-  lemma lemma_div_is_div_recursive_forall()
-    ensures forall x:int, d:int :: d > 0 ==> my_div_recursive(x, d) == x / d
+  /* the common syntax of division gives the same quotient as performing division through recursion for all
+  integer division */
+  lemma lemma_div_is_div_recursive_auto()
+    ensures forall x:int, d:int {:trigger x / d}:: d > 0 ==> my_div_recursive(x, d) == x / d
   {
     forall x:int, d:int | d > 0
       ensures my_div_recursive(x, d) == x / d
@@ -467,6 +473,8 @@ module Div {
   //- Proof that mod is recursive mod
   //-/////////////////////////////////////////////////////
 
+  /* the common syntax of the modulus operation results in the same remainder as recursively
+  calculating the modulus */
   lemma lemma_mod_is_mod_recursive(x:int, m:int)
     requires m > 0
     ensures my_mod_recursive(x, m) == x % m
@@ -503,8 +511,10 @@ module Div {
     }
   }
 
-  lemma lemma_mod_is_mod_recursive_forall()
-    ensures forall x:int, d:int :: d > 0 ==> my_mod_recursive(x, d) == x % d
+  /* the common syntax of the modulus operation results in the same remainder as recursively
+  calculating the modulus for all integers */
+  lemma lemma_mod_is_mod_recursive_auto()
+    ensures forall x:int, d:int {:trigger x % d}:: d > 0 ==> my_mod_recursive(x, d) == x % d
   {
     forall x:int, d:int | d > 0
       ensures my_mod_recursive(x, d) == x % d
@@ -515,7 +525,7 @@ module Div {
 
   //-/////////////////////////////////////////////////////
 
-
+  /* dividing a smaller integer by a larger integer results in a quotient of 0 */
   lemma lemma_basic_div(d:int)
     requires d > 0
     ensures forall x {:trigger x / d} :: 0 <= x < d ==> x / d == 0
@@ -523,6 +533,7 @@ module Div {
     lemma_div_auto(d);
   }
 
+  /* numerical order is preserved when dividing two seperate integers by a common positive divisor */
   lemma lemma_div_is_ordered(x:int, y:int, z:int)
     requires x <= y
     requires z > 0
@@ -531,6 +542,8 @@ module Div {
     lemma_div_induction_auto(z, x - y, xy => xy <= 0 ==> (xy + y) / z <= y / z);
   }
 
+  /* dividing an integer by 2 or more results in a quotient that is smaller than the 
+  original dividend */
   lemma lemma_div_decreases(x:int, d:int)
     requires 0<x
     requires 1<d
@@ -539,6 +552,8 @@ module Div {
     lemma_div_induction_auto(d, x, u => 0<u ==> u/d < u);
   }
 
+  /* dividing an integer by 1 or more results in a quotient that is less than or equal to 
+  the original dividend */
   lemma lemma_div_nonincreasing(x:int, d:int)
     requires 0<=x
     requires 0<d
@@ -547,6 +562,7 @@ module Div {
     lemma_div_induction_auto(d, x, u => 0<=u ==> u/d <= u);
   }
 
+  /*  */
   lemma lemma_breakdown(a:int, b:int, c:int)
     requires 0<=a
     requires 0<b
@@ -557,19 +573,6 @@ module Div {
     lemma_mul_strictly_positive_auto();
     lemma_div_pos_is_pos(a,b);
     assert 0<=a/b;
-
-  //-  lemma_mod_properties();
-  //-  assert a%b < b;
-  //-  assert 1<c;
-  //-  calc {
-  //-    b;
-  //-      <    { lemma_mul_strictly_increases(c,b); }
-  //-    c*b;
-  //-           { lemma_mul_is_commutative_auto(); }
-  //-    b*c;
-  //-  }
-  //-  lemma_mod_properties();
-  //-  assert (a%b)%(b*c) < b;
 
     calc {
       (b*(a/b)) % (b*c) + (a%b) % (b*c);
@@ -610,34 +613,37 @@ module Div {
     }
   }
 
-  lemma lemma_remainder_upper(x:int, divisor:int)
+  /*  */
+  lemma lemma_remainder_upper(x:int, d:int)
     requires 0 <= x
-    requires 0 < divisor
-    ensures   x - divisor < x / divisor * divisor
+    requires 0 < d
+    ensures x - d < x / d * d
   {
     lemma_mul_auto();
-    lemma_div_induction_auto(divisor, x, u => 0 <= u ==> u - divisor < u / divisor * divisor);
+    lemma_div_induction_auto(d, x, u => 0 <= u ==> u - d < u / d * d);
   }
 
-  lemma lemma_remainder_lower(x:int, divisor:int)
+  lemma lemma_remainder_lower(x:int, d:int)
     requires 0 <= x
-    requires 0 < divisor
-    ensures  x >= x / divisor * divisor
+    requires 0 < d
+    ensures  x >= x / d * d
   {
     lemma_mul_auto();
-    lemma_div_induction_auto(divisor, x, u => 0 <= u ==> u >= u / divisor * divisor);
+    lemma_div_induction_auto(d, x, u => 0 <= u ==> u >= u / d * d);
   }
 
-  lemma lemma_remainder(x:int, divisor:int)
+  lemma lemma_remainder(x:int, d:int)
     requires 0 <= x
-    requires 0 < divisor
-    ensures  0 <= x - x / divisor * divisor < divisor
+    requires 0 < d
+    ensures  0 <= x - (x / d * d) < d
   {
     lemma_mul_auto();
-    lemma_div_induction_auto(divisor, x, u => 0 <= u - u / divisor * divisor < divisor);
+    lemma_div_induction_auto(d, x, u => 0 <= u - u / d * d < d);
   }
 
 
+  /* divding a fraction by a divisor is equivalent to multiplying the fraction's 
+  denominator with the divisor */
   lemma lemma_div_denominator(x:int,c:nat,d:nat)
     requires 0 <= x
     requires 0<c
@@ -646,20 +652,14 @@ module Div {
     ensures (x/c)/d == x / (c*d)
   {
     lemma_mul_strictly_positive_auto();
-    //-assert 0 < c*d;
     var R := x % (c*d);
     lemma_mod_properties();
-    //-assert 0<=R;
 
     lemma_div_pos_is_pos(R,c);
-    //-assert 0 <= R/c;
     if (R/c >= d) {
       lemma_fundamental_div_mod(R, c);
-  //-      assert R >= c*(R/c);
       lemma_mul_inequality(d, R/c, c);
       lemma_mul_is_commutative_auto();
-  //-      assert c*(R/c) >= c*d;
-  //-      assert R >= c*d;
       assert false;
     }
     assert R/c < d;
@@ -704,7 +704,7 @@ module Div {
           assert R%c == x%c;
         }
       R;
-        { lemma_mod_is_mod_recursive_forall(); }
+        { lemma_mod_is_mod_recursive_auto(); }
       R%(c*d);
       (x-(c*d)*k) % (c*d);
         { lemma_mul_unary_negation(c*d,k); }
@@ -735,6 +735,8 @@ module Div {
     }
   }
 
+  /* mutltiplying an integer by a fraction is equivalent to multiplying the integer by the
+  fraction's numerator */
   lemma lemma_mul_hoist_inequality(x:int, y:int, z:int)
     requires 0 <= x
     requires 0 < z
@@ -759,6 +761,7 @@ module Div {
     }
   }
 
+  /*  */
   lemma lemma_indistinguishable_quotients(a:int, b:int, d:int)
     requires 0<d
     requires 0 <= a - a%d <= b < a + d - a%d
@@ -767,6 +770,7 @@ module Div {
     lemma_div_induction_auto(d, a - b, ab => var u := ab + b; 0 <= u - u%d <= b < u + d - u%d ==> u/d == b/d);
   }
 
+  /* */
   lemma lemma_truncate_middle(x:int, b:int, c:int)
     requires 0<=x
     requires 0<b
@@ -797,6 +801,7 @@ module Div {
     }
   }
 
+  /* multiplying the numerator and denominator by an integer does not change the quotient */
   lemma lemma_div_multiples_vanish_quotient(x:int, a:int, d:int)
     requires 0<x
     requires 0<=a
@@ -816,6 +821,7 @@ module Div {
     }
   }
 
+  /*  */
   lemma lemma_round_down(a:int, r:int, d:int)
     requires 0<d
     requires a%d == 0
@@ -826,7 +832,7 @@ module Div {
     lemma_div_induction_auto(d, a, u => u%d == 0 ==> u==d*((u+r)/d));
   }
 
-
+  /* this is the same as writing x + (b/d) == x when b is less than d; this is true because (b/d) == 0 */
   lemma lemma_div_multiples_vanish_fancy(x:int, b:int, d:int)
     requires 0<d
     requires 0<=b<d
@@ -838,6 +844,7 @@ module Div {
     assert f(x);
   }
 
+  /* multiplying an integer by a common numerator and denominator results in the original integer */
   lemma lemma_div_multiples_vanish(x:int, d:int)
     requires 0<d
     ensures (d*x)/d == x
@@ -845,7 +852,7 @@ module Div {
     lemma_div_multiples_vanish_fancy(x, 0, d);
   }
 
-  // Oh, this is a synonym for lemma_div_multiples_vanish
+  /* multiplying a whole number by a common numerator and denominator results in the original integer */
   lemma lemma_div_by_multiple(b:int, d:int)
     requires 0 <= b
     requires 0 < d
@@ -854,6 +861,7 @@ module Div {
     lemma_div_multiples_vanish(b,d);
   }
 
+  /* a dividend that is any multiple of the divisor will result in a remainder of 0 */
   lemma lemma_mod_multiples_basic(x:int, m:int)
     requires m > 0
     ensures  (x * m) % m == 0
@@ -862,6 +870,7 @@ module Div {
     lemma_mul_induction_auto(x, u => (u * m) % m == 0);
   }
 
+  /*  */
   lemma lemma_div_by_multiple_is_strongly_ordered(x:int, y:int, m:int, z:int)
     requires x < y
     requires y == m * z
