@@ -205,6 +205,7 @@ module Seq {
   function {:opaque} remove_value<T>(s: seq<T>, v: T): (s': seq<T>)
     ensures v !in s ==> s == s'
     ensures v in s ==> |multiset(s')| == |multiset(s)| - 1
+    ensures v in s ==> multiset(s')[v] == multiset(s)[v] - 1
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
     //ensures v in s ==> multiset(s')[v] == multiset(s)[v] - 1
   {
@@ -212,7 +213,12 @@ module Seq {
     reveal_to_set();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
+<<<<<<< HEAD
     s[.. i] + s[i+1 ..];
+=======
+    assert s == s[.. i] + [v] + s[i + 1 ..];
+    s[.. i] + s[i + 1 ..]
+>>>>>>> 5fc5098531a409b9f64b091d20660b558b4a3df6
   }
 
   /* inserts a certain value into a specified index of the sequence */
