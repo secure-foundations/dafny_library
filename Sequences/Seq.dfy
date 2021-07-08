@@ -13,12 +13,6 @@ module Seq {
 
   /**********************************************************
   *
-  Table of contents: 
-  *
-  ***********************************************************/
-
-  /**********************************************************
-  *
   Last in Sequences
   *
   ***********************************************************/
@@ -212,12 +206,13 @@ module Seq {
     ensures v !in s ==> s == s'
     ensures v in s ==> |multiset(s')| == |multiset(s)| - 1
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
+    //ensures v in s ==> multiset(s')[v] == multiset(s)[v] - 1
   {
     reveal_has_no_duplicates();
     reveal_to_set();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
-    s[.. i] + s[i + 1 ..]
+    s[.. i] + s[i+1 ..];
   }
 
   /* inserts a certain value into a specified index of the sequence */
@@ -243,7 +238,6 @@ module Seq {
       [v] + repeat(v, length - 1)
   }
   
-  //???
   /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
   function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(s).0| == |unzip(s).1| == |s|
@@ -268,7 +262,7 @@ module Seq {
     else zip(drop_last(a), drop_last(b)) + [(last(a), last(b))]
   }
 
-  // if a sequence is unzipped and then zipped, it forms the original sequence
+  /* if a sequence is unzipped and then zipped, it forms the original sequence */
   lemma lemma_zip_of_unzip<A,B>(s: seq<(A,B)>)
     ensures zip(unzip(s).0, unzip(s).1) == s
   {
@@ -455,7 +449,6 @@ module Seq {
   /* the length of concatenating sequence in a sequence together will be no longer 
   than the length of the original sequence of sequences multiplied by the length of 
   the longest sequence */
-  // added trigger
   lemma lemma_flatten_length_le_mul<T>(s: seq<seq<T>>, j: int)
     requires forall i {:trigger s[i]} | 0 <= i < |s| :: |s[i]| <= j
     ensures |flatten_reverse(s)| <= |s| * j
@@ -484,6 +477,8 @@ module Seq {
     else  [f(s[0])] + apply(f, s[1..])
   }
 
+  /* concatenating two sequences and then using "apply" is the same as using "apply" on each sequence 
+  seperately and then concatenating the two resulting sequences */
   lemma {:opaque} lemma_apply_concat<T,R>(f: (T ~> R), a: seq<T>, b: seq<T>)
     requires forall i {:trigger a[i]}:: 0 <= i < |a| ==> f.requires(a[i])
     requires forall j {:trigger b[j]}:: 0 <= j < |b| ==> f.requires(b[j])
@@ -515,6 +510,8 @@ module Seq {
     else ((if f(s[0]) then [s[0]] else []) + filter(f, s[1..]))
   }
 
+  /* concatenating two sequences and then using "filter" is the same as using "filter" on each sequences
+  seperately and then concatenating their resulting sequences */
   lemma {:opaque} lemma_filter_concat<T>(f: (T ~> bool), a: seq<T>, b: seq<T>)
     requires forall i {:trigger a[i]}:: 0 <= i < |a| ==> f.requires(a[i])
     requires forall j {:trigger b[j]}:: 0 <= j < |b| ==> f.requires(b[j])
