@@ -100,6 +100,7 @@ module Seq {
     }
   }
 
+  /* converts a sequence to a set */
   function method {:opaque} to_set<T>(s: seq<T>): set<T> 
   {
     set x: T | x in multiset(s)
@@ -207,18 +208,13 @@ module Seq {
     ensures v in s ==> |multiset(s')| == |multiset(s)| - 1
     ensures v in s ==> multiset(s')[v] == multiset(s)[v] - 1
     ensures has_no_duplicates(s) ==> has_no_duplicates(s') && to_set(s') == to_set(s) - {v}
-    //ensures v in s ==> multiset(s')[v] == multiset(s)[v] - 1
   {
     reveal_has_no_duplicates();
     reveal_to_set();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
-<<<<<<< HEAD
-    s[.. i] + s[i+1 ..];
-=======
     assert s == s[.. i] + [v] + s[i + 1 ..];
     s[.. i] + s[i + 1 ..]
->>>>>>> 5fc5098531a409b9f64b091d20660b558b4a3df6
   }
 
   /* inserts a certain value into a specified index of the sequence */
