@@ -1,6 +1,5 @@
 include "Power.dfy"
 include "Mul.dfy"
-include "Div-Def.dfy"
 include "Div-Nonlinear.dfy"
 include "Div-Internals.dfy"
 
@@ -12,7 +11,6 @@ module Div {
   import opened MulInternals
   import opened MulNonlinear
   import opened Mul
-  import opened DivDef
   import opened DivNonlinear
   import opened DivInternals
 
@@ -78,8 +76,9 @@ module Div {
     ensures x / y >= x / z
     decreases x
   {
+    reveal_div_recursive();
     lemma_div_is_div_recursive_auto();
-    assert forall u:int, d:int {:trigger u / d}{:trigger my_div_recursive(u, d)} :: d > 0 ==> my_div_recursive(u, d) == u / d;
+    assert forall u:int, d:int {:trigger u / d}{:trigger div_recursive(u, d)} :: d > 0 ==> div_recursive(u, d) == u / d;
 
     if (x < z)
     {
@@ -459,18 +458,20 @@ module Div {
   /* the common syntax of division gives the same quotient as performing division through recursion */
   lemma lemma_div_is_div_recursive(x:int, d:int)
     requires d > 0
-    ensures my_div_recursive(x, d) == x / d
+    ensures div_recursive(x, d) == x / d
   {
-    lemma_div_induction_auto(d, x, u => my_div_recursive(u, d) == u / d);
+    reveal_div_recursive();
+    lemma_div_induction_auto(d, x, u => div_recursive(u, d) == u / d);
   }
 
   /* the common syntax of division gives the same quotient as performing division through recursion for all
   integer division */
   lemma lemma_div_is_div_recursive_auto()
-    ensures forall x:int, d:int {:trigger x / d}:: d > 0 ==> my_div_recursive(x, d) == x / d
+    ensures forall x:int, d:int {:trigger x / d}:: d > 0 ==> div_recursive(x, d) == x / d
   {
+    reveal_div_recursive();
     forall x:int, d:int | d > 0
-      ensures my_div_recursive(x, d) == x / d
+      ensures div_recursive(x, d) == x / d
     {
       lemma_div_is_div_recursive(x, d);
     }
@@ -486,13 +487,14 @@ module Div {
   calculating the modulus */
   lemma lemma_mod_is_mod_recursive(x:int, m:int)
     requires m > 0
-    ensures my_mod_recursive(x, m) == x % m
+    ensures mod_recursive(x, m) == x % m
     decreases if x < 0 then -x + m else x
   {
+    reveal_mod_recursive();
     if x < 0 { 
       calc { 
-        my_mod_recursive(x, m);
-        my_mod_recursive(x + m, m);
+        mod_recursive(x, m);
+        mod_recursive(x + m, m);
           { lemma_mod_is_mod_recursive(x + m, m); }
         (x + m) % m;
           { lemma_add_mod_noop(x, m, m); } 
@@ -506,8 +508,8 @@ module Div {
       lemma_small_mod(x, m);
     } else {
       calc { 
-        my_mod_recursive(x, m);
-        my_mod_recursive(x - m, m);
+        mod_recursive(x, m);
+        mod_recursive(x - m, m);
           { lemma_mod_is_mod_recursive(x - m, m); }
         (x - m) % m;
           { lemma_sub_mod_noop(x, m, m); } 
@@ -523,10 +525,11 @@ module Div {
   /* the common syntax of the modulus operation results in the same remainder as recursively
   calculating the modulus for all integers */
   lemma lemma_mod_is_mod_recursive_auto()
-    ensures forall x:int, d:int {:trigger x % d}:: d > 0 ==> my_mod_recursive(x, d) == x % d
+    ensures forall x:int, d:int {:trigger x % d}:: d > 0 ==> mod_recursive(x, d) == x % d
   {
+    reveal_mod_recursive();
     forall x:int, d:int | d > 0
-      ensures my_mod_recursive(x, d) == x % d
+      ensures mod_recursive(x, d) == x % d
     {
       lemma_mod_is_mod_recursive(x, d);
     }
