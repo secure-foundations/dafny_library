@@ -37,30 +37,30 @@ module Power {
   }
 
   /* 0 raised to a positive power equals 0. */
-  lemma lemma_0_power(e: nat)
+  lemma lemma_base_0(e: nat)
     requires e > 0
     ensures power(0, e) == 0
   {
     reveal power();
     lemma_mul_basics_auto();
     if e != 1 {
-      lemma_0_power(e-1);
+      lemma_base_0(e-1);
     }
   }
 
   /* 1 raised to any power equals 1. */
-  lemma lemma_1_power(e: nat)
+  lemma lemma_base_1(e: nat)
     ensures power(1, e) == 1
   {
     reveal power();
     lemma_mul_basics_auto();
     if e != 0 {
-      lemma_1_power(e-1);
+      lemma_base_1(e-1);
     }
   }
 
   /* Add exponents when multiplying powers with the same base. */
-  lemma lemma_power_adds(b: int, e1: nat, e2: nat)
+  lemma lemma_add(b: int, e1: nat, e2: nat)
     decreases e1
     ensures power(b, e1) * power(b, e2) == power(b, e1+e2)
   {
@@ -80,7 +80,7 @@ module Power {
         (b * power(b, e1-1)) * power(b, e2);
           { lemma_mul_is_associative_auto(); }
         b * (power(b, e1-1)*power(b, e2));
-          { lemma_power_adds(b, e1-1, e2); }
+          { lemma_add(b, e1-1, e2); }
         b * power(b, e1-1+e2);
           { reveal power(); }
         power(b, e1+e2);
@@ -89,7 +89,7 @@ module Power {
   }
 
   /* Multiply exponents to find the power of a power. */
-  lemma lemma_power_multiplies(a: int, b: nat, c: nat)
+  lemma lemma_multiply(a: int, b: nat, c: nat)
     decreases c
     ensures 0 <= b*c
     ensures power(a, b*c) == power(power(a, b), c)
@@ -119,10 +119,10 @@ module Power {
       calc {
         power(a, b*c);
         power(a, b+b*c-b);
-          { lemma_power_adds(a, b, b*c-b); }
+          { lemma_add(a, b, b*c-b); }
         power(a, b)*power(a, b*c-b);
         power(a, b)*power(a, b*(c-1));
-          { lemma_power_multiplies(a, b, c-1); }
+          { lemma_multiply(a, b, c-1); }
         power(a, b)*power(power(a, b), c-1);
           { reveal power(); }
         power(power(a, b), c);
@@ -131,7 +131,7 @@ module Power {
   }
 
   /* Distribute the power to each factor of a product. */
-  lemma lemma_power_distributes(a: int, b: int, e: nat)
+  lemma lemma_distribute(a: int, b: int, e: nat)
     decreases e
     ensures power(a*b, e) == power(a, e) * power(b, e)
   {
@@ -141,7 +141,7 @@ module Power {
       calc {
         power(a*b, e);
         (a*b) * power(a*b, e-1);
-          { lemma_power_distributes(a, b, e-1); }
+          { lemma_distribute(a, b, e-1); }
         (a*b) * (power(a, e-1) * power(b, e-1));
           { lemma_mul_is_associative_auto(); lemma_mul_is_commutative_auto(); }
         (a*power(a, e-1)) * (b*power(b, e-1));
@@ -151,7 +151,8 @@ module Power {
     }
   }
 
-  lemma lemma_power_auto()
+  /* Properties of powers. */
+  lemma lemma_auto()
     ensures forall x: int {:trigger power(x, 0)} :: power(x, 0) == 1
     ensures forall x: int {:trigger power(x, 1)} :: power(x, 1) == x
     ensures forall x: int, y: int {:trigger power(x, y)} :: y == 0 ==> power(x, y) == 1
@@ -175,19 +176,19 @@ module Power {
     forall x: int, y: int, z: nat {:trigger power(x*y, z)}
       ensures power(x*y, z) == power(x, z) * power(y, z)
     {
-      lemma_power_distributes(x, y, z);
+      lemma_distribute(x, y, z);
     }
 
     forall x: int, y: nat, z: nat {:trigger power(x, y+z)}
       ensures power(x, y+z) == power(x, y) * power(x, z)
     {
-      lemma_power_adds(x, y, z);
+      lemma_add(x, y, z);
     }
 
     forall x: int, y: nat, z: nat {:trigger power(x, y-z)} | y >= z
       ensures power(x, y-z) * power(x, z) == power(x, y)
     {
-      lemma_power_adds(x, y-z, z);
+      lemma_add(x, y-z, z);
     }
 
     // forall x: int, y: int {:trigger x*y} | 0 < x && 0 < y
@@ -208,59 +209,59 @@ module Power {
   }
 
   /* A positive number raised to any power is positive. */
-  lemma lemma_power_positive(b: int, e: nat)
+  lemma lemma_positive_base(b: int, e: nat)
     requires 0 < b
     ensures  0 < power(b, e)
   {
-    lemma_power_auto();
+    lemma_auto();
     lemma_mul_induction_auto(e, u => 0 <= u ==> 0 < power(b, u));
-  }
-
-  /* A positive number raised to a power increases as the power increases. */
-  lemma lemma_power_increases(b: nat, e1: nat, e2: nat)
-    requires 0 < b
-    requires e1 <= e2
-    ensures power(b, e1) <= power(b, e2)
-  {
-    lemma_power_auto();
-    var f := e => 0 <= e ==> power(b, e1) <= power(b, e1+e);
-    forall i {:trigger is_le(0, i)} | is_le(0, i) && f(i)
-      ensures f(i+1)
-    {
-      calc {
-        power(b, e1+i);
-        <= { lemma_power_positive(b, e1+i);
-             lemma_mul_left_inequality(power(b, e1+i), 1, b); }
-          power(b, e1+i) * b;
-        == { lemma_power_1(b); }
-          power(b, e1+i) * power(b, 1);
-        == { lemma_power_adds(b, e1+i, 1); }
-          power(b, e1+i+1);
-      }
-    }
-    lemma_mul_induction_auto(e2-e1, f);
   }
 
   /* A positive number raised to a power strictly increases as the power
   strictly increases. */
-  lemma lemma_power_strictly_increases(b: nat, e1: nat, e2: nat)
+  lemma lemma_strictly_increases(b: nat, e1: nat, e2: nat)
     requires 1 < b
     requires e1 < e2
     ensures power(b, e1) < power(b, e2)
   {
-    lemma_power_auto();
+    lemma_auto();
     var f := e => 0 < e ==> power(b, e1) < power(b, e1+e);
     forall i {:trigger is_le(0, i)} | is_le(0, i) && f(i)
       ensures f(i+1)
     {
       calc {
         power(b, e1+i);
-        <= { lemma_power_positive(b, e1+i);
+        <= { lemma_positive_base(b, e1+i);
              lemma_mul_left_inequality(power(b, e1+i), 1, b); }
           power(b, e1+i) * b;
         == { lemma_power_1(b); }
           power(b, e1+i) * power(b, 1);
-        == { lemma_power_adds(b, e1+i, 1); }
+        == { lemma_add(b, e1+i, 1); }
+          power(b, e1+i+1);
+      }
+    }
+    lemma_mul_induction_auto(e2-e1, f);
+  }
+
+  /* A positive number raised to a power increases as the power increases. */
+  lemma lemma_increases(b: nat, e1: nat, e2: nat)
+    requires 0 < b
+    requires e1 <= e2
+    ensures power(b, e1) <= power(b, e2)
+  {
+    lemma_auto();
+    var f := e => 0 <= e ==> power(b, e1) <= power(b, e1+e);
+    forall i {:trigger is_le(0, i)} | is_le(0, i) && f(i)
+      ensures f(i+1)
+    {
+      calc {
+        power(b, e1+i);
+        <= { lemma_positive_base(b, e1+i);
+             lemma_mul_left_inequality(power(b, e1+i), 1, b); }
+          power(b, e1+i) * b;
+        == { lemma_power_1(b); }
+          power(b, e1+i) * power(b, 1);
+        == { lemma_add(b, e1+i, 1); }
           power(b, e1+i+1);
       }
     }
