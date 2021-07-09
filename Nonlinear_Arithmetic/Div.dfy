@@ -103,7 +103,7 @@ module Div {
     lemma_div_induction_auto(d, x, u => 0 < u ==> u / d < u);
   }
 
-  /*  */
+  /* ??? */
   lemma lemma_dividing_sums(a:int, b:int, d:int, R:int)
     requires 0<d
     requires R == a%d + b%d - (a+b)%d
@@ -140,7 +140,7 @@ module Div {
   // Actual useful lemmas
   ////////////////////////////////////////////////
 
-  /*  */
+  /* ??? */
   lemma lemma_mod_basics()
     ensures forall m:int {:trigger m % m} :: m > 0 ==> m % m == 0
     ensures forall x:int, m:int {:trigger (x%m) % m} :: m > 0 ==> (x%m) % m == x%m
@@ -157,6 +157,7 @@ module Div {
     }
   }
 
+  /* ??? */
   lemma lemma_mod_properties()
     ensures forall m:int {:trigger m % m} :: m > 0 ==> m % m == 0
     ensures forall x:int, m:int {:trigger (x%m) % m} :: m > 0 ==> (x%m) % m == x%m
@@ -249,7 +250,7 @@ module Div {
     lemma_mod_auto(m);
   }
 
-  /*  */
+  /* ??? */
   lemma lemma_mod_adds(a:int, b:int, d:int)
     requires 0<d
     ensures a%d + b%d == (a+b)%d + d*((a%d + b%d)/d)
@@ -259,6 +260,7 @@ module Div {
     lemma_div_auto(d);
   }
 
+  /* ??? */
   lemma {:timeLimitMultiplier 2} lemma_mod_neg_neg(x:int, d:int)
     requires d > 0
     ensures x%d == (x*(1-d))%d
@@ -274,7 +276,8 @@ module Div {
     }
     lemma_mul_auto();
   }
-
+  
+  /* ??? */
   lemma {:timeLimitMultiplier 2} lemma_fundamental_div_mod_converse(x:int, d:int, q:int, r:int)
     requires d != 0
     requires 0 <= r < d
@@ -287,6 +290,7 @@ module Div {
     lemma_mul_induction_auto(q, u => r == (u * d + r) % d);
   }
 
+  /* ??? */
   lemma lemma_mod_pos_bound(x:int, m:int)
     decreases x
     requires 0 <= x
@@ -295,7 +299,8 @@ module Div {
   {
     lemma_mod_auto(m);
   }
-
+  
+  /* ??? */
   lemma lemma_mul_mod_noop_left(x:int, y:int, m:int)
     requires 0 < m
     ensures (x % m)*y % m == x*y % m
@@ -303,7 +308,8 @@ module Div {
     lemma_mod_auto(m);
     lemma_mul_induction_auto(y, u => (x % m)*u % m == x*u % m);
   }
-
+  
+  /* ??? */
   lemma lemma_mul_mod_noop_right(x:int, y:int, m:int)
     requires 0 < m
     ensures x*(y % m) % m == (x*y) % m
@@ -311,7 +317,8 @@ module Div {
     lemma_mod_auto(m);
     lemma_mul_induction_auto(x, u => u*(y % m) % m == (u*y) % m);
   }
-
+  
+  /* ??? */
   lemma lemma_mul_mod_noop_general(x:int, y:int, m:int)
     requires 0 < m
     ensures ((x % m) * y      ) % m == (x * y) % m
@@ -323,15 +330,16 @@ module Div {
     lemma_mul_mod_noop_right(x, y, m);
     lemma_mul_mod_noop_right(x % m, y, m);
   }
-
-
+  
+  /* ??? */
   lemma lemma_mul_mod_noop(x:int, y:int, m:int)
     requires 0 < m
     ensures (x % m) * (y % m) % m == (x*y) % m
   {
     lemma_mul_mod_noop_general(x, y, m);
   }
-
+  
+  /* ??? */
   lemma lemma_power_mod_noop(b:int, e:nat, m:int)
     decreases e
     requires 0 < m
@@ -355,7 +363,8 @@ module Div {
       }
     }
   }
-
+  
+  /* ??? */
   lemma lemma_mod_subtraction(x:nat, s:nat, d:nat)
     requires 0<d
     requires 0<=s<=x%d
@@ -423,7 +432,7 @@ module Div {
     lemma_div_auto(d);
   }
 
-  /*  */
+  /* ??? */
   lemma lemma_mod_mod(x:int, a:int, b:int)
     requires 0<a
     requires 0<b
@@ -562,7 +571,7 @@ module Div {
     lemma_div_induction_auto(d, x, u => 0<=u ==> u/d <= u);
   }
 
-  /*  */
+  /* ??? */
   lemma lemma_breakdown(a:int, b:int, c:int)
     requires 0<=a
     requires 0<b
@@ -612,8 +621,8 @@ module Div {
       b * ((a/b)%c) + a%b;
     }
   }
-
-  /*  */
+  
+  /* ??? */
   lemma lemma_remainder_upper(x:int, d:int)
     requires 0 <= x
     requires 0 < d
@@ -622,7 +631,8 @@ module Div {
     lemma_mul_auto();
     lemma_div_induction_auto(d, x, u => 0 <= u ==> u - d < u / d * d);
   }
-
+  
+  /* ??? */
   lemma lemma_remainder_lower(x:int, d:int)
     requires 0 <= x
     requires 0 < d
@@ -631,7 +641,8 @@ module Div {
     lemma_mul_auto();
     lemma_div_induction_auto(d, x, u => 0 <= u ==> u >= u / d * d);
   }
-
+  
+  /* ??? */
   lemma lemma_remainder(x:int, d:int)
     requires 0 <= x
     requires 0 < d
@@ -774,8 +785,8 @@ module Div {
       x*(y/z);
     }
   }
-
-  /*  */
+  
+  /* ??? */
   lemma lemma_indistinguishable_quotients(a:int, b:int, d:int)
     requires 0<d
     requires 0 <= a - a%d <= b < a + d - a%d
@@ -783,8 +794,8 @@ module Div {
   {
     lemma_div_induction_auto(d, a - b, ab => var u := ab + b; 0 <= u - u%d <= b < u + d - u%d ==> u/d == b/d);
   }
-
-  /* */
+  
+  /* ??? */
   lemma lemma_truncate_middle(x:int, b:int, c:int)
     requires 0<=x
     requires 0<b
@@ -930,7 +941,7 @@ module Div {
     lemma_mul_induction_auto(j, u => x/d + u == (x+u*d) / d);
   }
 
-  /*  */
+  /* ??? */
   lemma lemma_part_bound1(a:int, b:int, c:int)
     requires 0<=a
     requires 0<b
@@ -962,7 +973,8 @@ module Div {
       b*(a/b) % (b*c) <= b*(c-1);
     }
   }
-
+  
+  /* ??? */
   lemma lemma_part_bound2(a:int, b:int, c:int)
     requires 0<=a
     requires 0<b
@@ -981,7 +993,8 @@ module Div {
     lemma_small_mod(a%b,b*c);
     assert (a%b)%(b*c) == a%b;
   }
-
+  
+  /* ??? */
   lemma lemma_mod_breakdown(a:int, b:int, c:int)
     requires 0<=a
     requires 0<b
