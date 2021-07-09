@@ -59,6 +59,13 @@ module Power {
     }
   }
 
+  /* Squaring a number is equal to raising the number to the power of 2. */
+  lemma lemma_square_is_power_2(x: nat)
+    ensures power(x, 2) == x*x
+  {
+    reveal power();
+  }
+
   /* Add exponents when multiplying powers with the same base. */
   lemma lemma_add(b: int, e1: nat, e2: nat)
     decreases e1
@@ -266,13 +273,6 @@ module Power {
       }
     }
     lemma_mul_induction_auto(e2-e1, f);
-  }
-
-  /* Squaring a number is equal to raising the number to the power of 2. */
-  lemma lemma_square_is_power_2(x: nat)
-    ensures power(x, 2) == x*x
-  {
-    reveal power();
   }
 
 }
