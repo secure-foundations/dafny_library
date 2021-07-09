@@ -337,7 +337,7 @@ module Seq {
     var subseq := s[from.. to];
     if max(subseq) > max(s) {
       var k :| 0 <= k < |subseq| && subseq[k] == max(subseq);
-      assert s[seq(|subseq|, i requires 0 <= i < |subseq| => i + from)[k] ] in s;
+      assert s[seq(|subseq|, i requires 0 <= i < |subseq| => i + from)[k]] in s;
       assert false;
     }
   }
@@ -351,7 +351,7 @@ module Seq {
     var subseq := s[from..to];
     if min(subseq) < min (s) {
       var k :| 0 <= k < |subseq| && subseq[k] == min(subseq);
-      assert s[seq(|subseq|, i requires 0<=i<|subseq| => i + from)[k] ] in s;
+      assert s[seq(|subseq|, i requires 0 <= i < |subseq| => i + from)[k]] in s;
     }
   }
 
@@ -528,7 +528,7 @@ module Seq {
           { assert (a + b)[0] == a[0]; assert (a + b)[1..] == a[1..] + b; }
         filter(f, [a[0]]) + filter(f, a[1..] + b);
         filter(f, [a[0]]) + filter(f, a[1..]) + filter(f, b);
-          {assert [(a + b)[0]] + a[1..] + b == a + b;}
+          { assert [(a + b)[0]] + a[1..] + b == a + b; }
         filter(f, a) + filter(f, b);
       }
     }
@@ -553,10 +553,10 @@ module Seq {
       calc {
         fold_left(f, fold_left(f, init, a), b);
         fold_left(f, fold_left(f, f(init, a[0]), a[1..]), b);
-        { lemma_fold_left_concat(f, f(init, a[0]), a[1..], b); }
+          { lemma_fold_left_concat(f, f(init, a[0]), a[1..], b); }
         fold_left(f, f(init, a[0]), a[1..] + b);
-        { assert (a + b)[0] == a[0]; }
-        { assert (a + b)[1..] == a[1..] + b; }
+          { assert (a + b)[0] == a[0];
+            assert (a + b)[1..] == a[1..] + b; }
         fold_left(f, init, a + b);
       }
     }
@@ -580,8 +580,8 @@ module Seq {
         fold_right(f, a, fold_right(f, b, init));
         f(a[0], fold_right(f, a[1..], fold_right(f, b, init)));
         f(a[0], fold_right(f, a[1..] + b, init));
-        { assert (a + b)[0] == a[0]; }
-        { assert (a + b)[1..] == a[1..] + b; }
+          { assert (a + b)[0] == a[0];
+            assert (a + b)[1..] == a[1..] + b; }
         fold_right(f, a + b, init);
       }
     }
