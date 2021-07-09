@@ -734,6 +734,20 @@ module Div {
       (x/c)/d == x/(c*d);
     }
   }
+  
+  /* divding a fraction by a divisor is always equivalent to multiplying the fraction's 
+  denominator with the divisor */
+  lemma lemma_div_denominator_auto()
+    ensures forall c:nat,d:nat {:trigger c * d} :: 0 < c && 0 < d ==> c * d != 0
+    ensures forall x:int,c:nat,d:nat {:trigger (x/c)/d} :: 0 <= x && 0 < c && 0 < d ==> (x/c)/d == x/(c*d)
+  {
+    lemma_mul_nonzero_auto();
+    forall x:int,c:nat,d:nat | 0 <= x && 0 < c && 0 < d
+      ensures (x/c)/d == x/(c*d)
+    {
+      lemma_div_denominator(x,c,d);
+    }
+  }
 
   /* mutltiplying an integer by a fraction is equivalent to multiplying the integer by the
   fraction's numerator */
@@ -821,7 +835,8 @@ module Div {
     }
   }
 
-  /*  */
+  /* rounds down when adding an integer r to the dividend a that is smaller than the divisor d, and then
+  multiplying by d */
   lemma lemma_round_down(a:int, r:int, d:int)
     requires 0<d
     requires a%d == 0
@@ -870,7 +885,8 @@ module Div {
     lemma_mul_induction_auto(x, u => (u * m) % m == 0);
   }
 
-  /*  */
+  /* a dividend y that is a positive multiple of the divisor z will always yield a greater quotient 
+  than a dividend x that is less than y */
   lemma lemma_div_by_multiple_is_strongly_ordered(x:int, y:int, m:int, z:int)
     requires x < y
     requires y == m * z
@@ -881,6 +897,8 @@ module Div {
     lemma_div_induction_auto(z, y - x, yx => var u := yx + x; x < u && u % z == 0 ==> x / z < u / z);
   }
 
+  /* if an integer a is less than or equal to the product of two other integers b and c, then the 
+  quotient of a/b will be less than or equal to c */
   lemma lemma_multiply_divide_le(a:int, b:int, c:int)
     requires 0 < b
     requires a <= b * c
@@ -891,6 +909,8 @@ module Div {
     lemma_div_multiples_vanish(c, b);
   }
 
+  /* if an integer a is less than the product of two other integers b and c, then the quotient 
+  of a/b will be less than c */
   lemma lemma_multiply_divide_lt(a:int, b:int, c:int)
     requires 0 < b
     requires a < b * c
@@ -901,6 +921,7 @@ module Div {
     lemma_div_multiples_vanish(c, b);
   }
 
+  /* expresses the equality of giving fractions common denominators and then adding them together */
   lemma lemma_hoist_over_denominator(x:int, j:int, d:nat)
     requires 0<d
     ensures x/d + j == (x+j*d) / d
@@ -909,6 +930,7 @@ module Div {
     lemma_mul_induction_auto(j, u => x/d + u == (x+u*d) / d);
   }
 
+  /*  */
   lemma lemma_part_bound1(a:int, b:int, c:int)
     requires 0<=a
     requires 0<b
@@ -1007,19 +1029,6 @@ module Div {
     (b*(a/b)) % (b*c) + a%b;
             { lemma_truncate_middle(a/b,b,c); }
     b * ((a/b)%c) + a%b;
-    }
-  }
-
-
-  lemma lemma_div_denominator_forall()
-    ensures forall c:nat,d:nat {:trigger c * d} :: 0 < c && 0 < d ==> c * d != 0
-    ensures forall x:int,c:nat,d:nat {:trigger (x/c)/d} :: 0 <= x && 0 < c && 0 < d ==> (x/c)/d == x/(c*d)
-  {
-    lemma_mul_nonzero_auto();
-    forall x:int,c:nat,d:nat | 0 <= x && 0 < c && 0 < d
-      ensures (x/c)/d == x/(c*d)
-    {
-      lemma_div_denominator(x,c,d);
     }
   }
 

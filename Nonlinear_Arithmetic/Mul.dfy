@@ -167,19 +167,16 @@ module Mul {
     lemma_mul_inequality(y, y_bound, x_bound);
   }
 
-  // "use with caution" --> remove?
-  //- This lemma is less precise than the non-strict version, since
-  //- it uses two < facts to achieve only one < result. Thus, use it with
-  //- caution -- it may be throwing away precision you'll require later.
+  /* the product of two strictly upper bounded integers is less than the product of their upper bounds */
   lemma lemma_mul_strict_upper_bound(x:int, x_bound:int, y:int, y_bound:int)
-    requires x < x_bound
-    requires y < y_bound
+    requires x < x_bound 
+    requires y < y_bound 
     requires 0<x
     requires 0<y
     ensures x*y <= (x_bound - 1) * (y_bound - 1)
   {
-    lemma_mul_induction_auto(x, u => 0 <= u ==> u * y <= u * y_bound);
-    lemma_mul_induction_auto(y_bound, u => 1 <= u ==> x * u < x_bound * u);
+    lemma_mul_inequality(x, x_bound - 1, y);
+    lemma_mul_inequality(y, y_bound - 1, x_bound - 1);
   }
 
   // different than lemma_mul_inequality?
@@ -193,9 +190,7 @@ module Mul {
     lemma_mul_induction_auto(x, u => u > 0 ==> y < z ==> u*y < u*z);
   }
 
-  // reword
-  /* when two integers, x and y, are each multiplied by a positive integer, z, the numerical order of the 
-  products x*z and y*z will also hold true for x and y alone */
+  /* when two integers, x and y, are each multiplied by a positive integer, z, if x < z then the x*z < y*z */
   lemma lemma_mul_strict_inequality_converse(x:int, y:int, z:int)
     requires x*z < y*z
     requires z >= 0
@@ -204,22 +199,19 @@ module Mul {
     lemma_mul_induction_auto(z, u => x * u < y * u && u >= 0 ==> x < y);
   }
 
-  // reword
-  /* when any two integers, x and y, are each multiplied by a positive integer, z, the numerical order of 
-  the products x*z and y*z will also hold true for x and y alone */
+  /* when two integers, x and y, are each multiplied by a positive integer, z, if x < z then the x*z < y*z 
+  for all valid values of x, y, and z*/
   lemma lemma_mul_strict_inequality_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z < y*z && z>=0 ==> x < y
   {
       forall (x:int, y:int, z:int | x*z < y*z && z>=0)
           ensures x < y;
       {
-          lemma_mul_strict_inequality_auto_converse(x,y,z);
+          lemma_mul_strict_inequality_converse(x,y,z);
       }
   }
 
-  // reword
-  /* when two integers x and y are each multiplied by a negative integer z, the numerical order of the 
-  products x*z and y*z will also hold true for x and y alone */
+  /* when two integers, x and y, are each multiplied by a positive integer, z, if x <= z then the x*z <= y*z */
   lemma lemma_mul_inequaliy_converse(x:int, y:int, z:int)
     requires x*z <= y*z
     requires z > 0
@@ -228,9 +220,8 @@ module Mul {
     lemma_mul_induction_auto(z, u => x * u <= y * u && u > 0 ==> x <= y);
   }
 
-  // reword
-  /* when any two integers x and y are each multiplied by a negative integer z, the numerical order of 
-  the products x*z and y*z will also hold true for x and y alone */
+  /* when two integers, x and y, are each multiplied by a positive integer, z, if x <= z then the x*z <= y*z 
+  for all valid values of x, y, and z*/
   lemma lemma_mul_inequaliy_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z <= y*z && z>0 ==> x <= y
   {
@@ -241,9 +232,8 @@ module Mul {
     }
   }
 
-  // reword
   /* when any two integers x and y are each multiplied by a nonnegative integer z and their products are equal,
-  then x and y are equal */
+  then x and y are equal as well */
   lemma lemma_mul_equality_converse(x:int, y:int, z:int)
     requires x*z == y*z
     requires 0 < z
@@ -397,8 +387,7 @@ module Mul {
     lemma_mul_induction_auto(x, u => (-u)*y == -(u*y) == u*(-y));
   }
 
-  //reword
-  /* shows the equivalent forms of using the unary negation operator for nonspecific integers*/
+  /* shows the equivalent forms of using the unary negation operator for any integers*/
   lemma lemma_mul_unary_negation_auto()
     ensures forall x:int, y:int {:trigger (-x)*y}{:trigger x*(-y)} :: (-x)*y == -(x*y) == x*(-y)
   {
@@ -434,6 +423,8 @@ module Mul {
     }
   }
 
+
+  // The following gives timeout errors and is "a little dangerous" ... remove?
   //////////////////////////////////////////////////////////////////////////////
   //
   // The big properties bundle. This can be a little dangerous, because
