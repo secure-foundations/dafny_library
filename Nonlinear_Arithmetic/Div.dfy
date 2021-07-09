@@ -1,6 +1,5 @@
 include "Power.dfy"
 include "Mul.dfy"
-include "Div-Def.dfy"
 include "Div-Nonlinear.dfy"
 include "Div-Internals.dfy"
 
@@ -12,7 +11,6 @@ module Div {
   import opened MulInternals
   import opened MulNonlinear
   import opened Mul
-  import opened DivDef
   import opened DivNonlinear
   import opened DivInternals
 
