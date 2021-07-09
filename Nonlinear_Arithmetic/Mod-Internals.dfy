@@ -118,7 +118,7 @@ module ModInternals {
   }
 
   /* proves the quotient remainder theorem */
-  lemma lemma_unique_quotient_and_remainder(x:int, q:int, r:int, n:int)
+  lemma lemma_quotient_and_remainder(x:int, q:int, r:int, n:int)
     requires n > 0
     requires 0 <= r < n
     requires x == q * n + r
@@ -133,11 +133,11 @@ module ModInternals {
 
     if q > 0 {
       assert q * n + r == (q - 1) * n + n + r;
-      lemma_unique_quotient_and_remainder(x - n, q - 1, r, n);
+      lemma_quotient_and_remainder(x - n, q - 1, r, n);
     }
     else if q < 0 {
       assert q * n + r == (q + 1) * n - n + r;
-      lemma_unique_quotient_and_remainder(x + n, q + 1, r, n);
+      lemma_quotient_and_remainder(x + n, q + 1, r, n);
     }
     else {
       lemma_small_div();
@@ -184,10 +184,10 @@ module ModInternals {
       lemma_fundamental_div_mod(y, n);
       assert y == yq * n + yr;
       if xr + yr < n {
-        lemma_unique_quotient_and_remainder(x + y, xq + yq, xr + yr, n);
+        lemma_quotient_and_remainder(x + y, xq + yq, xr + yr, n);
       }
       else {
-        lemma_unique_quotient_and_remainder(x + y, xq + yq + 1, xr + yr - n, n);
+        lemma_quotient_and_remainder(x + y, xq + yq + 1, xr + yr - n, n);
       }
     }
 
@@ -203,10 +203,10 @@ module ModInternals {
       lemma_fundamental_div_mod(y, n);
       assert y == yq * n + yr;
       if xr - yr >= 0 {
-        lemma_unique_quotient_and_remainder(x - y, xq - yq, xr - yr, n);
+        lemma_quotient_and_remainder(x - y, xq - yq, xr - yr, n);
       }
       else {
-        lemma_unique_quotient_and_remainder(x - y, xq - yq - 1, xr - yr + n, n);
+        lemma_quotient_and_remainder(x - y, xq - yq - 1, xr - yr + n, n);
       }
     }
   }
@@ -228,6 +228,7 @@ module ModInternals {
     assert f(x);
   }
 
+  // not used in other files
   /* performs auto induction on modulus for all i s.t. f(i) exists */
   lemma lemma_mod_induction_auto_forall(n:int, f:int->bool)
     requires n > 0

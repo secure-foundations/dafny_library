@@ -158,8 +158,5 @@ module MulInternals {
     if x >= 0 then mul_pos(x, y)
     else -1*mul_pos(-1*x, y)
   }
-  
-  //- Kept for legacy reasons:
-  function method INTERNAL_mul_recursive(x:int, y:int) : int { mul_recursive(x, y) }
 
 } 
