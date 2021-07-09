@@ -24,16 +24,17 @@ module DivInternals {
     x % d
   }
 
-  function method div_recursive(x: int, d: int): int
+  function method {:opaque} div_recursive(x: int, d: int): int
     requires d != 0
   {
+    reveal_div_pos();
     if d > 0 then
       div_pos(x, d)
     else
       -1 * div_pos(x, -1*d)
   }
 
-  function method mod_recursive(x: int, d: int): int
+  function method {:opaque} mod_recursive(x: int, d: int): int
     requires d > 0
     decreases if x < 0 then (d - x) else x
   {
@@ -45,7 +46,7 @@ module DivInternals {
       mod_recursive(x - d, d)
   }
 
-  function method div_pos(x:int, d:int) : int
+  function method {:opaque} div_pos(x:int, d:int) : int
     requires d >  0
     decreases if x < 0 then (d - x) else x
   {

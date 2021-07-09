@@ -76,6 +76,7 @@ module Div {
     ensures x / y >= x / z
     decreases x
   {
+    reveal_div_recursive();
     lemma_div_is_div_recursive_auto();
     assert forall u:int, d:int {:trigger u / d}{:trigger div_recursive(u, d)} :: d > 0 ==> div_recursive(u, d) == u / d;
 
@@ -450,6 +451,7 @@ module Div {
     requires d > 0
     ensures div_recursive(x, d) == x / d
   {
+    reveal_div_recursive();
     lemma_div_induction_auto(d, x, u => div_recursive(u, d) == u / d);
   }
 
@@ -458,6 +460,7 @@ module Div {
   lemma lemma_div_is_div_recursive_auto()
     ensures forall x:int, d:int {:trigger x / d}:: d > 0 ==> div_recursive(x, d) == x / d
   {
+    reveal_div_recursive();
     forall x:int, d:int | d > 0
       ensures div_recursive(x, d) == x / d
     {
@@ -478,6 +481,7 @@ module Div {
     ensures mod_recursive(x, m) == x % m
     decreases if x < 0 then -x + m else x
   {
+    reveal_mod_recursive();
     if x < 0 { 
       calc { 
         mod_recursive(x, m);
@@ -514,6 +518,7 @@ module Div {
   lemma lemma_mod_is_mod_recursive_auto()
     ensures forall x:int, d:int {:trigger x % d}:: d > 0 ==> mod_recursive(x, d) == x % d
   {
+    reveal_mod_recursive();
     forall x:int, d:int | d > 0
       ensures mod_recursive(x, d) == x % d
     {
