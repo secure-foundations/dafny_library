@@ -44,12 +44,6 @@ module Mul {
     lemma_mul_induction_auto(x, u => u >= 0 ==> u * y == mul_pos(u, y));
   }
 
-  //-////////////////////////////////////////////////////////////////////////////
-  //-
-  //- Core lemmas, with named arguments.
-  //-
-  //-////////////////////////////////////////////////////////////////////////////
-
   /* ensures that the basic properties of multiplication, including the identity and zero properties */
   lemma lemma_mul_basics(x:int)
     ensures 0*x == 0
