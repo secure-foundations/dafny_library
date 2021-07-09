@@ -157,8 +157,8 @@ module Power {
     ensures forall x: int {:trigger power(x, 1)} :: power(x, 1) == x
     ensures forall x: int, y: int {:trigger power(x, y)} :: y == 0 ==> power(x, y) == 1
     ensures forall x: int, y: int {:trigger power(x, y)} :: y == 1 ==> power(x, y) == x
-    // ensures forall x: int, y: int {:trigger x*y} :: 0 < x && 0 < y ==> x <= x*y
-    // ensures forall x: int, y: int {:trigger x*y} :: 0 < x && 1 < y ==> x < x*y
+    ensures forall x: int, y: int {:trigger x*y} :: 0 < x && 0 < y ==> x <= x*y
+    ensures forall x: int, y: int {:trigger x*y} :: 0 < x && 1 < y ==> x < x*y
     ensures forall x: int, y: nat, z: nat {:trigger power(x, y+z)} :: power(x, y+z) == power(x, y) * power(x, z)
     ensures forall x: int, y: nat, z: nat {:trigger power(x, y-z)} :: y >= z ==> power(x, y-z) * power(x, z) == power(x, y)
     ensures forall x: int, y: int, z: nat {:trigger power(x*y, z)} :: power(x*y, z) == power(x, z) * power(y, z)
@@ -191,21 +191,21 @@ module Power {
       lemma_add(x, y-z, z);
     }
 
-    // forall x: int, y: int {:trigger x*y} | 0 < x && 0 < y
-    //   ensures x <= x*y
-    // {
-    //   lemma_mul_auto();
-    //   lemma_mul_increases_auto();
-    //   lemma_mul_strictly_increases_auto();
-    // }
+    forall x: int, y: int {:trigger x*y} | 0 < x && 0 < y
+      ensures x <= x*y
+    {
+      lemma_mul_auto();
+      lemma_mul_increases_auto();
+      lemma_mul_strictly_increases_auto();
+    }
 
-    // forall x:int, y:int {:trigger x * y} | 0 < x && 1 < y
-    //   ensures x < x * y
-    // {
-    //   lemma_mul_auto();
-    //   lemma_mul_increases_auto();
-    //   lemma_mul_strictly_increases_auto();
-    // }
+    forall x:int, y:int {:trigger x * y} | 0 < x && 1 < y
+      ensures x < x * y
+    {
+      lemma_mul_auto();
+      lemma_mul_increases_auto();
+      lemma_mul_strictly_increases_auto();
+    }
   }
 
   /* A positive number raised to any power is positive. */
