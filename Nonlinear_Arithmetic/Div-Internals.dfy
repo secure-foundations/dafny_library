@@ -18,12 +18,6 @@ module DivInternals {
     x / d
   }
 
-  function method mod(x: int, d: int): int
-    requires d != 0
-  {
-    x % d
-  }
-
   /* Performs division recursively with positive denominator. */
   function method {:opaque} div_pos(x: int, d: int): int
     requires d > 0
@@ -46,19 +40,6 @@ module DivInternals {
       div_pos(x, d)
     else
       -1 * div_pos(x, -1*d)
-  }
-
-  /* Performs modulus recursively. */
-  function method {:opaque} mod_recursive(x: int, d: int): int
-    requires d > 0
-    decreases if x < 0 then (d - x) else x
-  {
-    if x < 0 then
-      mod_recursive(d + x, d)
-    else if x < d then
-      x
-    else
-      mod_recursive(x - d, d)
   }
 
   /* proves the basics of the division operation */

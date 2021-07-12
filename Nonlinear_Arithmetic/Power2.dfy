@@ -1,4 +1,5 @@
 include "Div.dfy"
+include "Mod.dfy"
 include "Mod-Nonlinear.dfy"
 include "Mul.dfy"
 include "Mul-Internals.dfy"
@@ -6,6 +7,7 @@ include "Power.dfy"
 
 module Power2 {
   import opened Div
+  import opened Mod
   import opened ModNonlinear
   import opened Mul
   import opened MulInternals
@@ -20,14 +22,12 @@ module Power2 {
       2 * power2(e-1)
   }
 
-  /* 2^0 is 1. */
   lemma lemma_power2_0()
     ensures power2(0) == 1
   {
     reveal power2();
   }
 
-  /* 2^1 is 2. */
   lemma lemma_power2_1()
     ensures power2(1) == 2
   {
@@ -35,18 +35,18 @@ module Power2 {
   }
 
   /* power2() is equivalent to power() with base 2. */
-  lemma lemma_power_2(e: nat)
+  lemma lemma_power2_is_power_2(e: nat)
     ensures power2(e) == Power.power(2, e)
   {
     reveal Power.power();
     reveal power2();
     if e != 0 {
-      lemma_power_2(e-1);
+      lemma_power2_is_power_2(e-1);
     }
   }
 
   /* power2() is equivalent to power() with a base of 2. */
-  lemma lemma_power_2_auto()
+  lemma lemma_power2_is_power_2_auto()
     ensures forall e: nat {:trigger power2(e)} :: power2(e) == power(2, e)
   {
     reveal power2();
@@ -55,49 +55,49 @@ module Power2 {
     forall e: nat {:trigger power2(e)}
       ensures power2(e) == power(2, e)
     {
-      lemma_power_2(e);
+      lemma_power2_is_power_2(e);
     }
   }
 
   /* (2^xy)^z = (2^x)^yz */
-  lemma lemma_pull_out_power2(x: nat, y: nat, z: nat)
+  lemma lemma_pull_out_powers_of_2(x: nat, y: nat, z: nat)
     ensures 0 <= x*y
     ensures 0 <= y*z
     ensures power(power2(x*y), z) == power(power2(x), y*z)
   {
     lemma_mul_nonnegative(x, y);
     lemma_mul_nonnegative(y, z);
-    Power.lemma_positive_base(2, x);
+    lemma_power_positive(2, x);
     calc {
       power(power2(x*y), z);
-        { lemma_power_2(x*y); }
+        { lemma_power2_is_power_2(x*y); }
       power(power(2, x*y), z);
-        { Power.lemma_multiply(2, x, y); }
+        { lemma_power_multiplies(2, x, y); }
       power(power(power(2, x), y), z);
-        { Power.lemma_multiply(power(2, x), y, z); }
+        { lemma_power_multiplies(power(2, x), y, z); }
       power(power(2, x), y*z);
-        { lemma_power_2(x); }
+        { lemma_power2_is_power_2(x); }
       power(power2(x), y*z);
     }
   }
 
   /* Add exponents when multiplying powers with base 2. */
-  lemma lemma_add(e1: nat, e2: nat)
+  lemma lemma_power2_adds(e1: nat, e2: nat)
     decreases e2
     ensures power2(e1 + e2) == power2(e1) * power2(e2)
   {
     reveal power2();
-    lemma_auto();
+    lemma_power2_auto();
   }
 
   /* Subtract exponents when dividing powers with base 2. */
-  lemma lemma_subtract(e1: int, e2: int)
+  lemma lemma_power2_subtracts(e1: int, e2: int)
     requires 0 <= e1 <= e2
     ensures power2(e2 - e1) == power2(e2)/power2(e1) >= 0
   {
     calc {
       power2(e2)/power2(e1);
-        { lemma_add(e2-e1, e1); }
+        { lemma_power2_adds(e2-e1, e1); }
       power2(e2-e1)*power2(e1)/power2(e1);
         { lemma_div_by_multiple(power2(e2-e1), power2(e1)); }
       power2(e2-e1);
@@ -105,18 +105,18 @@ module Power2 {
   }
 
   /* Multiply exponents to find the power of a power of 2. */
-  lemma lemma_multiply(e1: nat, e2: nat)
+  lemma lemma_power2_multiplies(e1: nat, e2: nat)
     ensures 0 <= e1*e2
     ensures power(power2(e1), e2) == power2(e1*e2)
   {
     lemma_mul_nonnegative(e1, e2);
-    lemma_power_2(e1);
-    Power.lemma_multiply(2, e1, e2);
-    lemma_power_2(e1*e2);
+    lemma_power2_is_power_2(e1);
+    lemma_power_multiplies(2, e1, e2);
+    lemma_power2_is_power_2(e1*e2);
   }
 
   /* Multiply exponents to find the power of a power of 2. */
-  lemma lemma_multiply_auto()
+  lemma lemma_power2_multiplies_auto()
     ensures forall e1: nat, e2: nat {:trigger power(power2(e1), e2)} :: 0 <= e1 * e2 && power(power2(e1), e2) == power2(e1*e2)
   {
     reveal power();
@@ -125,71 +125,71 @@ module Power2 {
     forall e1: nat, e2: nat
       ensures 0 <= e1*e2 && power(power2(e1), e2) == power2(e1*e2)
     {
-      lemma_pull_out_power2(1, e1, e2);
-      lemma_auto();
-      lemma_power_2_auto();
+      lemma_pull_out_powers_of_2(1, e1, e2);
+      lemma_power2_auto();
+      lemma_power2_is_power_2_auto();
     }
   }
 
   /* Properties of powers with base 2. */
-  lemma lemma_auto()
+  lemma lemma_power2_auto()
     ensures power2(0) == 1
     ensures power2(1) == 2
     ensures forall e1: nat, e2: nat {:trigger power2(e1+e2)} :: power2(e1+e2) == power2(e1) * power2(e2)
     ensures forall e1: nat, e2: nat {:trigger power2(e1-e2)} :: e1 >= e2 ==> power2(e1-e2) * power2(e2) == power2(e1)
   {
     reveal power2();
-    lemma_power_2_auto();
-    Power.lemma_auto();
+    lemma_power2_is_power_2_auto();
+    lemma_power_auto();
   }
 
   /* 2 raised to a power strictly increases as the power strictly increases. */
-  lemma lemma_strictly_increases(e1: int, e2: int)
+  lemma lemma_power2_strictly_increases(e1: int, e2: int)
     requires 0 <= e1 < e2
     ensures power2(e1) < power2(e2)
   {
-    lemma_auto();
+    lemma_power2_auto();
     lemma_mul_induction_auto(e2-e1, e => 0 < e ==> power2(e1) < power2(e1+e));
   }
 
   /* 2 raised to a power increases as the power increases. */
-  lemma lemma_increases(e1: int, e2: int)
+  lemma lemma_power2_increases(e1: int, e2: int)
     requires 0 <= e1 <= e2
     ensures power2(e1) <= power2(e2)
   {
-    lemma_auto();
+    lemma_power2_auto();
     lemma_mul_induction_auto(e2-e1, e => 0 <= e ==> power2(e1) <= power2(e1+e));
   }
 
   /* A power strictly increases as 2 raised to the power strictly increases. */
-  lemma lemma_strictly_increases_converse(e1: int, e2: int)
+  lemma lemma_power2_strictly_increases_converse(e1: int, e2: int)
     requires 0 <= e1
     requires 0 < e2
     requires power2(e1) < power2(e2)
     ensures e1 < e2
   {
     if e1 >= e2 {
-      lemma_increases(e2, e1);
+      lemma_power2_increases(e2, e1);
       assert false;
     }
   }
 
   /* A power increases as 2 raised to the power increases. */
-  lemma lemma_increases_converse(e1: int, e2: int)
+  lemma lemma_power2_increases_converse(e1: int, e2: int)
     requires 0 < e1
     requires 0 < e2
     requires power2(e1) <= power2(e2)
     ensures e1 <= e2
   {
     if e1 > e2 {
-      lemma_strictly_increases(e2, e1);
+      lemma_power2_strictly_increases(e2, e1);
       assert false;
     }
   }
 
    /* If a number is in the ranges [2^(a-1), 2^a) and [2^(b-1), 2^b), then a is
   equal to b. */
-  lemma lemma_bit_count_is_unique(x: int, a: int, b: int)
+  lemma lemma_power2_bit_count_is_unique(x: int, a: int, b: int)
     requires 0 < a
     requires 0 < b
     requires power2(a-1) <= x < power2(a)
@@ -197,21 +197,21 @@ module Power2 {
     ensures a == b
   {
     if a < b {
-      lemma_increases(a, b-1);
+      lemma_power2_increases(a, b-1);
       assert false;
     }
     if b < a {
-      lemma_increases(b, a-1);
+      lemma_power2_increases(b, a-1);
       assert false;
     }
   }
 
   /* (2^e - 1)/2 = 2^(e-1) - 1 */
-  lemma lemma_mask_div_2(e: nat)
+  lemma lemma_power2_mask_div_2(e: nat)
     requires 0 < e
     ensures (power2(e)-1)/2 == power2(e-1)-1
   {
-    lemma_auto();
+    lemma_power2_auto();
     var f := e => 0 < e ==> (power2(e)-1)/2 == power2(e-1)-1;
     assert forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1);
     assert forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1);
@@ -219,7 +219,7 @@ module Power2 {
   }
 
   /* Inequality due to smaller numerator, same denominator. */
-  lemma lemma_division_inequality(x: nat, e1: nat, e2: nat)
+  lemma lemma_power2_division_inequality(x: nat, e1: nat, e2: nat)
     requires e2 <= e1
     requires x < power2(e1)
     ensures x/power2(e2) < power2(e1-e2)
@@ -231,7 +231,7 @@ module Power2 {
         { lemma_fundamental_div_mod(x, power2(e2));
           lemma_mul_is_commutative_auto(); }
       x - x%power2(e2) >= power2(e1-e2)*power2(e2);
-        { lemma_add(e1-e2, e2); }
+        { lemma_power2_adds(e1-e2, e2); }
       x - x%power2(e2) >= power2(e1);
         { lemma_mod_properties(); }
       x >= power2(e1);
@@ -239,7 +239,7 @@ module Power2 {
     }
   }
 
-  lemma lemma_2to64()
+  lemma lemma_power2_2to64()
     ensures power2(0) == 0x1
     ensures power2(1) == 0x2
     ensures power2(2) == 0x4
