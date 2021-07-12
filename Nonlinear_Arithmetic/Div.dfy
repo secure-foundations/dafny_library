@@ -1,7 +1,7 @@
-include "Power.dfy"
 include "Mul.dfy"
 include "Div-Nonlinear.dfy"
 include "Div-Internals.dfy"
+include "Mod.dfy"
 
 module Div {
 
@@ -13,6 +13,7 @@ module Div {
   import opened Mul
   import opened DivNonlinear
   import opened DivInternals
+  import opened Mod
 
   /* the common syntax of division gives the same quotient as performing division through recursion */
   lemma lemma_div_is_div_recursive(x:int, d:int)
