@@ -1,7 +1,7 @@
 include "Mul.dfy"
 include "Div-Nonlinear.dfy"
 include "Div-Internals.dfy"
-include "Mod.dfy"
+include "Power.dfy"
 
 module DivMod {
 
