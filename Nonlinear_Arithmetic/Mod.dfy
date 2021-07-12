@@ -360,7 +360,7 @@ module Mod {
     lemma_mul_is_commutative_auto();
     lemma_fundamental_div_mod_converse(x, a, b*(x/(a*b)) + x%(a*b)/a, (x%(a*b))%a);
   }
-  
+
   /* ??? */
   lemma lemma_part_bound2(a:int, b:int, c:int)
     requires 0<=a

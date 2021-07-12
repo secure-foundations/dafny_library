@@ -4,6 +4,21 @@ module MulInternals {
 
   import opened MulNonlinear
 
+  /* performs multiplication for positive integers using recursive addition */
+  function method {:opaque} mul_pos(x:int, y:int) : int
+    requires x >= 0
+  {
+    if x == 0 then 0
+    else y + mul_pos(x - 1, y)
+  }
+
+  /* performs multiplication for both positive and negative integers */ 
+  function method mul_recursive(x:int, y:int) : int
+  {
+    if x >= 0 then mul_pos(x, y)
+    else -1*mul_pos(-1*x, y)
+  }
+
   /* aids in the process of induction for multiplication*/
   lemma lemma_mul_induction_helper(f:int->bool, i:int)
     requires f(0)
@@ -143,20 +158,5 @@ module MulInternals {
     assert forall i {:trigger f(i)} :: is_le(i, 0) && f(i) ==> f(i - 1);
     lemma_mul_induction(f);
   } 
-
-  /* performs multiplication for positive integers using recursive addition */
-  function method {:opaque} mul_pos(x:int, y:int) : int
-    requires x >= 0
-  {
-    if x == 0 then 0
-    else y + mul_pos(x - 1, y)
-  }
-
-  /* performs multiplication for both positive and negative integers */ 
-  function method mul_recursive(x:int, y:int) : int
-  {
-    if x >= 0 then mul_pos(x, y)
-    else -1*mul_pos(-1*x, y)
-  }
 
 } 

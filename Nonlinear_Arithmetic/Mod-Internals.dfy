@@ -109,7 +109,6 @@ module ModInternals {
     }
   }
 
-
   /* true if x%n and y%n are equal */
   predicate is_mod_equivalent(x:int, y:int, n:int)
     requires n > 0
