@@ -11,6 +11,25 @@ module ModInternals {
   import opened ModNonlinear
   import opened DivNonlinear
 
+  function method mod(x: int, d: int): int
+    requires d != 0
+  {
+    x % d
+  }
+
+  /* Performs modulus recursively. */
+  function method {:opaque} mod_recursive(x: int, d: int): int
+    requires d > 0
+    decreases if x < 0 then (d - x) else x
+  {
+    if x < 0 then
+      mod_recursive(d + x, d)
+    else if x < d then
+      x
+    else
+      mod_recursive(x - d, d)
+  }
+
   /* aids in the process of induction for modulus */
   lemma lemma_mod_induction_helper(n:int, f:int->bool, x:int)
     requires n > 0
