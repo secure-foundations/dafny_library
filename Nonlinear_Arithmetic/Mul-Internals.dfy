@@ -1,11 +1,20 @@
+// in service of mul.dfy ???
+
 include "Mul-Nonlinear.dfy"
 
 module MulInternals {
 
   import opened MulNonlinear
 
+  /* this predicate is primarily used as a trigger */
+  predicate is_le(x:int, y:int) 
+  { 
+    x <= y 
+  }
+
+  // see if needed ??? + change recursive things to functions
   /* performs multiplication for positive integers using recursive addition */
-  function method {:opaque} mul_pos(x:int, y:int) : int
+  function {:opaque} mul_pos(x:int, y:int) : int
     requires x >= 0
   {
     if x == 0 then 0
@@ -20,6 +29,7 @@ module MulInternals {
   }
 
   /* aids in the process of induction for multiplication*/
+  // maybe just use in general with is_le too ???
   lemma lemma_mul_induction_helper(f:int->bool, i:int)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
@@ -68,6 +78,7 @@ module MulInternals {
 
   /* proves the distributive property of multiplication when multiplying an interger
   by (x +/- 1) */
+  //rename for both directions ???
   lemma lemma_mul_successor()
     ensures  forall x:int, y:int {:trigger (x + 1) * y} :: (x + 1) * y == x * y + y
     ensures  forall x:int, y:int {:trigger (x - 1) * y} :: (x - 1) * y == x * y - y
@@ -105,7 +116,7 @@ module MulInternals {
     }
   }
 
-  /* describes distributive and associative properties of multiplication */
+  /* groups distributive and associative properties of multiplication */
   predicate mul_auto()
   {
     && (forall x:int, y:int {:trigger x * y} :: x * y == y * x)
@@ -119,12 +130,6 @@ module MulInternals {
   {
     lemma_mul_commutes();
     lemma_mul_distributes();
-  }
-
-  /* true if the first integer is less than or equal to the second integer */
-  predicate is_le(x:int, y:int) 
-  { 
-    x <= y 
   }
 
   /* performs auto induction for multiplication */
@@ -143,7 +148,6 @@ module MulInternals {
     assert f(x);
   }
 
-  // not used at all in Mul.dfy...
   /* performs auto induction on multiplication for all i s.t. f(i) exists */
   lemma lemma_mul_induction_auto_forall(f:int->bool)
     requires mul_auto() ==> f(0)

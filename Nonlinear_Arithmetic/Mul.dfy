@@ -3,17 +3,9 @@ include "Mul-Internals.dfy"
 
 module Mul {
 
-  import opened MulNonlinear
+  import opened MulNonlinear // NL instead of opened 
   import opened MulInternals
 
-  /* calculates the product of two integers */
-  function method mul(x:int, y:int) : int { x*y }
-
-  /*****************************************************
-  * Recursive definitions that can be handy for proving 
-  * properties we can't or don't want to rely on nonlinear for
-  *****************************************************/
-  
   /* the common syntax of multiplication results in the same product as multiplication 
   through recursive addition */
   lemma lemma_mul_is_mul_recursive(x:int, y:int)
@@ -61,6 +53,7 @@ module Mul {
   {
   }
 
+  // copy over most from mul-nonlinear ??? -- call originals for proof
   /* multiplying any two nonzero integers will never result in 0 as the poduct */
   lemma lemma_mul_nonzero_auto()
     ensures forall x:int, y:int {:trigger x*y} :: x*y != 0 <==> x != 0 && y != 0
@@ -79,7 +72,7 @@ module Mul {
     forall x:int {:trigger 0*x} {:trigger x*0}
       ensures x*0 == 0*x == 0
     {
-      lemma_mul_by_zero_is_zero(x);
+      lemma_mul_by_zero_is_zero(x); // call from basics lemma
     }
   }
   
@@ -108,10 +101,11 @@ module Mul {
 
   /* the product of two positive integers is always greater than the individual value of either 
   multiplied integer */
+  // change order of x and xy and 0 ???
   lemma lemma_mul_ordering_auto()
-    ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y && 0 <= x*y) ==> x <= x*y && y <= x*y
+    ensures forall x:int, y:int {:trigger x*y} :: (0 != x && 0 != y && 0 <= x*y) ==> x <= x*y && y <= x*y
   {
-    forall x:int, y:int | 0 < x && 0 < y && 0 <= x*y
+    forall x:int, y:int | 0 != x && 0 != y && 0 <= x*y
         ensures x <= x*y && y <= x*y
     {
       lemma_mul_ordering(x, y);
@@ -150,6 +144,7 @@ module Mul {
   }
 
   /* the product of two bounded integers is less than or equal to the product of their upper bounds */
+  // make auto too ???
   lemma lemma_mul_upper_bound(x:int, x_bound:int, y:int, y_bound:int)
     requires x <= x_bound
     requires y <= y_bound
@@ -162,6 +157,7 @@ module Mul {
   }
 
   /* the product of two strictly upper bounded integers is less than the product of their upper bounds */
+  // make auto too ???
   lemma lemma_mul_strict_upper_bound(x:int, x_bound:int, y:int, y_bound:int)
     requires x < x_bound 
     requires y < y_bound 
@@ -173,7 +169,6 @@ module Mul {
     lemma_mul_inequality(y, y_bound - 1, x_bound - 1);
   }
 
-  // different than lemma_mul_inequality?
   /* any two integers that are multiplied by a positive number will maintain their numerical order */
   lemma lemma_mul_left_inequality(x:int, y:int, z:int)
     requires x > 0
@@ -205,8 +200,9 @@ module Mul {
       }
   }
 
+  // put before strict ???
   /* when two integers, x and y, are each multiplied by a positive integer, z, if x <= z then the x*z <= y*z */
-  lemma lemma_mul_inequaliy_converse(x:int, y:int, z:int)
+  lemma lemma_mul_inequality_converse(x:int, y:int, z:int)
     requires x*z <= y*z
     requires z > 0
     ensures  x <= y
@@ -216,18 +212,19 @@ module Mul {
 
   /* when two integers, x and y, are each multiplied by a positive integer, z, if x <= z then the x*z <= y*z 
   for all valid values of x, y, and z*/
-  lemma lemma_mul_inequaliy_converse_auto()
+  lemma lemma_mul_inequality_converse_auto()
     ensures  forall x:int, y:int, z:int {:trigger x*z, y*z} :: x*z <= y*z && z>0 ==> x <= y
   {
     forall (x:int, y:int, z:int | x*z <= y*z && z>0)
       ensures x <= y
     {
-      lemma_mul_inequaliy_converse(x,y,z);
+      lemma_mul_inequality_converse(x,y,z); // go back and look for ts ???
     }
   }
 
   /* when any two integers x and y are each multiplied by a nonnegative integer z and their products are equal,
   then x and y are equal as well */
+  // add mul_equality too ???
   lemma lemma_mul_equality_converse(x:int, y:int, z:int)
     requires x*z == y*z
     requires 0 < z
@@ -249,7 +246,7 @@ module Mul {
   }
 
   /* for all integers, multiplication is distributive with addition in the form (y + z) * x */
-  lemma lemma_mul_is_distributive_add_auto_other_way(x:int, y:int, z:int)
+  lemma lemma_mul_is_distributive_add_auto_other_way(x:int, y:int, z:int) // change name no auto!!! ???
     ensures (y + z)*x == y*x + z*x
   {
     lemma_mul_auto();
@@ -310,6 +307,8 @@ module Mul {
     }
   }
 
+  //explain difference btween auto and not ??? at top
+
   /* multiplying a positive integer by an integer greater than 1 will result in a product that 
   is greater than the original integer */
   lemma lemma_mul_strictly_increases(x:int, y:int)
@@ -322,6 +321,7 @@ module Mul {
 
   /* multiplying any positive integer by any integer greater than 1 will result in a product that 
   is greater than the original integer */
+  // check inequality lemmas and check redundancy ???
   lemma lemma_mul_strictly_increases_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (1 < x && 0 < y) ==> (y < x*y)
   {
@@ -332,7 +332,7 @@ module Mul {
     }
   }
 
-  /* multiplying an integer by a positive integer will result in a product thhat is greater than or
+  /* multiplying an integer by a positive integer will result in a product that is greater than or
   equal to the original integer */
   lemma lemma_mul_increases(x:int, y:int)
     requires 0<x
@@ -342,7 +342,7 @@ module Mul {
     lemma_mul_induction_auto(x, u => 0 < u ==> y <= u * y);
   }
 
-  /* multiplying any integer by any positive integer will result in a product thhat is greater than or
+  /* multiplying any integer by any positive integer will result in a product that is greater than or
   equal to the original integer */
   lemma lemma_mul_increases_auto()
     ensures forall x:int, y:int {:trigger x*y} :: (0 < x && 0 < y) ==> (y <= x*y)
@@ -355,6 +355,7 @@ module Mul {
   }
 
   /* multiplying two positive numbers will result in a positive product */
+  // redundant ???
   lemma lemma_mul_nonnegative(x:int, y:int)
     requires 0 <= x
     requires 0 <= y
@@ -383,7 +384,7 @@ module Mul {
 
   /* shows the equivalent forms of using the unary negation operator for any integers*/
   lemma lemma_mul_unary_negation_auto()
-    ensures forall x:int, y:int {:trigger (-x)*y}{:trigger x*(-y)} :: (-x)*y == -(x*y) == x*(-y)
+    ensures forall x:int, y:int {:trigger (-x)*y} {:trigger x*(-y)} :: (-x)*y == -(x*y) == x*(-y)
   {
     forall (x:int, y:int) 
       ensures (-x)*y == -(x*y) == x*(-y)
@@ -394,6 +395,7 @@ module Mul {
 
   /* if two seperate integers are each multiplied by a common integer and the products are equal, the 
   two original integers are equal */
+  // check mul_eq_converse ???
   lemma lemma_mul_one_to_one(m:int, x:int, y:int)
     requires m!=0
     requires m*x == m*y
@@ -417,7 +419,16 @@ module Mul {
     }
   }
 
+  // /* multiplying two negative integers, -a and -b, is equivalent to multiplying a and b */
+  lemma lemma_mul_cancels_negatives(a:int, b:int)
+  // prove ???
+  //   ensures a*b == (-a)*(-b);
+  // {
+  //   lemma_mul_properties();
+  // }
 
+
+// 10 max for multiplier
   // The following gives timeout errors and is "a little dangerous" ... remove?
   //////////////////////////////////////////////////////////////////////////////
   //

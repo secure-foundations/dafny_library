@@ -1,10 +1,11 @@
-/* - <NuBuild AddDafnyFlag /proverOpt:O:smt.arith.nl=true/>
-- WARNING: In general, you shouldn't need to call these directly.*/
+/* WARNING: In general, you shouldn't need to call these directly. These are used in the proofs in Mul-Internals*/
+// Mul Internals Nonlinear rename file ??? -- folder for internals
+
 
 module MulNonlinear {
 
   /* WARNING: Think three times before adding to this file, as nonlinear verification
-  is highly unstable! */
+  is highly unstable!*/
 
   /* multiplying two positive integers will result in a positive integer */
   lemma lemma_mul_strictly_positive(x:int, y:int)
@@ -23,16 +24,16 @@ module MulNonlinear {
 
   /* multiplication is distributive */
   lemma lemma_mul_is_distributive_add(x:int, y:int, z:int)
-  ensures x*(y + z) == x*y + x*z
+  ensures x * (y + z) == x*y + x*z
   {}
 
-  /* the product of two integers is greater than the value of each individual integer */
+  /* the product of two integers is greater than the value of each individual integer */ //???
   lemma lemma_mul_ordering(x:int, y:int)
-  requires 0 < x
-  requires 0 < y
+  requires x != 0
+  requires y != 0
   requires 0 <= x*y
-  ensures x <= x*y && y <= x*y
-  { }
+  ensures x*y >= x && x*y >= y
+  {}
 
   /* multiplying by a positive integer preserves inequality */
   lemma lemma_mul_strict_inequality(x:int, y:int, z:int)
@@ -40,11 +41,5 @@ module MulNonlinear {
   requires z > 0
   ensures  x*z < y*z
   {}
-
-  /* the product of any integer and zero is zero */
-  lemma lemma_mul_by_zero_is_zero(x:int)
-  ensures 0*x == 0
-  ensures x*0 == 0
-  { }
 
 } 
