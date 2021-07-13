@@ -21,7 +21,6 @@ module Power {
     reveal_power();
   }
 
-  /* A number raised to the power of 0 equals 1. */
   lemma lemma_power_0_auto()
     ensures forall b: nat {:trigger power(b, 0)} :: power(b, 0) == 1
   {
@@ -48,7 +47,6 @@ module Power {
     }
   }
 
-  /* A number raised to the power of 1 equals the number itself. */
   lemma lemma_power_1_auto()
     ensures forall b: nat {:trigger power(b, 1)} :: power(b, 1) == b
   {
@@ -72,7 +70,6 @@ module Power {
     }
   }
 
-  /* 0 raised to a positive power equals 0. */
   lemma lemma_0_power_auto()
     ensures forall e: nat {:trigger power(0, e)} :: e > 0 ==> power(0, e) == 0
   {
@@ -95,7 +92,6 @@ module Power {
     }
   }
 
-  /* 1 raised to any power equals 1. */
   lemma lemma_1_power_auto()
     ensures forall e: nat {:trigger power(1, e)} :: power(1, e) == 1
   {
@@ -114,7 +110,6 @@ module Power {
     reveal_power();
   }
 
-  /* Squaring a number is equal to raising the number to the power of 2. */
   lemma lemma_square_is_power_2_auto()
     ensures forall x: nat {:trigger power(x, 2)} :: power(x, 2) == x * x
   {
@@ -127,7 +122,7 @@ module Power {
   /* Add exponents when multiplying powers with the same base. */
   lemma lemma_power_adds(b: int, e1: nat, e2: nat)
     decreases e1
-    ensures power(b, e1) * power(b, e2) == power(b, e1 + e2)
+    ensures power(b, e1 + e2) == power(b, e1) * power(b, e2)
   {
     if e1 == 0 {
       calc {
@@ -153,10 +148,9 @@ module Power {
     }
   }
 
-  /* Add exponents when multiplying powers with the same base. */
   lemma lemma_power_adds_auto()
     ensures forall b: int, e1: nat, e2: nat {:trigger power(b, e1 + e2)}
-      :: power(b, e1) * power(b, e2) == power(b, e1 + e2)
+      :: power(b, e1 + e2) == power(b, e1) * power(b, e2)
   {
     reveal_power();
     forall b: int, e1: nat, e2: nat {:trigger power(b, e1 + e2)}
@@ -208,7 +202,6 @@ module Power {
     }
   }
 
-  /* Multiply exponents to find the power of a power. */
   lemma lemma_power_multiplies_auto()
     ensures forall b: nat, c: nat {:trigger b * c} :: 0 <= b * c
     ensures forall a: int, b: nat, c: nat {:trigger power(a, b * c)}
@@ -243,7 +236,6 @@ module Power {
     }
   }
 
-  /* Distribute the power to factors of a product. */
   lemma lemma_power_distributes_auto()
     ensures forall a: int, b: int, e: nat {:trigger power(a * b, e)}
       :: power(a * b, e) == power(a, e) * power(b, e)
@@ -322,7 +314,6 @@ module Power {
     lemma_mul_induction_auto(e, u => 0 <= u ==> 0 < power(b, u));
   }
 
-  /* A positive number raised to any power is positive. */
   lemma lemma_power_positive_auto()
     ensures forall b: int, e: nat {:trigger power(b, e)}
       :: 0 < b ==> 0 < power(b, e)
@@ -361,8 +352,6 @@ module Power {
     lemma_mul_induction_auto(e2 - e1, f);
   }
 
-  /* A positive number raised to a power strictly increases as the power
-  strictly increases. */
   lemma lemma_power_strictly_increases_auto()
     ensures forall b: nat, e1: nat, e2: nat {:trigger power(b, e1),
       power(b, e2)} :: (1 < b && e1 < e2) ==> power(b, e1) < power(b, e2)
@@ -401,7 +390,6 @@ module Power {
     lemma_mul_induction_auto(e2 - e1, f);
   }
 
-  /* A positive number raised to a power increases as the power increases. */
   lemma lemma_power_increases_auto()
     ensures forall b: nat, e1: nat, e2: nat {:trigger power(b, e1),
       power(b, e2)} :: (1 < b && e1 <= e2) ==> power(b, e1) <= power(b, e2)
