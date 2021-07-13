@@ -1,17 +1,17 @@
 include "Mul.dfy"
-include "Div-Nonlinear.dfy"
-include "Div-Internals.dfy"
+include "Internals/DivInternalsNonlinear.dfy"
+include "Internals/DivInternals.dfy"
 include "Power.dfy"
 
 module DivMod {
 
   import opened Power
   import opened ModInternals
-  import opened ModNonlinear
+  import opened ModInternalsNonlinear
   import opened MulInternals
-  import opened MulNonlinear
+  import opened MulInternalsNonlinear
   import opened Mul
-  import opened DivNonlinear
+  import opened DivInternalsNonlinear
   import opened DivInternals
 
   /**************************************************************************************************
@@ -225,7 +225,7 @@ module DivMod {
         <    { lemma_part_bound2(a, b, c); }
       b*(c-1) + b;
             { lemma_mul_basics_auto(); }
-      b*(c-1) + mul(b,1);
+      b*(c-1) + b * 1;
             { lemma_mul_is_distributive_auto(); }
       b*(c-1+1);
       b*c;
@@ -376,7 +376,7 @@ module DivMod {
         { lemma_fundamental_div_mod(x, c*d); }
       (c*d)*((x/c)/d) == (c*d)*(x/(c*d)) + x%(c*d) - R;
       (c*d)*((x/c)/d) == (c*d)*(x/(c*d));
-        { lemma_mul_one_to_one(c*d, (x/c)/d, x/(c*d)); }
+        { lemma_mul_equality_converse(c*d, (x/c)/d, x/(c*d)); }
       (x/c)/d == x/(c*d);
     }
   }
@@ -1004,7 +1004,7 @@ module DivMod {
         <    { lemma_part_bound2(a, b, c); }
       b*(c-1) + b;
             { lemma_mul_basics_auto(); }
-      b*(c-1) + mul(b,1);
+      b*(c-1) + b * 1;
             { lemma_mul_is_distributive_auto(); }
       b*(c-1+1);
       b*c;

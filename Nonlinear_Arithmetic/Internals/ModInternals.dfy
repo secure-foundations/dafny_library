@@ -1,23 +1,18 @@
-include "Mul-Internals.dfy"
-include "Mul.dfy"
-include "Mod-Nonlinear.dfy"
-include "Div-Nonlinear.dfy"
+include "MulInternals.dfy"
+include "../Mul.dfy"
+include "ModInternalsNonlinear.dfy"
+include "DivInternalsNonlinear.dfy"
 
 module ModInternals {
 
   import opened Mul
   import opened MulInternalsNonlinear
   import opened MulInternals
-  import opened ModNonlinear
-  import opened DivNonlinear
-
-  function method mod(x: int, d: int): int
-    requires d != 0
-  {
-    x % d
-  }
+  import opened ModInternalsNonlinear
+  import opened DivInternalsNonlinear
 
   /* Performs modulus recursively. */
+  // make all recursive only a function ???
   function method {:opaque} mod_recursive(x: int, d: int): int
     requires d > 0
     decreases if x < 0 then (d - x) else x

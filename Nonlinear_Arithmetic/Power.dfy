@@ -1,5 +1,5 @@
 include "Mul.dfy"
-include "Mul-Internals.dfy"
+include "Internals/MulInternals.dfy"
 
 module Power {
   import opened Mul
