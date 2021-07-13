@@ -1,5 +1,5 @@
-include "Mul-Nonlinear.dfy"
-include "Mul-Internals.dfy"
+include "MulInternalsNonlinear.dfy"
+include "MulInternals.dfy"
 
 module Mul {
 
