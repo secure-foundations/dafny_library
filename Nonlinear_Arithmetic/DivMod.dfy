@@ -605,7 +605,7 @@ module DivMod {
 /*********************************************************************************************************
 * Modulus:
 **********************************************************************************************************/
-
+  
   /* the common syntax of the modulus operation results in the same remainder as recursively
   calculating the modulus */
   lemma lemma_mod_is_mod_recursive(x:int, m:int)
@@ -719,7 +719,7 @@ module DivMod {
     lemma_mod_auto(m);
   }
 
-  /* the remainder of aubtracting the divisor m from the dividend b will be the same
+  /* the remainder of subtracting the divisor m from the dividend b will be the same
   as simply performing b % m */
   lemma lemma_mod_sub_multiples_vanish(b:int, m:int)
     requires 0 < m
@@ -739,6 +739,30 @@ module DivMod {
     lemma_mul_induction_auto(a, u => (m*u + b) % m == b % m);
   }
 
+  /* true if x%n and y%n are equal */
+  predicate is_mod_equivalent(x:int, y:int, m:int)
+    requires m > 0
+  {
+    (x - y) % m == 0 // same as x % n == y % n, but easier to do induction on x - y than x and y separately
+  }
+  
+  /* proves modulus equivalence in two forms */
+  lemma lemma_mod_equivalence(x:int, y:int, m:int)
+    requires 0 < m
+    ensures x % m == y % m <==> (x - y) % m == 0
+  {
+    lemma_mod_auto(m);
+  }
+  
+  /* proves equivalent forms of modulus subtraction */
+  lemma lemma_mod_subtraction(x:nat, s:nat, d:nat)
+    requires 0<d
+    requires 0<=s<=x%d
+    ensures x%d - s%d == (x-s)%d
+  {
+    lemma_mod_auto(d);
+  }
+  
   /* describes expanded and succinct version of modulus operator in relation to addition (read "ensures") */
   lemma lemma_add_mod_noop(x:int, y:int, m:int)
     requires 0 < m
@@ -751,14 +775,6 @@ module DivMod {
   lemma lemma_add_mod_noop_right(x:int, y:int, m:int)
     requires 0 < m
     ensures (x + (y % m)) % m == (x+y) % m
-  {
-    lemma_mod_auto(m);
-  }
-
-  /* proves modulus equivalence in two forms */
-  lemma lemma_mod_equivalence(x:int, y:int, m:int)
-    requires 0 < m
-    ensures x % m == y % m <==> (x - y) % m == 0
   {
     lemma_mod_auto(m);
   }
@@ -891,15 +907,6 @@ module DivMod {
         power(b, e) % m;
       }
     }
-  }
-  
-  /* proves equivalent forms of modulus subtraction */
-  lemma lemma_mod_subtraction(x:nat, s:nat, d:nat)
-    requires 0<d
-    requires 0<=s<=x%d
-    ensures x%d - s%d == (x-s)%d
-  {
-    lemma_mod_auto(d);
   }
 
   /* the remainder can increase with a larger divisor */

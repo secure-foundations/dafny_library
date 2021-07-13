@@ -6,7 +6,7 @@ include "Div-Nonlinear.dfy"
 module ModInternals {
 
   import opened Mul
-  import opened MulNonlinear
+  import opened MulInternalsNonlinear
   import opened MulInternals
   import opened ModNonlinear
   import opened DivNonlinear
@@ -62,6 +62,7 @@ module ModInternals {
     forall i ensures f(i) { lemma_mod_induction_helper(n, f, i); }
   }
 
+  // not used anywhere else in Mod
   /* given an integer x and divisor n, the remainder of x%n is equivalent to the remainder of (x+m)%n
   where m is a multiple of n */
   lemma lemma_mod_induction_forall2(n:int, f:(int,int)->bool)
@@ -126,13 +127,6 @@ module ModInternals {
       if (zm > 0) { lemma_mul_inequality(1, zm, n); }
       if (zm < 0) { lemma_mul_inequality(zm, -1, n); }
     }
-  }
-
-  /* true if x%n and y%n are equal */
-  predicate is_mod_equivalent(x:int, y:int, n:int)
-    requires n > 0
-  {
-    (x - y) % n == 0 // same as x % n == y % n, but easier to do induction on x - y than x and y separately
   }
 
   /* proves the quotient remainder theorem */

@@ -46,8 +46,8 @@ module Seq {
   }
 
   /* explains associative property of sequences in addition */
-  lemma lemma_concat_is_associative<T>(a:seq<T>, b:seq<T>, c:seq<T>)
-    ensures a+(b+c) == (a+b)+c;
+  lemma lemma_concat_is_associative<T>(a: seq<T>, b: seq<T>, c: seq<T>)
+    ensures a + (b + c) == (a + b) + c;
   {
   }
 
@@ -71,7 +71,7 @@ module Seq {
   /* a sequence that is sliced at the jth element concatenated with that same
   sequence sliced from the jth element is equal to the original, unsliced sequence */
   lemma lemma_split_at<T>(s: seq<T>, pos: nat)
-    requires pos<|s|;
+    requires pos < |s|;
     ensures s[..pos] + s[pos..] == s;
   {
   }
@@ -172,7 +172,7 @@ module Seq {
   {
     if |s| == 0 {
     } else {
-      assert s == drop_last(s) + [ last(s) ];
+      assert s == drop_last(s) + [last(s)];
       assert last(s) !in drop_last(s) by {
         reveal_has_no_duplicates();
       }
@@ -199,7 +199,7 @@ module Seq {
     ensures forall i {:trigger remove(s, pos)[i], s[i]} | 0 <= i < pos :: remove(s, pos)[i] == s[i]
     ensures forall i {:trigger remove(s, pos)[i]} | pos <= i < |s| - 1 :: remove(s, pos)[i] == s[i+1]
   {
-    s[.. pos] + s[pos + 1 ..] 
+    s[..pos] + s[pos+1..] 
   }
 
   /* slices out a specific value from the sequence */
@@ -213,14 +213,14 @@ module Seq {
     reveal_to_set();
     if v !in s then s else
     var i :| 0 <= i < |s| && s[i] == v;
-    assert s == s[.. i] + [v] + s[i + 1 ..];
-    s[.. i] + s[i + 1 ..]
+    assert s == s[..i] + [v] + s[i+1..];
+    s[..i] + s[i+1..]
   }
 
   /* inserts a certain value into a specified index of the sequence */
   function method {:opaque} insert<T>(s: seq<T>, a: T, pos: nat): seq<T>
     requires pos <= |s|;
-    ensures |insert(s,a,pos)| == |s| + 1;
+    ensures |insert(s, a, pos)| == |s| + 1;
     ensures forall i {:trigger insert(s, a, pos)[i], s[i]}:: 0 <= i < pos ==> insert(s, a, pos)[i] == s[i];
     ensures forall i {:trigger s[i]} :: pos <= i < |s| ==> insert(s, a, pos)[i+1] == s[i];
     ensures insert(s, a, pos)[pos] == a;
@@ -243,7 +243,8 @@ module Seq {
   /* unzips a sequence that contains ordered pairs into 2 seperate sequences */
   function method {:opaque} unzip<A,B>(s: seq<(A, B)>): (seq<A>, seq<B>)
     ensures |unzip(s).0| == |unzip(s).1| == |s|
-    ensures forall i {:trigger unzip(s).0[i]} {:trigger unzip(s).1[i]}:: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
+    ensures forall i {:trigger unzip(s).0[i]} {:trigger unzip(s).1[i]} 
+        :: 0 <= i < |s| ==> (unzip(s).0[i], unzip(s).1[i]) == s[i]
   {
     if |s| == 0 then ([], [])
     else
@@ -279,7 +280,7 @@ module Seq {
   /* finds the maximum integer value in the sequence */
   function method {:opaque} max(s: seq<int>): int
     requires 0 < |s|
-    ensures forall k {:trigger k in s}:: k in s ==> max(s) >= k
+    ensures forall k {:trigger k in s} :: k in s ==> max(s) >= k
     ensures max(s) in s
   {
     assert s == [s[0]] + s[1..];
@@ -292,7 +293,7 @@ module Seq {
     requires 0 < |a| && 0 < |b|
     ensures max(a+b) >= max(a)
     ensures max(a+b) >= max(b)
-    ensures forall i {:trigger i in [max(a + b)]} :: i in a+b ==> max(a+b) >= i
+    ensures forall i {:trigger i in [max(a + b)]} :: i in a + b ==> max(a + b) >= i
   {
     reveal_max();
     if |a| == 1 {
@@ -305,7 +306,7 @@ module Seq {
   /* finds the minimum integer value in the sequence */
   function method {:opaque} min(s: seq<int>): int
     requires 0 < |s|
-    ensures forall k {:trigger k in s}:: k in s ==> min(s) <= k
+    ensures forall k {:trigger k in s} :: k in s ==> min(s) <= k
     ensures min(s) in s
   {
     assert s == [s[0]] + s[1..];
@@ -318,7 +319,7 @@ module Seq {
     requires 0 < |a| && 0 < |b|
     ensures min(a+b) <= min(a)
     ensures min(a+b) <= min(b)
-    ensures forall i {:trigger i in a+b}:: i  in a+b ==> min(a+b) <= i
+    ensures forall i {:trigger i in a + b} :: i in a + b ==> min(a + b) <= i
   {
     reveal_min();
     if |a| == 1 {
@@ -334,7 +335,7 @@ module Seq {
     requires from < to <= |s|
     ensures max(s[from..to]) <= max(s)
   {
-    var subseq := s[from.. to];
+    var subseq := s[from..to];
     if max(subseq) > max(s) {
       var k :| 0 <= k < |subseq| && subseq[k] == max(subseq);
       assert s[seq(|subseq|, i requires 0 <= i < |subseq| => i + from)[k]] in s;
@@ -400,19 +401,19 @@ module Seq {
 
   /* concatenating two reversed sequences of sequences is the same as reversing two 
   sequences of sequences and then concattenating the two resulting sequences together */
-  lemma lemma_flatten_reverse_concat<T>(A:seq<seq<T>>, B:seq<seq<T>>)
-  ensures flatten_reverse(A + B) == flatten_reverse(A) + flatten_reverse(B)
+  lemma lemma_flatten_reverse_concat<T>(a: seq<seq<T>>, b: seq<seq<T>>)
+  ensures flatten_reverse(a + b) == flatten_reverse(a) + flatten_reverse(b)
   {
-    if |B| == 0 {
-      assert flatten_reverse(B) == [];
-      assert A+B == A;
+    if |b| == 0 {
+      assert flatten_reverse(b) == [];
+      assert a + b == a;
     } else {
       calc == {
-        flatten_reverse(A + B);
-          { assert last(A + B) == last(B);  assert drop_last(A + B) == A + drop_last(B); }
-        flatten_reverse(A + drop_last(B)) + last(B);
-        flatten_reverse(A) + flatten_reverse(drop_last(B)) + last(B);
-        flatten_reverse(A) + flatten_reverse(B);
+        flatten_reverse(a + b);
+          { assert last(a + b) == last(b);  assert drop_last(a + b) == a + drop_last(b); }
+        flatten_reverse(a + drop_last(b)) + last(b);
+        flatten_reverse(a) + flatten_reverse(drop_last(b)) + last(b);
+        flatten_reverse(a) + flatten_reverse(b);
       }
     }
   }

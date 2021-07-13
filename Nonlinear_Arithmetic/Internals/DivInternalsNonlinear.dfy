@@ -1,7 +1,7 @@
 //- <NuBuild AddDafnyFlag /proverOpt:O:smt.arith.nl=true/>
 //- WARNING: In general, you shouldn't need to call these directly.
 
-module DivNonlinear {
+module DivInternalsNonlinear {
 
   /* WARNING: Think three times before adding to this file, as nonlinear verification
   is highly unstable! */

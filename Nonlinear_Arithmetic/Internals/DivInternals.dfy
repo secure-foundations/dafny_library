@@ -8,9 +8,9 @@ include "Mod-Internals.dfy"
 module DivInternals {
 
   import opened ModInternals
-  import opened ModNonlinear
-  import opened DivNonlinear
-  import opened MulInternals
+  import opened ModInternalsNonlinear
+  import opened DivInternalsNonlinear
+  import opened MulInternalsInternals
 
   function method div(x: int, d: int): int
     requires d != 0
