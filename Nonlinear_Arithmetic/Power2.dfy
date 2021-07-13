@@ -23,21 +23,21 @@ module Power2 {
   lemma lemma_power2_0()
     ensures power2(0) == 1
   {
-    reveal power2();
+    reveal_power2();
   }
 
   lemma lemma_power2_1()
     ensures power2(1) == 2
   {
-    reveal power2();
+    reveal_power2();
   }
 
   /* power2() is equivalent to power() with base 2. */
   lemma lemma_power2_is_power_2(e: nat)
     ensures power2(e) == power(2, e)
   {
-    reveal power();
-    reveal power2();
+    reveal_power();
+    reveal_power2();
     if e != 0 {
       lemma_power2_is_power_2(e - 1);
     }
@@ -47,8 +47,8 @@ module Power2 {
   lemma lemma_power2_is_power_2_auto()
     ensures forall e: nat {:trigger power2(e)} :: power2(e) == power(2, e)
   {
-    reveal power2();
-    reveal power();
+    reveal_power2();
+    reveal_power();
     
     forall e: nat {:trigger power2(e)}
       ensures power2(e) == power(2, e)
@@ -57,14 +57,14 @@ module Power2 {
     }
   }
 
-  /* Properties of powers with base 2. */
+  /* Groups properties of powers with base 2. */
   lemma lemma_power2_auto()
     ensures power2(0) == 1
     ensures power2(1) == 2
     ensures forall e1: nat, e2: nat {:trigger power2(e1 + e2)} :: power2(e1 + e2) == power2(e1) * power2(e2)
     ensures forall e1: nat, e2: nat {:trigger power2(e1 - e2)} :: e1 >= e2 ==> power2(e1 - e2) * power2(e2) == power2(e1)
   {
-    reveal power2();
+    reveal_power2();
     lemma_power2_is_power_2_auto();
     lemma_power_auto();
   }
@@ -74,7 +74,7 @@ module Power2 {
     decreases e2
     ensures power2(e1 + e2) == power2(e1) * power2(e2)
   {
-    reveal power2();
+    reveal_power2();
     lemma_power2_auto();
   }
 
@@ -107,8 +107,8 @@ module Power2 {
   lemma lemma_power2_multiplies_auto()
     ensures forall e1: nat, e2: nat {:trigger power(power2(e1), e2)} :: 0 <= e1 * e2 && power(power2(e1), e2) == power2(e1 * e2)
   {
-    reveal power();
-    reveal power2();
+    reveal_power();
+    reveal_power2();
 
     forall e1: nat, e2: nat
       ensures 0 <= e1 * e2 && power(power2(e1), e2) == power2(e1 * e2)
@@ -273,7 +273,7 @@ module Power2 {
     ensures power2(32) == 0x100000000
     ensures power2(64) == 0x10000000000000000
   {
-    reveal power2();
+    reveal_power2();
   }
 
 } 
