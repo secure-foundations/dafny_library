@@ -12,12 +12,6 @@ module DivInternals {
   import opened DivInternalsNonlinear
   import opened MulInternals
 
-  function method div(x: int, d: int): int
-    requires d != 0
-  {
-    x / d
-  }
-
   /* Performs division recursively with positive denominator. */
   function method {:opaque} div_pos(x: int, d: int): int
     requires d > 0
@@ -32,7 +26,7 @@ module DivInternals {
   }
 
   /* Performs division recursively. */
-  function method {:opaque} div_recursive(x: int, d: int): int
+  function {:opaque} div_recursive(x: int, d: int): int
     requires d != 0
   {
     reveal_div_pos();
