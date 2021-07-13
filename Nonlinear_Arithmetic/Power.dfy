@@ -137,7 +137,7 @@ module Power {
     }
   }
 
-  /* Distribute the power to each factor of a product. */
+  /* Distribute the power to factors of a product. */
   lemma lemma_power_distributes(a: int, b: int, e: nat)
     decreases e
     ensures power(a*b, e) == power(a, e) * power(b, e)
@@ -154,7 +154,6 @@ module Power {
         (a*power(a, e-1)) * (b*power(b, e-1));
         power(a, e) * power(b, e);
       }
-      lemma_mul_is_distributive_auto();
     }
   }
 
