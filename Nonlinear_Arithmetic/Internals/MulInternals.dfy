@@ -7,14 +7,14 @@ module MulInternals {
   import opened MulInternalsNonlinear
 
   /* this predicate is primarily used as a trigger */
-  predicate is_le(x:int, y:int) 
+  predicate is_le(x: int, y: int) 
   { 
     x <= y 
   }
 
   // see if needed ??? + change recursive things to functions
   /* performs multiplication for positive integers using recursive addition */
-  function {:opaque} mul_pos(x:int, y:int) : int
+  function {:opaque} mul_pos(x: int, y: int) : int
     requires x >= 0
   {
     if x == 0 then 0
@@ -22,7 +22,7 @@ module MulInternals {
   }
 
   /* performs multiplication for both positive and negative integers */ 
-  function mul_recursive(x:int, y:int) : int
+  function mul_recursive(x: int, y: int) : int
   {
     if x >= 0 then mul_pos(x, y)
     else -1 * mul_pos(-1 * x, y)
@@ -30,7 +30,7 @@ module MulInternals {
 
   /* aids in the process of induction for multiplication*/
   // maybe just use in general with is_le too ???
-  lemma lemma_mul_induction_helper(f:int->bool, i:int)
+  lemma lemma_mul_induction_helper(f: int -> bool, i: int)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
     requires forall i {:trigger f(i), f(i - 1)} :: i <= 0 && f(i) ==> f(i - 1)
@@ -56,7 +56,7 @@ module MulInternals {
   }
 
   /* performs induction on multiplication */ 
-  lemma lemma_mul_induction(f:int->bool)
+  lemma lemma_mul_induction(f: int -> bool)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
     requires forall i {:trigger f(i), f(i - 1)} :: i <= 0 && f(i) ==> f(i - 1)
@@ -133,7 +133,7 @@ module MulInternals {
   }
 
   /* performs auto induction for multiplication */
-  lemma lemma_mul_induction_auto(x:int, f:int->bool)
+  lemma lemma_mul_induction_auto(x: int, f: int -> bool)
     requires mul_auto() ==> f(0)
                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
                           && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1))
@@ -149,7 +149,7 @@ module MulInternals {
   }
 
   /* performs auto induction on multiplication for all i s.t. f(i) exists */
-  lemma lemma_mul_induction_auto_forall(f:int->bool)
+  lemma lemma_mul_induction_auto_forall(f: int -> bool)
     requires mul_auto() ==> f(0)
                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
                           && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1))
