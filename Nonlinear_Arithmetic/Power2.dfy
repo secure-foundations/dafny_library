@@ -1,12 +1,12 @@
 include "DivMod.dfy"
-include "Mod-Nonlinear.dfy"
+include "Internals/ModInternalsNonlinear.dfy"
+include "Internals/MulInternals.dfy"
 include "Mul.dfy"
-include "Mul-Internals.dfy"
 include "Power.dfy"
 
 module Power2 {
   import opened DivMod
-  import opened ModNonlinear
+  import opened ModInternalsNonlinear
   import opened Mul
   import opened MulInternals
   import opened Power

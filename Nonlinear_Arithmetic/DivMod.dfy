@@ -1,18 +1,18 @@
+include "Internals/DivInternals.dfy"
+include "Internals/DivInternalsNonlinear.dfy"
 include "Mul.dfy"
-include "Div-Nonlinear.dfy"
-include "Div-Internals.dfy"
 include "Power.dfy"
 
 module DivMod {
 
-  import opened Power
-  import opened ModInternals
-  import opened ModNonlinear
-  import opened MulInternals
-  import opened MulNonlinear
-  import opened Mul
-  import opened DivNonlinear
   import opened DivInternals
+  import opened DivInternalsNonlinear
+  import opened ModInternals
+  import opened ModInternalsNonlinear
+  import opened Mul
+  import opened MulInternals
+  import opened MulInternalsNonlinear
+  import opened Power
 
   /**************************************************************************************************
   * Division:
@@ -225,7 +225,7 @@ module DivMod {
         <    { lemma_part_bound2(a, b, c); }
       b*(c-1) + b;
             { lemma_mul_basics_auto(); }
-      b*(c-1) + mul(b,1);
+      b*(c-1) + b*1;
             { lemma_mul_is_distributive_auto(); }
       b*(c-1+1);
       b*c;
@@ -1004,7 +1004,7 @@ module DivMod {
         <    { lemma_part_bound2(a, b, c); }
       b*(c-1) + b;
             { lemma_mul_basics_auto(); }
-      b*(c-1) + mul(b,1);
+      b*(c-1) + b*1;
             { lemma_mul_is_distributive_auto(); }
       b*(c-1+1);
       b*c;

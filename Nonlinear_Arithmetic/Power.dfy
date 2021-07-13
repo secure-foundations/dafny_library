@@ -1,5 +1,5 @@
+include "Internals/MulInternals.dfy"
 include "Mul.dfy"
-include "Mul-Internals.dfy"
 
 module Power {
   import opened Mul
@@ -181,7 +181,7 @@ module Power {
       calc {
         b * c - b;
           { lemma_mul_basics_auto(); }
-        b * c - mul(b, 1);
+        b * c - b * 1;
           { lemma_mul_is_distributive_auto(); }
         b * (c - 1);
       }

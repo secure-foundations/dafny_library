@@ -3,14 +3,14 @@
 //- For example, -3 div 5 is -1 and -3 mod 5 is 2.
 //- Note this is consistent: -3 * -1 + 2 == 5
 
-include "Mod-Internals.dfy"
+include "ModInternals.dfy"
 
 module DivInternals {
 
   import opened ModInternals
   import opened ModInternalsNonlinear
   import opened DivInternalsNonlinear
-  import opened MulInternalsInternals
+  import opened MulInternals
 
   function method div(x: int, d: int): int
     requires d != 0
