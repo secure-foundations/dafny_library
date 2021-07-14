@@ -10,6 +10,7 @@ module ModInternals {
   import opened MulInternals
   import opened ModInternalsNonlinear
   import opened DivInternalsNonlinear
+  import opened GeneralInternals
 
   /* Performs modulus recursively. */
   // make all recursive only a function ???
@@ -26,7 +27,7 @@ module ModInternals {
   }
 
   /* aids in the process of induction for modulus */
-  lemma lemma_mod_induction_helper(n:int, f:int->bool, x:int)
+  lemma lemma_mod_induction_helper(n: int, f: int -> bool, x: int)
     requires n > 0
     requires forall i :: 0 <= i < n ==> f(i)
     requires forall i {:trigger f(i), f(i + n)} :: i >= 0 && f(i) ==> f(i + n)
@@ -47,7 +48,7 @@ module ModInternals {
   }
 
   /* performs induction on modulus */ 
-  lemma lemma_mod_induction_forall(n:int, f:int->bool)
+  lemma lemma_mod_induction_forall(n: int, f: int -> bool)
     requires n > 0
     requires forall i :: 0 <= i < n ==> f(i)
     requires forall i {:trigger f(i), f(i + n)} :: i >= 0 && f(i) ==> f(i + n)
@@ -60,7 +61,7 @@ module ModInternals {
   // not used anywhere else in Mod
   /* given an integer x and divisor n, the remainder of x%n is equivalent to the remainder of (x+m)%n
   where m is a multiple of n */
-  lemma lemma_mod_induction_forall2(n:int, f:(int,int)->bool)
+  lemma lemma_mod_induction_forall2(n: int, f:(int, int)->bool)
     requires n > 0
     requires forall i, j :: 0 <= i < n && 0 <= j < n ==> f(i, j)
     requires forall i, j {:trigger f(i, j), f(i + n, j)} :: i >= 0 && f(i, j) ==> f(i + n, j)
@@ -86,21 +87,21 @@ module ModInternals {
   }
 
   /* proves the basics of the modulus operation */
-  lemma lemma_mod_basics(n:int)
+  lemma lemma_mod_basics(n: int)
     requires n > 0
-    ensures  forall x:int {:trigger (x + n) % n} :: (x + n) % n == x % n
-    ensures  forall x:int {:trigger (x - n) % n} :: (x - n) % n == x % n
-    ensures  forall x:int {:trigger (x + n) / n} :: (x + n) / n == x / n + 1
-    ensures  forall x:int {:trigger (x - n) / n} :: (x - n) / n == x / n - 1
-    ensures  forall x:int {:trigger x % n} :: 0 <= x < n <==> x % n == x
+    ensures  forall x: int {:trigger (x + n) % n} :: (x + n) % n == x % n
+    ensures  forall x: int {:trigger (x - n) % n} :: (x - n) % n == x % n
+    ensures  forall x: int {:trigger (x + n) / n} :: (x + n) / n == x / n + 1
+    ensures  forall x: int {:trigger (x - n) / n} :: (x - n) / n == x / n - 1
+    ensures  forall x: int {:trigger x % n} :: 0 <= x < n <==> x % n == x
   {
-    forall x:int
+    forall x: int
       ensures 0 <= x < n <==> x % n == x
     {
       if (0 <= x < n) { lemma_small_mod(x, n); }
       lemma_mod_range(x, n);
     }
-    forall x:int
+    forall x: int
       ensures (x + n) % n == x % n
       ensures (x - n) % n == x % n
       ensures (x + n) / n == x / n + 1
@@ -118,14 +119,14 @@ module ModInternals {
       forall ensures 0 == n * zm + ((x - n) % n) - (x % n) { lemma_mul_auto(); }
       if (zp > 0) { lemma_mul_inequality(1, zp, n); }
       if (zp < 0) { lemma_mul_inequality(zp, -1, n); }
-      if (zp == 0) { lemma_mul_by_zero_is_zero(n); }
+      if (zp == 0) { lemma_mul_basics(); }
       if (zm > 0) { lemma_mul_inequality(1, zm, n); }
       if (zm < 0) { lemma_mul_inequality(zm, -1, n); }
     }
   }
 
   /* proves the quotient remainder theorem */
-  lemma lemma_quotient_and_remainder(x:int, q:int, r:int, n:int)
+  lemma lemma_quotient_and_remainder(x: int, q: int, r: int, n: int)
     requires n > 0
     requires 0 <= r < n
     requires x == q * n + r
@@ -153,24 +154,24 @@ module ModInternals {
   }
 
   /* automates the modulus operator process */
-  predicate mod_auto(n:int)
+  predicate mod_auto(n: int)
       requires n > 0;
   {
   && (n % n == (-n) % n == 0)
-  && (forall x:int {:trigger (x % n) % n} :: (x % n) % n == x % n)
-  && (forall x:int {:trigger x % n} :: 0 <= x < n <==> x % n == x)
-  && (forall x:int, y:int {:trigger (x + y) % n} ::
+  && (forall x: int {:trigger (x % n) % n} :: (x % n) % n == x % n)
+  && (forall x: int {:trigger x % n} :: 0 <= x < n <==> x % n == x)
+  && (forall x: int, y: int {:trigger (x + y) % n} ::
                   (var z := (x % n) + (y % n);
                       (  (0 <= z < n     && (x + y) % n == z)
                       || (n <= z < n + n && (x + y) % n == z - n))))
-  && (forall x:int, y:int {:trigger (x - y) % n} ::
+  && (forall x: int, y: int {:trigger (x - y) % n} ::
                   (var z := (x % n) - (y % n);
                       (   (0 <= z < n && (x - y) % n == z)
                       || (-n <= z < 0 && (x - y) % n == z + n))))
   }
 
 /* ensures that mod_auto is true */
-  lemma lemma_mod_auto(n:int)
+  lemma lemma_mod_auto(n: int)
     requires n > 0
     ensures  mod_auto(n)
   {
@@ -179,7 +180,7 @@ module ModInternals {
     lemma_mul_is_distributive_add_auto();
     lemma_mul_is_distributive_sub_auto();
 
-    forall x:int, y:int {:trigger (x + y) % n}
+    forall x: int, y: int {:trigger (x + y) % n}
       ensures var z := (x % n) + (y % n);
               || (0 <= z < n && (x + y) % n == z)
               || (n <= z < 2 * n && (x + y) % n == z - n)
@@ -198,7 +199,7 @@ module ModInternals {
       }
     }
 
-    forall x:int, y:int {:trigger (x - y) % n}
+    forall x: int, y: int {:trigger (x - y) % n}
       ensures var z := (x % n) - (y % n);
               || (0 <= z < n && (x - y) % n == z)
               || (-n <= z < 0 && (x - y) % n == z + n)
@@ -219,7 +220,7 @@ module ModInternals {
   }
 
   /* performs auto induction for modulus */
-  lemma lemma_mod_induction_auto(n:int, x:int, f:int->bool)
+  lemma lemma_mod_induction_auto(n: int, x: int, f: int -> bool)
     requires n > 0
     requires mod_auto(n) ==> && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && i < n ==> f(i))
                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + n))
@@ -237,7 +238,7 @@ module ModInternals {
 
   // not used in other files
   /* performs auto induction on modulus for all i s.t. f(i) exists */
-  lemma lemma_mod_induction_auto_forall(n:int, f:int->bool)
+  lemma lemma_mod_induction_auto_forall(n: int, f: int -> bool)
     requires n > 0
     requires mod_auto(n) ==> && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && i < n ==> f(i))
                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + n))

@@ -16,7 +16,7 @@ module ModInternalsNonlinear {
   /* describes fundementals of the modulus operator */
   lemma lemma_fundamental_div_mod(x:int, d:int)
     requires d != 0
-    ensures x == d * (x/d) + (x%d)
+    ensures x == d * (x / d) + (x % d)
   {
   }
 

@@ -6,7 +6,7 @@ include "Internals/MulInternals.dfy"
 
 module Mul {
 
-  import opened MulInternalsNonlinear // NL instead of opened ???
+  import MulINL = MulInternalsNonlinear
   import opened MulInternals
 
   /* the common syntax of multiplication results in the same product as multiplication 
@@ -56,6 +56,13 @@ module Mul {
   {
   }
 
+ /* multiplying two nonzero integers will never result in 0 as the poduct */
+  lemma lemma_mul_nonzero(x: int, y: int)
+    ensures x * y != 0 <==> x != 0 && y != 0
+  {
+    MulINL.lemma_mul_nonzero(x, y);
+  }
+
   // copy over most from mul-nonlinear ??? -- call originals for proof
   /* multiplying any two nonzero integers will never result in 0 as the poduct */
   lemma lemma_mul_nonzero_auto()
@@ -78,7 +85,14 @@ module Mul {
       lemma_mul_basics(x);
     }
   }
-  
+
+  /* multiplication is associative */
+  lemma lemma_mul_is_associative(x: int, y: int, z: int)
+    ensures x * (y * z) == (x * y) * z
+  {
+    MulINL.lemma_mul_is_associative(x, y, z);
+  }
+
   /* multiplication is always associative for all integers*/
   lemma lemma_mul_is_associative_auto()
     ensures forall x: int, y: int, z: int {:trigger x * (y * z)} {:trigger (x * y) * z} 
@@ -101,6 +115,16 @@ module Mul {
   lemma lemma_mul_is_commutative_auto()
     ensures forall x: int, y: int {:trigger x * y} :: x * y == y * x
   {
+  }
+
+  /* the product of two integers is greater than the value of each individual integer */ 
+  lemma lemma_mul_ordering(x: int, y: int)
+    requires x != 0
+    requires y != 0
+    requires 0 <= x * y
+    ensures x * y >= x && x * y >= y
+  {
+    MulINL.lemma_mul_ordering(x, y);
   }
 
   /* the product of two positive integers is always greater than the individual value of either 
@@ -138,6 +162,15 @@ module Mul {
     {
       lemma_mul_inequality(x, y, z);
     }
+  }
+
+  /* multiplying by a positive integer preserves inequality */
+  lemma lemma_mul_strict_inequality(x: int, y: int, z: int)
+    requires x < y
+    requires z > 0
+    ensures  x * z < y * z
+  {
+    MulINL.lemma_mul_strict_inequality(x, y, z);
   }
 
   /* multiplying by a positive integer preserves inequality for all integers*/
@@ -285,6 +318,13 @@ module Mul {
     }
   }
 
+  /* multiplication is distributive */
+  lemma lemma_mul_is_distributive_add(x: int, y: int, z: int)
+    ensures x * (y + z) == x * y + x * z
+  {
+    MulINL.lemma_mul_is_distributive_add(x, y, z);
+  }
+
   /* for all integers, multiplication is distributive with addition in the form x * (y + z) */
   lemma lemma_mul_is_distributive_add_auto()
     ensures forall x: int, y: int, z: int {:trigger x * (y + z)} :: x * (y + z) == x * y + x * z
@@ -355,6 +395,13 @@ module Mul {
     lemma_mul_is_distributive_add_auto();
     lemma_mul_is_distributive_sub_auto();
     lemma_mul_is_commutative_auto();
+  }
+
+  /* multiplying two positive integers will result in a positive integer */
+  lemma lemma_mul_strictly_positive(x: int, y: int)
+    ensures (0 < x && 0 < y) ==> (0 < x * y)
+  {
+    MulINL.lemma_mul_strictly_positive(x, y);
   }
 
   /* multiplying any two positive integers will result in a positive integer */

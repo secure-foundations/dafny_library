@@ -11,6 +11,7 @@ module DivInternals {
   import opened ModInternalsNonlinear
   import opened DivInternalsNonlinear
   import opened MulInternals
+  import opened GeneralInternals
 
   /* Performs division recursively with positive denominator. */
   function method {:opaque} div_pos(x: int, d: int): int

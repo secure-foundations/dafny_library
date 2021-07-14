@@ -1,6 +1,4 @@
 /* WARNING: In general, you shouldn't need to call these directly. These are used in the proofs in Mul-Internals*/
-// Mul Internals Nonlinear rename file ??? -- folder for internals
-
 
 module MulInternalsNonlinear {
 

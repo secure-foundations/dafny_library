@@ -1,16 +1,12 @@
 // in service of mul.dfy ???
 
 include "MulInternalsNonlinear.dfy"
+include "GeneralInternals.dfy"
 
 module MulInternals {
 
   import opened MulInternalsNonlinear
-
-  /* this predicate is primarily used as a trigger */
-  predicate is_le(x: int, y: int) 
-  { 
-    x <= y 
-  }
+  import opened GeneralInternals
 
   // see if needed ??? + change recursive things to functions
   /* performs multiplication for positive integers using recursive addition */
@@ -29,7 +25,6 @@ module MulInternals {
   }
 
   /* aids in the process of induction for multiplication*/
-  // maybe just use in general with is_le too ???
   lemma lemma_mul_induction_helper(f: int -> bool, i: int)
     requires f(0)
     requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
