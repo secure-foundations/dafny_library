@@ -1,4 +1,5 @@
 // in service of mul.dfy ???
+// add lit to all! ???
 
 include "MulInternalsNonlinear.dfy"
 include "GeneralInternals.dfy"

@@ -1,3 +1,6 @@
+// RUN: %dafny "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
 include "../Mathematics.dfy"
 
 module Sets {
