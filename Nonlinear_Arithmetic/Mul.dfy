@@ -1,8 +1,8 @@
 // RUN: %dafny /compile:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
-  //explain difference btween auto and not ??? at top
-  // check inequality lemmas and check redundancy ???
+/* Every lemma comes in 2 forms: 'lemma_property' and 'lemma_property_auto'. The former takes arguments and may 
+be more stable and less reliant on Z3 heuristics. The latter includes automation and its use requires less effort */
 
 include "Internals/MulInternalsNonlinear.dfy"
 include "Internals/MulInternals.dfy"
@@ -66,7 +66,6 @@ module Mul {
     MulINL.lemma_mul_nonzero(x, y);
   }
 
-  // copy over most from mul-nonlinear ??? -- call originals for proof
   /* multiplying any two nonzero integers will never result in 0 as the poduct */
   lemma lemma_mul_nonzero_auto()
     ensures forall x: int, y: int {:trigger x * y} :: x * y != 0 <==> x != 0 && y != 0
@@ -142,6 +141,21 @@ module Mul {
     }
   }
 
+  lemma lemma_mul_equality(x: int, y: int, z: int)
+    requires x == y
+    ensures x * z == y * z
+  {}
+
+  lemma lemma_mul_equality_auto()
+    ensures forall x: int, y: int, z: int {:trigger x * z, y * z } :: x == y ==> x * z == y * z
+  {
+    forall (x: int, y: int, z: int | x == y) 
+      ensures x * z == y * z
+    {
+      lemma_mul_equality(x, y, z);
+    }
+  }
+
   /* two integers that are multiplied by a positive number will maintain their numerical order */
   lemma lemma_mul_inequality(x: int, y: int, z: int)
     requires x <= y
@@ -150,11 +164,6 @@ module Mul {
   {
     lemma_mul_induction_auto(z, u => u >= 0 ==> x * u <= y * u);
   }
-
-  lemma lemma_mul_equality(x: int, y: int, z: int)
-    requires x == y
-    ensures x * z == y * z
-  {}
 
   /* any two integers that are multiplied by a positive number will maintain their numerical order */
   lemma lemma_mul_inequality_auto()
@@ -254,6 +263,31 @@ module Mul {
     }
   }
 
+/* if two seperate integers are each multiplied by a common integer and the products are equal, the 
+  two original integers are equal */
+  lemma lemma_mul_equality_converse(m: int, x: int, y: int)
+    requires m != 0
+    requires m * x == m * y
+    ensures x == y
+  {
+    lemma_mul_induction_auto(m, u => x > y && 0 < u ==> x * u > y * u);
+    lemma_mul_induction_auto(m, u => x > y && 0 > u ==> x * u < y * u);
+    lemma_mul_induction_auto(m, u => x < y && 0 < u ==> x * u < y * u);
+    lemma_mul_induction_auto(m, u => x < y && 0 > u ==> x * u > y * u);
+  }
+  
+  /* if any two seperate integers are each multiplied by a common integer and the products are equal, the 
+  two original integers are equal */
+  lemma lemma_mul_equality_converse_auto()
+    ensures forall m: int, x: int, y: int {:trigger m * x, m * y} :: (m != 0 && m * x == m * y) ==> x == y
+  {
+    forall (m: int, x: int, y: int | m != 0 && m * x == m * y)
+      ensures x == y
+    {
+      lemma_mul_equality_converse(m, x, y);
+    }
+  }
+
   /* when two integers, x and y, are each multiplied by a positive integer, z, if x <= z then the x*z <= y*z */
   lemma lemma_mul_inequality_converse(x: int, y: int, z: int)
     requires x * z <= y * z
@@ -294,31 +328,6 @@ module Mul {
       {
           lemma_mul_strict_inequality_converse(x, y, z);
       }
-  }
-
-  /* if two seperate integers are each multiplied by a common integer and the products are equal, the 
-  two original integers are equal */
-  lemma lemma_mul_equality_converse(m: int, x: int, y: int)
-    requires m != 0
-    requires m * x == m * y
-    ensures x == y
-  {
-    lemma_mul_induction_auto(m, u => x > y && 0 < u ==> x * u > y * u);
-    lemma_mul_induction_auto(m, u => x > y && 0 > u ==> x * u < y * u);
-    lemma_mul_induction_auto(m, u => x < y && 0 < u ==> x * u < y * u);
-    lemma_mul_induction_auto(m, u => x < y && 0 > u ==> x * u > y * u);
-  }
-  
-  /* if any two seperate integers are each multiplied by a common integer and the products are equal, the 
-  two original integers are equal */
-  lemma lemma_mul_equality_converse_auto()
-    ensures forall m: int, x: int, y: int {:trigger m * x, m * y} :: (m != 0 && m * x == m * y) ==> x == y
-  {
-    forall (m: int, x: int, y: int | m != 0 && m * x == m * y)
-      ensures x == y
-    {
-      lemma_mul_equality_converse(m, x, y);
-    }
   }
 
   /* multiplication is distributive */
@@ -505,6 +514,13 @@ module Mul {
     ensures x * y == (-x) * (-y)
   {
     lemma_mul_unary_negation_auto();
+  }
+
+  /* multiplying two negative integers, -x and -y, is equivalent to multiplying x and y */
+  lemma lemma_mul_cancels_negatives_auto()
+    ensures forall x: int, y: int {:trigger x * y} :: x * y == (-x) * (-y)
+  {
+    lemma_mul_cancels_negatives();
   }
 
   /* includes all properties of multiplication */
