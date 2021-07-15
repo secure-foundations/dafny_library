@@ -1,7 +1,6 @@
 include "Internals/DivInternalsNonlinear.dfy"
 include "Internals/DivInternals.dfy"
 include "../Mathematics.dfy"
-include "Power.dfy"
 
 module DivMod {
 
@@ -13,7 +12,6 @@ module DivMod {
   import opened MulInternals
   import opened MulInternalsNonlinear
   import opened Mul
-  import opened Power
 
   /**************************************************************************************************
   * Division:
@@ -982,32 +980,6 @@ module DivMod {
     ensures (x % m) * (y % m) % m == (x*y) % m
   {
     lemma_mul_mod_noop_general(x, y, m);
-  }
-  
-  /* exponentiating the remainder of b/m is equivalent to exponentiating b and then 
-  dividing that product by m */
-  lemma lemma_power_mod_noop(b: int, e:nat, m: int)
-    decreases e
-    requires 0 < m
-    ensures power(b % m, e) % m == power(b, e) % m
-  {
-    reveal power();
-    lemma_mod_properties();
-    if (e > 0)
-    {
-      calc {
-        power(b % m, e) % m;
-        ((b % m) * power(b % m, e - 1)) % m;
-          { lemma_mul_mod_noop_general(b, power(b % m, e - 1), m); }
-        ((b % m) * (power(b % m, e - 1) % m) % m) % m;
-          { lemma_power_mod_noop(b, e - 1, m); }
-        ((b % m) * (power(b, e - 1) % m) % m) % m;
-          { lemma_mul_mod_noop_general(b, power(b, e - 1), m); }
-        (b * (power(b, e - 1)) % m) % m;
-        (b * (power(b, e - 1))) % m;
-        power(b, e) % m;
-      }
-    }
   }
 
   /* the remainder can increase with a larger divisor */
