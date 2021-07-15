@@ -1,5 +1,7 @@
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
 // in service of mul.dfy ???
-// add lit to all! ???
 
 include "../../Mathematics.dfy"
 include "MulInternalsNonlinear.dfy"
@@ -25,32 +27,6 @@ module MulInternals {
     else -1 * mul_pos(-1 * x, y)
   }
 
-  /* aids in the process of induction for multiplication*/
-  lemma lemma_mul_induction_helper(f: int -> bool, i: int)
-    requires f(0)
-    requires forall i {:trigger f(i), f(i + 1)} :: i >= 0 && f(i) ==> f(i + 1)
-    requires forall i {:trigger f(i), f(i - 1)} :: i <= 0 && f(i) ==> f(i - 1)
-    ensures  f(i)
-    decreases if i >= 0 then i else -i
-  {
-    if (i > 0)
-    {
-      assert f(i - 1) by {
-        lemma_mul_induction_helper(f, i - 1);
-      }
-      var x := i - 1;
-      assert f(x) ==> f(x + 1);
-    }
-    else if (i < 0)
-    {
-      assert f(i + 1) by {
-        lemma_mul_induction_helper(f, i + 1);
-      }
-      var x := i + 1;
-      assert f(x) ==> f(x - 1);
-    }
-  }
-
   /* performs induction on multiplication */ 
   lemma lemma_mul_induction(f: int -> bool)
     requires f(0)
@@ -58,7 +34,7 @@ module MulInternals {
     requires forall i {:trigger f(i), f(i - 1)} :: i <= 0 && f(i) ==> f(i - 1)
     ensures  forall i {:trigger f(i)} :: f(i)
   {
-    forall i ensures f(i) { lemma_mul_induction_helper(f, i); }
+    forall i ensures f(i) { lemma_induction_helper(1, f, i); }
   }
 
   /* proves that multiplication is always commutative */

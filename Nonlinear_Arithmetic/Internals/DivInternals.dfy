@@ -1,7 +1,10 @@
-//- Specs/implements mathematical div and mod, not the C version.
-//- This may produce "surprising" results for negative values
-//- For example, -3 div 5 is -1 and -3 mod 5 is 2.
-//- Note this is consistent: -3 * -1 + 2 == 5
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+/* Specs/implements mathematical div and mod, not the C version.
+This may produce "surprising" results for negative values
+For example, -3 div 5 is -1 and -3 mod 5 is 2.
+Note this is consistent: -3 * -1 + 2 == 5 */
 
 include "../../Mathematics.dfy"
 include "ModInternals.dfy"

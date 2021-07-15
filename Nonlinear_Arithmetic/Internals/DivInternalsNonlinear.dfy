@@ -1,5 +1,7 @@
-//- <NuBuild AddDafnyFlag /proverOpt:O:smt.arith.nl=true/>
-//- WARNING: In general, you shouldn't need to call these directly.
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+/* WARNING: In general, you shouldn't need to call these directly. These are used in the proofs in Div-Internals */
 
 module DivInternalsNonlinear {
 

@@ -1,4 +1,6 @@
-include "../../Mathematics.dfy"
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
 include "MulInternals.dfy"
 include "../Mul.dfy"
 include "ModInternalsNonlinear.dfy"
@@ -27,27 +29,6 @@ module ModInternals {
       mod_recursive(x - d, d)
   }
 
-  /* aids in the process of induction for modulus */
-  lemma lemma_mod_induction_helper(n: int, f: int -> bool, x: int)
-    requires n > 0
-    requires forall i :: 0 <= i < n ==> f(i)
-    requires forall i {:trigger f(i), f(i + n)} :: i >= 0 && f(i) ==> f(i + n)
-    requires forall i {:trigger f(i), f(i - n)} :: i < n  && f(i) ==> f(i - n)
-    ensures  f(x)
-    decreases if x >= n then x else -x
-  {
-    if (x >= n)
-    {
-      lemma_mod_induction_helper(n, f, x - n);
-      assert f((x - n) + n);
-    }
-    else if (x < 0)
-    {
-      lemma_mod_induction_helper(n, f, x + n);
-      assert f((x + n) - n);
-    }
-  }
-
   /* performs induction on modulus */ 
   lemma lemma_mod_induction_forall(n: int, f: int -> bool)
     requires n > 0
@@ -56,7 +37,7 @@ module ModInternals {
     requires forall i {:trigger f(i), f(i - n)} :: i < n  && f(i) ==> f(i - n)
     ensures  forall i :: f(i)
   {
-    forall i ensures f(i) { lemma_mod_induction_helper(n, f, i); }
+    forall i ensures f(i) { lemma_induction_helper(n, f, i); }
   }
 
   // not used anywhere else in Mod
