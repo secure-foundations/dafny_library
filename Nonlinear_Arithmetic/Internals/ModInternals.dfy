@@ -1,3 +1,4 @@
+include "../../Mathematics.dfy"
 include "MulInternals.dfy"
 include "../Mul.dfy"
 include "ModInternalsNonlinear.dfy"
@@ -5,12 +6,12 @@ include "DivInternalsNonlinear.dfy"
 
 module ModInternals {
 
+  import opened Mathematics
   import opened Mul
   import opened MulInternalsNonlinear
   import opened MulInternals
   import opened ModInternalsNonlinear
   import opened DivInternalsNonlinear
-  import opened GeneralInternals
 
   /* Performs modulus recursively. */
   // make all recursive only a function ???

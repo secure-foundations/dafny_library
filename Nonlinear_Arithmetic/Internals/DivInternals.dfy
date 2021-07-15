@@ -3,15 +3,16 @@
 //- For example, -3 div 5 is -1 and -3 mod 5 is 2.
 //- Note this is consistent: -3 * -1 + 2 == 5
 
+include "../../Mathematics.dfy"
 include "ModInternals.dfy"
 
 module DivInternals {
 
+  import opened Mathematics
   import opened ModInternals
   import opened ModInternalsNonlinear
   import opened DivInternalsNonlinear
   import opened MulInternals
-  import opened GeneralInternals
 
   /* Performs division recursively with positive denominator. */
   function method {:opaque} div_pos(x: int, d: int): int

@@ -1,7 +1,9 @@
-include "Internals/MulInternals.dfy"
+include "../Mathematics.dfy"
 include "Mul.dfy"
+include "Internals/MulInternals.dfy"
 
 module Power {
+  import opened Mathematics
   import opened Mul
   import opened MulInternals
 
