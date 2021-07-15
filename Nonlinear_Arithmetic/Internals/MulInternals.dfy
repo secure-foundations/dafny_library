@@ -3,13 +3,13 @@
 
 // in service of mul.dfy ???
 
+include "../../Mathematics.dfy"
 include "MulInternalsNonlinear.dfy"
-include "GeneralInternals.dfy"
 
 module MulInternals {
 
+  import opened Mathematics
   import opened MulInternalsNonlinear
-  import opened GeneralInternals
 
   // see if needed ??? + change recursive things to functions
   /* performs multiplication for positive integers using recursive addition */

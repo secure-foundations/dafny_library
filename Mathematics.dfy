@@ -1,4 +1,11 @@
 module Mathematics {
+
+  /* this predicate is primarily used as a trigger */
+  predicate is_le(x: int, y: int) 
+  { 
+    x <= y 
+  }
+
   function method min(a: int, b: int): int
   {
     if a < b
