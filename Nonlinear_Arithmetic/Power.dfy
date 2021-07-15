@@ -7,6 +7,8 @@ be more stable and less reliant on Z3 heuristics. The latter includes automation
 include "Internals/DivInternals.dfy"
 include "DivMod.dfy"
 include "../Mathematics.dfy"
+include "Internals/GeneralInternals.dfy"
+include "Internals/ModInternalsNonlinear.dfy"
 include "Mul.dfy"
 include "Internals/MulInternals.dfy"
 
@@ -14,6 +16,8 @@ module Power {
   import opened DivInternals
   import opened DivMod
   import opened Mathematics
+  import opened GeneralInternals
+  import opened ModInternalsNonlinear
   import opened Mul
   import opened MulInternals
 
@@ -133,7 +137,7 @@ module Power {
 
   /* A positive number raised to any power is positive. */
   lemma lemma_power_positive(b: int, e: nat)
-    requires 0 < b
+    requires b > 0
     ensures  0 < power(b, e)
   {
     lemma_power_auto();
@@ -142,10 +146,10 @@ module Power {
 
   lemma lemma_power_positive_auto()
     ensures forall b: int, e: nat {:trigger power(b, e)}
-      :: 0 < b ==> 0 < power(b, e)
+      :: b > 0 ==> 0 < power(b, e)
   {
     reveal_power();
-    forall b: int, e: nat {:trigger power(b, e)} | 0 < b
+    forall b: int, e: nat {:trigger power(b, e)} | b > 0
       ensures 0 < power(b, e)
     {
       lemma_power_positive(b, e);
@@ -211,15 +215,16 @@ module Power {
   }
 
   lemma lemma_power_subtracts_auto()
+    ensures forall b: nat, e1: nat :: b > 0 ==> power(b, e1) > 0
     ensures forall b: nat, e1: nat, e2: nat {:trigger power(b, e2 - e1)}
       :: b > 0 && e1 <= e2 ==>
-        && power(b, e1) > 0
-        && power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
+         power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
   {
     reveal_power();
-    forall (b: nat, e1: nat, e2: nat | b > 0 && e1 <= e2)
-      ensures && power(b, e1) > 0
-              && power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
+    lemma_power_positive_auto();
+    forall b: nat, e1: nat, e2: nat {:trigger power(b, e2 - e1)}
+      | b > 0 && e1 <= e2
+      ensures power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
     {
       lemma_power_subtracts(b, e1, e2);
     }
@@ -411,7 +416,7 @@ module Power {
 
   /* A positive number raised to a power increases as the power increases. */
   lemma lemma_power_increases(b: nat, e1: nat, e2: nat)
-    requires 0 < b
+    requires b > 0
     requires e1 <= e2
     ensures power(b, e1) <= power(b, e2)
   {
@@ -450,7 +455,7 @@ module Power {
   /* A power strictly increases as a positive number raised to the power
   strictly increases. */
   lemma lemma_power_strictly_increases_converse(b: nat, e1: nat, e2: nat)
-    requires 0 < b
+    requires b > 0
     requires power(b, e1) < power(b, e2)
     ensures e1 < e2
   {
@@ -463,11 +468,11 @@ module Power {
   lemma lemma_power_strictly_increases_converse_auto()
     ensures forall b: nat, e1: nat, e2: nat
       {:trigger power(b, e1), power(b, e2)}
-      :: 0 < b && power(b, e1) < power(b, e2) ==> e1 < e2
+      :: b > 0 && power(b, e1) < power(b, e2) ==> e1 < e2
   {
     reveal_power();
     forall b: nat, e1: nat, e2: nat {:trigger power(b, e1), power(b, e2)}
-      | 0 < b && power(b, e1) < power(b, e2)
+      | b > 0 && power(b, e1) < power(b, e2)
       ensures e1 < e2
     {
       lemma_power_strictly_increases_converse(b, e1, e2);
@@ -502,7 +507,7 @@ module Power {
 
   /* (b^xy)^z = (b^x)^yz */
   lemma lemma_pull_out_powers(b: nat, x: nat, y: nat, z: nat)
-    requires 0 < b
+    requires b > 0
     ensures 0 <= x * y
     ensures 0 <= y * z
     ensures power(power(b, x * y), z) == power(power(b, x), y * z)
@@ -523,12 +528,12 @@ module Power {
     ensures forall y: nat, z: nat {:trigger z * y} :: 0 <= z * y && 0 <= y * z
     ensures forall b: nat, x: nat, y: nat, z: nat
       {:trigger power(power(b, x * y), z)}
-      :: 0 < b ==> power(power(b, x * y), z) == power(power(b, x), y * z)
+      :: b > 0 ==> power(power(b, x * y), z) == power(power(b, x), y * z)
   {
     reveal_power();
     lemma_mul_nonnegative_auto();
     forall b: nat, x: nat, y: nat, z: nat {:trigger power(power(b, x * y), z)}
-      | 0 < b ensures power(power(b, x * y), z) == power(power(b, x), y * z)
+      | b > 0 ensures power(power(b, x * y), z) == power(power(b, x), y * z)
     {
       lemma_pull_out_powers(b, x, y, z);
     }
@@ -536,7 +541,7 @@ module Power {
 
   /* Inequality due to smaller numerator, same denominator. */
   lemma lemma_power_division_inequality(x: nat, b: nat, e1: nat, e2: nat)
-    requires 0 < b
+    requires b > 0
     requires e2 <= e1
     requires x < power(b, e1)
     ensures power(b, e2) > 0
@@ -558,26 +563,28 @@ module Power {
     }
   }
 
-  // lemma lemma_power_division_inequality_auto()
-  //   ensures forall x: nat, b: nat, e1: nat, e2: nat
-  //     {:trigger x / power(b, e2), power(b, e1 - e2)}
-  //     :: 0 < b && e2 <= e1 && x < power(b, e1) ==>
-  //        power(b, e2) > 0 && x / power(b, e2) < power(b, e1 - e2)
-  // {
-  //   reveal_power();
-  //   forall x: nat, b: nat, e1: nat, e2: nat
-  //     {:trigger x / power(b, e2), power(b, e1 - e2)}
-  //     | 0 < b && e2 <= e1 && x < power(b, e1)
-  //     ensures power(b, e2) > 0 && x / power(b, e2) < power(b, e1 - e2)
-  //   {
-  //     lemma_power_division_inequality(x, b, e1, e2);
-  //   }
-  // }
+  lemma lemma_power_division_inequality_auto()
+    ensures forall b: nat, e2: nat :: b > 0 ==> power(b, e2) > 0
+    ensures forall x: nat, b: nat, e1: nat, e2: nat
+      {:trigger x / power(b, e2), power(b, e1 - e2)}
+      :: b > 0 && e2 <= e1 && x < power(b, e1) ==>
+         x / power(b, e2) < power(b, e1 - e2)
+  {
+    reveal_power();
+    lemma_power_positive_auto();
+    forall x: nat, b: nat, e1: nat, e2: nat
+      {:trigger x / power(b, e2), power(b, e1 - e2)}
+      | b > 0 && e2 <= e1 && x < power(b, e1)
+      ensures x / power(b, e2) < power(b, e1 - e2)
+    {
+      lemma_power_division_inequality(x, b, e1, e2);
+    }
+  }
 
   /* ((b % e)^e) % m = b^e % m */
   lemma lemma_power_mod_noop(b: int, e: nat, m: int)
     decreases e
-    requires 0 < m
+    requires m > 0
     ensures power(b % m, e) % m == power(b, e) % m
   {
     reveal power();
@@ -600,11 +607,11 @@ module Power {
 
   lemma lemma_power_mod_noop_auto()
     ensures forall b: nat, e: nat, m: nat {:trigger power(b % m, e)}
-      :: 0 < m ==> power(b % m, e) % m == power(b, e) % m
+      :: m > 0 ==> power(b % m, e) % m == power(b, e) % m
   {
     reveal_power();
     forall b: nat, e: nat, m: nat {:trigger power(b % m, e)}
-      | 0 < m ensures power(b % m, e) % m == power(b, e) % m
+      | m > 0 ensures power(b % m, e) % m == power(b, e) % m
     {
       lemma_power_mod_noop(b, e, m);
     }
