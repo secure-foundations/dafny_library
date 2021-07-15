@@ -1,3 +1,6 @@
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
   //explain difference btween auto and not ??? at top
   // check inequality lemmas and check redundancy ???
 

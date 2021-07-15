@@ -1,18 +1,21 @@
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
 include "Internals/DivInternalsNonlinear.dfy"
 include "Internals/DivInternals.dfy"
 include "Power.dfy"
+include "Internals/GeneralInternals.dfy"
 
 module DivMod {
 
   import opened DivInternals
-  import opened DivInternalsNonlinear
+  import DivINL = DivInternalsNonlinear
   import opened ModInternals
-  import opened ModInternalsNonlinear
+  import ModINL = ModInternalsNonlinear
   import opened MulInternals
-  import opened MulInternalsNonlinear
   import opened Mul
-  import opened DivInternalsNonlinear
-  import opened DivInternals
+  import opened Power
+  import opened GeneralInternals
 
   /**************************************************************************************************
   * Division:
@@ -20,7 +23,7 @@ module DivMod {
 
   /* the common syntax of division gives the same quotient as performing division through recursion */
   lemma lemma_div_is_div_recursive(x: int, d: int)
-    requires d > 0
+    requires 0 < d
     ensures div_recursive(x, d) == x / d
   {
     reveal_div_recursive();
@@ -38,6 +41,22 @@ module DivMod {
     {
       lemma_div_is_div_recursive(x, d);
     }
+  }
+
+  /* the quotient of an integer divided by itself is 1 */
+  lemma lemma_div_by_self(d:int)
+    requires d != 0
+    ensures d/d == 1
+  { 
+    DivINL.lemma_div_by_self(d);
+  }
+
+  /* zero divided by an integer besides 0 is 0 */
+  lemma {:opaque} lemma_div_of_0(d:int)
+    requires d != 0
+    ensures 0/d == 0
+  { 
+    DivINL.lemma_div_of_0(d);
   }
 
   /* ensures the basic propoerties of division: 0 divided by any integer is 0; any integer 
@@ -170,16 +189,16 @@ module DivMod {
     }
   }
 
-  lemma lemma_dividing_sums_auto()
-    ensures forall a: int, b: int, d: int, R: int {:trigger d * ((a + b) / d) - R, d*(a/d) + d*(b/d)}
-        :: 0 < d &&  R == a%d + b%d - (a+b)%d ==> d*((a+b)/d) - R == d*(a/d) + d*(b/d)
-  {
-    forall (a: int, b: int, d: int, R: int | 0< d &&  R == a%d + b%d - (a+b)%d)
-      ensures d*((a+b)/d) - R == d*(a/d) + d*(b/d)
-    {
-      lemma_dividing_sums(a, b, d, R);
-    }
-  }
+  // lemma lemma_dividing_sums_auto()
+  //   ensures forall a: int, b: int, d: int, R: int {:trigger d * ((a + b) / d) - R, d*(a/d) + d*(b/d)}
+  //       :: 0 < d &&  R == a%d + b%d - (a+b)%d ==> d*((a+b)/d) - R == d*(a/d) + d*(b/d)
+  // {
+  //   forall (a: int, b: int, d: int, R: int | 0< d &&  R == a%d + b%d - (a+b)%d)
+  //     ensures d*((a+b)/d) - R == d*(a/d) + d*(b/d)
+  //   {
+  //     lemma_dividing_sums(a, b, d, R);
+  //   }
+  // }
 
   /* dividing a whole number by a natural number will result in a quotient that is 
   greater than or equal to 0 */
@@ -299,65 +318,93 @@ module DivMod {
   /* dividing an integer by 1 or more results in a quotient that is less than or equal to 
   the original dividend */
   lemma lemma_div_nonincreasing(x: int, d: int)
-    requires 0<=x
+    requires 0 <= x
     requires 0<d
     ensures x/d <= x
   {
     lemma_div_induction_auto(d, x, u => 0<=u ==> u/d <= u);
   }
 
-  /* ??? */
-  lemma lemma_breakdown(a: int, b: int, c: int)
-    requires 0<=a
-    requires 0<b
-    requires 0<c
-    ensures 0<b*c
-    ensures a%(b*c) == b * ((a/b)%c) + a%b
+  lemma lemma_div_nonincreasing_auto()
+    ensures forall x: int, d: int {:trigger x / d } :: 0 <= x && 0 < d ==> x / d <= x
+  {
+    forall (x: int, d: int | 0 <= x && 0 < d)
+      ensures x / d <= x 
+    {
+      lemma_div_nonincreasing(x, d);
+    }
+  }
+
+  /* a natural number x divided by a larger natural number gives a remainder equal to x */
+  lemma lemma_small_mod(x:nat, m:nat)
+    requires x<m
+    requires 0<m
+    ensures x % m == x
+  {
+    ModINL.lemma_small_mod(x, m);
+  }
+
+  lemma lemma_breakdown(x: int, y: int, z: int)
+    requires 0<=x
+    requires 0<y
+    requires 0<z
+    ensures 0<y*z
+    ensures x%(y*z) ==y* ((x/y)%z) + x%y
   {
     lemma_mul_strictly_positive_auto();
-    lemma_div_pos_is_pos(a,b);
-    assert 0<=a/b;
+    lemma_div_pos_is_pos(x,y);
+    assert 0<=x/y;
 
     calc {
-      (b*(a/b)) % (b*c) + (a%b) % (b*c);
-        <=    { lemma_part_bound1(a, b, c); }
-      b*(c-1) + (a%b) % (b*c);
-        <    { lemma_part_bound2(a, b, c); }
-      b*(c-1) + b;
+      (y*(x/y)) % (y*z) + (x%y) % (y*z);
+        <=    { lemma_part_bound1(x, y, z); }
+      y*(z-1) + (x%y) % (y*z);
+        <    { lemma_part_bound2(x, y, z); }
+      y*(z-1) + y;
             { lemma_mul_basics_auto(); }
-      b*(c-1) + b * 1;
+      y*(z-1) + y * 1;
             { lemma_mul_is_distributive_auto(); }
-      b*(c-1+1);
-      b*c;
+      y*(z-1+1);
+      y*z;
     }
 
     calc {
-      a % (b*c);
-            { lemma_fundamental_div_mod(a,b); }
-      (b*(a/b)+a%b) % (b*c);
+      x % (y*z);
+            { lemma_fundamental_div_mod(x,y); }
+      (y*(x/y)+x%y) % (y*z);
             {
               lemma_mod_properties();
-              assert 0<=a%b;
-              lemma_mul_nonnegative(b,a/b);
-              assert (b*(a/b)) % (b*c) + (a%b) % (b*c) < b*c;
-              lemma_mod_adds(b*(a/b), a%b, b*c);
+              assert 0<=x%y;
+              lemma_mul_nonnegative(y,x/y);
+              assert (y*(x/y)) % (y*z) + (x%y) % (y*z) < y*z;
+              lemma_mod_adds(y*(x/y), x%y, y*z);
             }
-      (b*(a/b)) % (b*c) + (a%b) % (b*c);
+      (y*(x/y)) % (y*z) + (x%y) % (y*z);
             {
               lemma_mod_properties();
-              lemma_mul_increases(c,b);
+              lemma_mul_increases(z,y);
               lemma_mul_is_commutative_auto();
-              assert a%b<b<=b*c;
-              lemma_small_mod(a%b,b*c);
-              assert (a%b) % (b*c) == a%b;
+              assert x%y<y<=y*z;
+              lemma_small_mod(x%y,y*z);
+              assert (x%y) % (y*z) == x%y;
             }
-      (b*(a/b)) % (b*c) + a%b;
-            { lemma_truncate_middle(a/b,b,c); }
-      b * ((a/b)%c) + a%b;
+      (y*(x/y)) % (y*z) + x%y;
+            { lemma_truncate_middle(x/y,y,z); }
+      y * ((x/y)%z) + x%y;
+    }
+  }
+
+  lemma lemma_breakdown_auto()
+    ensures forall x: int, y: int, z: int {:trigger y*z, x % (y * z), y * ((x / y) % z) + x % y} 
+        :: 0 <= x && 0 < y && 0 < z ==> 0 < y * z && x % (y * z) == y * ((x / y) % z) + x % y
+  {
+    forall (x: int, y: int, z: int  | 0 <= x && 0 < y && 0 < z)
+      ensures 0 < y * z && x % (y * z) == y * ((x / y) % z) + x % y
+    {
+      lemma_breakdown(x, y, z);
     }
   }
   
-  /* why...? */
   lemma lemma_remainder_upper(x: int, d: int)
     requires 0 <= x
     requires 0 < d
@@ -366,8 +413,17 @@ module DivMod {
     lemma_mul_auto();
     lemma_div_induction_auto(d, x, u => 0 <= u ==> u - d < u / d * d);
   }
+
+  lemma lemma_remainder_upper_auto()
+    ensures forall x: int, d: int {:trigger x - d, d * d} :: 0 <= x && 0 < d ==> x - d < x / d * d
+  {
+    forall (x: int, d: int | 0 <= x && 0 < d)
+      ensures x - d < x / d * d
+    {
+      lemma_remainder_upper(x, d);
+    }
+  }
   
-  /* why...? */
   lemma lemma_remainder_lower(x: int, d: int)
     requires 0 <= x
     requires 0 < d
@@ -376,8 +432,13 @@ module DivMod {
     lemma_mul_auto();
     lemma_div_induction_auto(d, x, u => 0 <= u ==> u >= u / d * d);
   }
+
+  // lemma lemma_remainder_lower_auto()
+  //   ensures forall
+  // {
+
+  // }
   
-  /* not sure why here...? */
   lemma lemma_remainder(x: int, d: int)
     requires 0 <= x
     requires 0 < d
@@ -387,6 +448,13 @@ module DivMod {
     lemma_div_induction_auto(d, x, u => 0 <= u - u / d * d < d);
   }
 
+ /* describes fundementals of the modulus operator */
+  lemma lemma_fundamental_div_mod(x:int, d:int)
+    requires d != 0
+    ensures x == d * (x / d) + (x % d)
+  {
+    ModINL.lemma_fundamental_div_mod(x, d);
+  }
 
   /* divding a fraction by a divisor is equivalent to multiplying the fraction's 
   denominator with the divisor */
@@ -923,7 +991,7 @@ module DivMod {
   }
   
   /* proves the validity of the quotient and remainder */
-  lemma {:timeLimitMultiplier 2} lemma_fundamental_div_mod_converse(x: int, d: int, q: int, r: int)
+  lemma {:timeLimitMultiplier 5} lemma_fundamental_div_mod_converse(x: int, d: int, q: int, r: int)
     requires d != 0
     requires 0 <= r < d
     requires x == q * d + r
