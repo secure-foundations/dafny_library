@@ -1,11 +1,13 @@
 include "Internals/DivInternalsNonlinear.dfy"
 include "Internals/DivInternals.dfy"
+include "../Mathematics.dfy"
 include "Power.dfy"
 
 module DivMod {
 
   import opened DivInternals
   import opened DivInternalsNonlinear
+  import opened Mathematics
   import opened ModInternals
   import opened ModInternalsNonlinear
   import opened MulInternals
