@@ -11,8 +11,7 @@ module DivMod {
   import opened MulInternals
   import opened MulInternalsNonlinear
   import opened Mul
-  import opened DivInternalsNonlinear
-  import opened DivInternals
+  import opened Power
 
   /**************************************************************************************************
   * Division:
