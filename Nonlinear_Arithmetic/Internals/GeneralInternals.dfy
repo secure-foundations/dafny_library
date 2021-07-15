@@ -1,3 +1,6 @@
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
 module GeneralInternals {
 
   /* this predicate is primarily used as a trigger */

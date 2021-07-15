@@ -1,9 +1,11 @@
 // RUN: %dafny /compile:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
+/* Every lemma comes in 2 forms: 'lemma_property' and 'lemma_property_auto'. The former takes arguments and may 
+be more stable and less reliant on Z3 heuristics. The latter includes automation and its use requires less effort */
+
 include "Internals/DivInternalsNonlinear.dfy"
 include "Internals/DivInternals.dfy"
-include "Power.dfy"
 include "Internals/GeneralInternals.dfy"
 
 module DivMod {
@@ -14,7 +16,6 @@ module DivMod {
   import ModINL = ModInternalsNonlinear
   import opened MulInternals
   import opened Mul
-  import opened Power
   import opened GeneralInternals
 
   /**************************************************************************************************

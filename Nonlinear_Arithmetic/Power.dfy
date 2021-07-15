@@ -1,7 +1,12 @@
+// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+/* Every lemma comes in 2 forms: 'lemma_property' and 'lemma_property_auto'. The former takes arguments and may 
+be more stable and less reliant on Z3 heuristics. The latter includes automation and its use requires less effort */
+
 include "Internals/DivInternals.dfy"
 include "DivMod.dfy"
 include "../Mathematics.dfy"
-include "Internals/ModInternalsNonlinear.dfy"
 include "Mul.dfy"
 include "Internals/MulInternals.dfy"
 
@@ -9,7 +14,6 @@ module Power {
   import opened DivInternals
   import opened DivMod
   import opened Mathematics
-  import opened ModInternalsNonlinear
   import opened Mul
   import opened MulInternals
 
@@ -206,21 +210,20 @@ module Power {
     }
   }
 
-  // lemma lemma_power_subtracts_auto()
-  //   ensures forall b: nat, e1: nat, e2: nat {:trigger power(b, e2 - e1)}
-  //     :: b > 0 && e1 <= e2 ==>
-  //       && power(b, e1) > 0
-  //       && power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
-  // {
-  //   reveal_power();
-  //   forall b: nat, e1: nat, e2: nat {:trigger power(b, e2 - e1)}
-  //     | b > 0 && e1 <= e2
-  //     ensures && power(b, e1) > 0
-  //             && power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
-  //   {
-  //     lemma_power_subtracts(b, e1, e2);
-  //   }
-  // }
+  lemma lemma_power_subtracts_auto()
+    ensures forall b: nat, e1: nat, e2: nat {:trigger power(b, e2 - e1)}
+      :: b > 0 && e1 <= e2 ==>
+        && power(b, e1) > 0
+        && power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
+  {
+    reveal_power();
+    forall (b: nat, e1: nat, e2: nat | b > 0 && e1 <= e2)
+      ensures && power(b, e1) > 0
+              && power(b, e2 - e1) == power(b, e2) / power(b, e1) > 0
+    {
+      lemma_power_subtracts(b, e1, e2);
+    }
+  }
 
   /* Multiply exponents when finding the power of a power. */
   lemma lemma_power_multiplies(a: int, b: nat, c: nat)
