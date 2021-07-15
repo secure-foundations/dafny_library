@@ -1,9 +1,9 @@
-include "../Mathematics.dfy"
+include "Internals/GeneralInternals.dfy"
 include "Internals/MulInternals.dfy"
 include "Power.dfy"
 
 module Power2 {
-  import opened Mathematics
+  import opened GeneralInternals
   import opened MulInternals
   import opened Power
 

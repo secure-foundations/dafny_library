@@ -3,7 +3,6 @@
 
 include "Internals/DivInternalsNonlinear.dfy"
 include "Internals/DivInternals.dfy"
-include "Power.dfy"
 include "Internals/GeneralInternals.dfy"
 
 module DivMod {
@@ -14,7 +13,6 @@ module DivMod {
   import ModINL = ModInternalsNonlinear
   import opened MulInternals
   import opened Mul
-  import opened Power
   import opened GeneralInternals
 
   /**************************************************************************************************
