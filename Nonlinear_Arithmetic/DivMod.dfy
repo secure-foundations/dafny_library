@@ -434,11 +434,15 @@ module DivMod {
     lemma_div_induction_auto(d, x, u => 0 <= u ==> u >= u / d * d);
   }
 
-  // lemma lemma_remainder_lower_auto()
-  //   ensures forall
-  // {
-
-  // }
+  lemma lemma_remainder_lower_auto()
+    ensures forall x: int, d: int {:trigger x / d * d} :: 0 <= x && 0 < d ==> x >= x / d * d
+  {
+    forall x: int, d: int | 0 <= x && 0 < d
+      ensures x >= x / d * d
+    {
+      lemma_remainder_lower(x, d);
+    }
+  }
   
   lemma lemma_remainder(x: int, d: int)
     requires 0 <= x
@@ -449,12 +453,32 @@ module DivMod {
     lemma_div_induction_auto(d, x, u => 0 <= u - u / d * d < d);
   }
 
+  lemma lemma_remainder_auto()
+    ensures forall x: int, d: int {:trigger x - (x / d * d)} :: 0 <= x && 0 < d ==> 0 <= x - (x / d * d) < d
+  {
+    forall x: int, d: int | 0 <= x && 0 < d 
+      ensures 0 <= x - (x / d * d) < d
+    {
+      lemma_remainder(x, d);
+    }
+  }
+
  /* describes fundementals of the modulus operator */
   lemma lemma_fundamental_div_mod(x:int, d:int)
     requires d != 0
     ensures x == d * (x / d) + (x % d)
   {
     ModINL.lemma_fundamental_div_mod(x, d);
+  }
+
+  lemma lemma_fundamental_div_mod_auto()
+    ensures forall x:int, d:int {:trigger d * (x / d) + (x % d)} :: d != 0 ==> x == d * (x / d) + (x % d) 
+  {
+    forall x:int, d:int | d != 0
+      ensures x == d * (x / d) + (x % d)
+    {
+      lemma_fundamental_div_mod(x, d);
+    }
   }
 
   /* divding a fraction by a divisor is equivalent to multiplying the fraction's 
@@ -590,22 +614,42 @@ module DivMod {
     }
   }
   
-  /* seems specific... */
+  lemma lemma_mul_hoist_inequality_auto()
+    ensures forall x: int, y: int, z: int {:trigger x*(y/z), (x*y)/z} :: 0 <= x && 0 < z ==> x*(y/z) <= (x*y)/z
+  {
+    forall (x: int, y: int, z: int | 0 <= x && 0 < z)
+      ensures x*(y/z) <= (x*y)/z
+    {
+      lemma_mul_hoist_inequality(x, y, z);
+    }
+  }
+
   lemma lemma_indistinguishable_quotients(a: int, b: int, d: int)
-    requires 0<d
-    requires 0 <= a - a%d <= b < a + d - a%d
-    ensures a/d == b/d
+    requires 0 < d
+    requires 0 <= a - a % d <= b < a + d - a % d
+    ensures a / d == b / d
   {
     lemma_div_induction_auto(d, a - b, ab => var u := ab + b; 0 <= u - u%d <= b < u + d - u%d ==> u/d == b/d);
   }
-  
+
+  lemma lemma_indistinguishable_quotients_auto()
+    ensures forall a: int, b: int, d: int {:trigger a / d, b / d} 
+      :: 0 < d && 0 <= a - a % d <= b < a + d - a % d ==> a / d == b / d
+  {
+    forall a: int, b: int, d: int | 0 < d && 0 <= a - a % d <= b < a + d - a % d 
+      ensures a / d == b / d
+    {
+      lemma_indistinguishable_quotients(a, b, d);
+    } 
+  }
+
   /* common factors from the dividend and divisor of a modulus operation can be factored out */
   lemma lemma_truncate_middle(x: int, b: int, c: int)
-    requires 0<=x
-    requires 0<b
-    requires 0<c
-    ensures 0<b*c
-    ensures (b*x)%(b*c) == b*(x%c)
+    requires 0 <= x
+    requires 0 < b
+    requires 0 < c
+    ensures 0 < b * c
+    ensures (b * x) % (b * c) == b * (x % c)
   {
     lemma_mul_strictly_positive_auto();
     lemma_mul_nonnegative_auto();
@@ -630,13 +674,24 @@ module DivMod {
     }
   }
 
+  lemma lemma_truncate_middle_auto()
+    ensures forall x: int, b: int, c: int {:trigger b*(x%c)} 
+      :: 0 <= x && 0 < b && 0 < c && 0 < b * c ==> (b * x) % (b * c) == b * (x % c)
+  {
+    forall x: int, b: int, c: int | 0 <= x && 0 < b && 0 < c && 0 < b * c 
+      ensures (b * x) % (b * c) == b * (x % c)
+    {
+      lemma_truncate_middle(x, b, c);
+    }
+  }
+
   /* multiplying the numerator and denominator by an integer does not change the quotient */
   lemma lemma_div_multiples_vanish_quotient(x: int, a: int, d: int)
-    requires 0<x
-    requires 0<=a
-    requires 0<d
-    ensures 0 < x*d
-    ensures a/d == (x*a)/(x*d)
+    requires 0 < x
+    requires 0 <= a
+    requires 0 < d
+    ensures 0 < x * d
+    ensures a / d == (x * a) / (x * d)
   {
     lemma_mul_strictly_positive(x,d);
     calc {
@@ -647,6 +702,17 @@ module DivMod {
       ((x*a)/x) / d;
         { lemma_div_multiples_vanish(a, x); }
       a / d;
+    }
+  }
+
+  lemma lemma_div_multiples_vanish_quotient_auto()
+    ensures forall x: int, a: int, d: int {:trigger a / d, x * d, x * a} 
+      :: 0 < x && 0 <= a && 0 < d ==> 0 < x * d  &&  a / d == (x * a) / (x * d)
+  {
+    forall x: int, a: int, d: int | 0 < x && 0 <= a && 0 < d
+      ensures 0 < x * d  &&  a / d == (x * a) / (x * d)
+    {
+      lemma_div_multiples_vanish_quotient(x, a, d);
     }
   }
 
@@ -661,6 +727,8 @@ module DivMod {
     lemma_mul_auto();
     lemma_div_induction_auto(d, a, u => u%d == 0 ==> u==d*((u+r)/d));
   }
+
+  lemma lemma_round_down(
 
   /* this is the same as writing x + (b/d) == x when b is less than d; this is true because (b/d) == 0 */
   lemma lemma_div_multiples_vanish_fancy(x: int, b: int, d: int)
@@ -974,22 +1042,22 @@ module DivMod {
     lemma_div_auto(d);
   }
 
-  /* comment more confusing than reading ensures clause */
-  lemma {:timeLimitMultiplier 2} lemma_mod_neg_neg(x: int, d: int)
-    requires 0 < d
-    ensures x%d == (x*(1-d))%d
-  {
-    forall ensures (x - x * d) % d == x % d
-    {
-      lemma_mod_auto(d);
-      var f := i => (x - i * d) % d == x % d;
-      assert  mul_auto() ==> && f(0)
-                            && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
-                            && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1));
-      lemma_mul_induction_auto(x, f);
-    }
-    lemma_mul_auto();
-  }
+  // /* comment more confusing than reading ensures clause */
+  // lemma {:timeLimitMultiplier 2} lemma_mod_neg_neg(x: int, d: int)
+  //   requires 0 < d
+  //   ensures x%d == (x*(1-d))%d
+  // {
+  //   forall ensures (x - x * d) % d == x % d
+  //   {
+  //     lemma_mod_auto(d);
+  //     var f := i => (x - i * d) % d == x % d;
+  //     assert  mul_auto() ==> && f(0)
+  //                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
+  //                           && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1));
+  //     lemma_mul_induction_auto(x, f);
+  //   }
+  //   lemma_mul_auto();
+  // }
   
   /* proves the validity of the quotient and remainder */
   lemma {:timeLimitMultiplier 5} lemma_fundamental_div_mod_converse(x: int, d: int, q: int, r: int)
