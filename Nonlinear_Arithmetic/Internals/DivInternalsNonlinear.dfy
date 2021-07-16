@@ -11,14 +11,14 @@ module DivInternalsNonlinear {
   /* zero divided by an integer besides 0 is 0 */
   lemma lemma_div_of_0(d:int)
     requires d != 0
-    ensures 0/d == 0
+    ensures 0 / d == 0
   { 
   }
 
   /* the quotient of an integer divided by itself is 1 */
   lemma lemma_div_by_self(d:int)
     requires d != 0
-    ensures d/d == 1
+    ensures d / d == 1
   { 
   }
 

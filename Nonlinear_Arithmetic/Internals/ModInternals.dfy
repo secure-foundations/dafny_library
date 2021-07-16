@@ -16,7 +16,6 @@ module ModInternals {
   import opened DivInternalsNonlinear
 
   /* Performs modulus recursively. */
-  // make all recursive only a function ???
   function method {:opaque} mod_recursive(x: int, d: int): int
     requires d > 0
     decreases if x < 0 then (d - x) else x

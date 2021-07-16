@@ -30,8 +30,8 @@ module ModInternalsNonlinear {
 
   /* a natural number x divided by a larger natural number gives a remainder equal to x */
   lemma lemma_small_mod(x:nat, m:nat)
-    requires x<m
-    requires 0<m
+    requires x < m
+    requires 0 < m
     ensures x % m == x
   {
   }

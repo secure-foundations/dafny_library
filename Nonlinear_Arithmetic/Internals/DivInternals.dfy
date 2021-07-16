@@ -23,11 +23,11 @@ module DivInternals {
     decreases if x < 0 then (d - x) else x
   {
     if x < 0 then
-      -1 + div_pos(x+d, d)
+      -1 + div_pos(x + d, d)
     else if x < d then
       0
     else
-      1 + div_pos(x-d, d)
+      1 + div_pos(x - d, d)
   }
 
   /* Performs division recursively. */
@@ -38,22 +38,22 @@ module DivInternals {
     if d > 0 then
       div_pos(x, d)
     else
-      -1 * div_pos(x, -1*d)
+      -1 * div_pos(x, -1 * d)
   }
 
   /* proves the basics of the division operation */
   lemma lemma_div_basics(n: int)
     requires n > 0
     ensures  n / n == -((-n) / n) == 1
-    ensures  forall x:int {:trigger x/n} :: 0 <= x < n <==> x/n == 0
-    ensures  forall x:int {:trigger (x+n)/n} :: (x+n)/n == x/n + 1
-    ensures  forall x:int {:trigger (x-n)/n} :: (x-n)/n == x/n - 1
+    ensures  forall x:int {:trigger x / n} :: 0 <= x < n <==> x / n == 0
+    ensures  forall x:int {:trigger (x + n) / n} :: (x + n) / n == x / n + 1
+    ensures  forall x:int {:trigger (x - n) / n} :: (x - n) / n == x / n - 1
   {
     lemma_mod_auto(n);
     lemma_mod_basics(n);
     lemma_small_div();
     lemma_div_by_self(n);
-    forall x: int | x/n == 0
+    forall x: int | x / n == 0
       ensures 0 <= x < n
     {
       lemma_fundamental_div_mod(x, n);
@@ -65,16 +65,16 @@ module DivInternals {
     requires n > 0
   {
     && mod_auto(n)
-    && (n / n == -((-n)/n) == 1)
-    && (forall x: int {:trigger x/n} :: 0 <= x < n <==> x/n == 0)
-    && (forall x: int, y: int {:trigger (x+y)/n} ::
+    && (n / n == -((-n) / n) == 1)
+    && (forall x: int {:trigger x / n} :: 0 <= x < n <==> x / n == 0)
+    && (forall x: int, y: int {:trigger (x + y) / n} ::
           (var z := (x % n) + (y % n);
-                    ((0 <= z < n && (x+y)/n == x/n + y/n) ||
-                    (n <= z < n+n && (x+y)/n == x/n + y/n + 1))))
-    && (forall x: int, y: int {:trigger (x-y)/n} ::
-          (var z := (x%n) - (y%n);
-                    ((0 <= z < n && (x-y)/n == x/n - y/n) ||
-                    (-n <= z < 0 && (x-y)/n == x/n - y/n - 1))))
+                    ((0 <= z < n && (x + y) / n == x / n + y / n) ||
+                    (n <= z < n + n && (x + y) / n == x / n + y / n + 1))))
+    && (forall x: int, y: int {:trigger (x - y) / n} ::
+          (var z := (x % n) - (y % n);
+                    ((0 <= z < n && (x - y) / n == x / n - y / n) ||
+                    (-n <= z < 0 && (x - y) / n == x / n - y / n - 1))))
   }
 
   /* ensures that div_auto is true */
