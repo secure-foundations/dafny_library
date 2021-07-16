@@ -63,7 +63,7 @@ module BE_Seq {
                                                     digits: seq<int>): int
   {
     if digits == [] then 0
-    else be_digit_to_seq_private(place_value, digits[0..|digits|-1])
+    else be_digit_to_seq_private(place_value, digits[0 .. |digits|-1])
        * place_value + digits[|digits|-1]
   }
 
@@ -88,7 +88,8 @@ module BE_Seq {
     be_digit_to_seq(power2(32), words)
   }
 
-  function method {:opaque} be_int_to_digit_seq_private(place_value: int,                                                             min_places: int,
+  function method {:opaque} be_int_to_digit_seq_private(place_value: int,
+                                                        min_places: int,
                                                         v: int): seq<int>
     decreases if v > min_places then v else min_places
   {
@@ -190,29 +191,29 @@ module BE_Seq {
 
   function method {:autoReq} be_word_seq_to_bit_seq(wordseq: seq<int>): seq<int>
   {
-    be_int_to_digit_seq(power2(1), |wordseq|*32, be_digit_to_seq(power2(32), wordseq))
+    be_int_to_digit_seq(power2(1), |wordseq| * 32, be_digit_to_seq(power2(32), wordseq))
   }
 
   function method {:autoReq} be_byte_seq_to_bit_seq(byteseq: seq<int>): seq<int>
   {
-    be_int_to_digit_seq(power2(1), |byteseq|*8, be_digit_to_seq(power2(8), byteseq))
+    be_int_to_digit_seq(power2(1), |byteseq| * 8, be_digit_to_seq(power2(8), byteseq))
   }
 
   function method {:autoReq} be_word_seq_to_byte_seq(wordseq: seq<int>): seq<int>
   {
-    be_int_to_digit_seq(power2(8), |wordseq|*4, be_digit_to_seq(power2(32), wordseq))
+    be_int_to_digit_seq(power2(8), |wordseq| * 4, be_digit_to_seq(power2(32), wordseq))
   }
 
   function method repeat_digit(digit: int, count: int): seq<int>
     decreases count
   {
-    if (count<=0) then [] else repeat_digit(digit, count-1) + [digit]
+    if count <= 0 then [] else repeat_digit(digit, count - 1) + [digit]
   }
 
   // Move to Seq
   function method {:opaque} reverse(s: seq<int>): seq<int>
   {
-    if s == [] then [] else [s[|s|-1]] + reverse(s[0..|s|-1])
+    if s == [] then [] else [s[|s|-1]] + reverse(s[0 .. |s|-1])
   }
 
 }
