@@ -73,6 +73,20 @@ module BE_Seq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
+  // Utility functions
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  function method {:opaque} be_extend_seq(s: seq<int>, len: int): seq<int>
+    requires |s| <= len
+    ensures |be_extend_seq(s, len)| == len
+    decreases len - |s|
+  {
+    if |s| == len then s else be_extend_seq([0] + s, len)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
   // Conversions from sequences to ints
   //
   /////////////////////////////////////////////////////////////////////////////
@@ -176,20 +190,6 @@ module BE_Seq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // Conversions between different data sizes
-  //
-  //////////////////////////////////////////////////////////////////////////////
-
-  function method be_extend_seq(s: seq<int>, len: int): seq<int>
-    requires |s| <= len
-    ensures |be_extend_seq(s, len)| == len
-    decreases len - |s|
-  {
-    if |s| == len then s else be_extend_seq([0] + s, len)
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  //
   // Equality between sequences and values
   //
   //////////////////////////////////////////////////////////////////////////////
@@ -281,12 +281,6 @@ module BE_Seq {
   {
     exists x :: be_word_32_seq_eq_int(bytes, x)
              && be_word_64_seq_eq_int(words, x)
-  }
-
-  // Move to Seq
-  function method {:opaque} reverse(s: seq<int>): seq<int>
-  {
-    if s == [] then [] else [s[|s|-1]] + reverse(s[0 .. |s|-1])
   }
 
 }
