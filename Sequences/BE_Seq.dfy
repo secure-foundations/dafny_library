@@ -73,20 +73,6 @@ module BE_Seq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // Utility functions
-  //
-  //////////////////////////////////////////////////////////////////////////////
-
-  function method {:opaque} be_extend_seq(s: seq<int>, len: int): seq<int>
-    requires |s| <= len
-    ensures |be_extend_seq(s, len)| == len
-    decreases len - |s|
-  {
-    if |s| == len then s else be_extend_seq([0] + s, len)
-  }
-
-  //////////////////////////////////////////////////////////////////////////////
-  //
   // Conversions from sequences to ints
   //
   /////////////////////////////////////////////////////////////////////////////
@@ -137,6 +123,15 @@ module BE_Seq {
   //
   //////////////////////////////////////////////////////////////////////////////
 
+  /* Zero extend a sequence to a specified length. */
+  function method {:opaque} be_extend_seq(s: seq<int>, len: int): seq<int>
+    requires |s| <= len
+    ensures |be_extend_seq(s, len)| == len
+    decreases len - |s|
+  {
+    if |s| == len then s else be_extend_seq([0] + s, len)
+  }
+
   // Move to DivMod
   lemma {:axiom} div_properties_dafny_cannot_see(n: int, d: int)
     requires d > 1;
@@ -145,47 +140,42 @@ module BE_Seq {
 
   /* Tranforms a single value into a sequence of digits. */
   function method {:opaque} be_int_to_digit_seq_private(data_size: int,
-                                                        min_length: int,
                                                         x: int): seq<int>
-    decreases if x > min_length then x else min_length
   {
-    if data_size > 1 && (x > 0 || min_length > 0) then
+    if data_size > 1 && x > 0 then
       div_properties_dafny_cannot_see(x, data_size);
-      be_int_to_digit_seq_private(data_size, min_length - 1, x / data_size)
-        + [x % data_size]
+      be_int_to_digit_seq_private(data_size, x / data_size) + [x % data_size]
     else []
   }
 
-  function method be_int_to_digit_seq(data_size: int,
-                                      min_length: int,
-                                      x: int): seq<int>
+  function method be_int_to_digit_seq(data_size: int, x: int): seq<int>
   {
-    be_int_to_digit_seq_private(data_size, min_length, x)
+    be_int_to_digit_seq_private(data_size, x)
   }
 
   function method be_int_to_bit_seq(x: int): seq<int>
   {
-    be_int_to_digit_seq(BIT, 0, x)
+    be_int_to_digit_seq(BIT, x)
   }
 
   function method be_int_to_byte_seq(x: int): seq<int>
   {
-    be_int_to_digit_seq(BYTE, 0, x)
+    be_int_to_digit_seq(BYTE, x)
   }
 
   function method be_int_to_word_16_seq(x: int): seq<int>
   {
-    be_int_to_digit_seq(WORD_16, 0, x)
+    be_int_to_digit_seq(WORD_16, x)
   }
 
   function method be_int_to_word_32_seq(x: int): seq<int>
   {
-    be_int_to_digit_seq(WORD_32, 0, x)
+    be_int_to_digit_seq(WORD_32, x)
   }
 
   function method be_int_to_word_64_seq(x: int): seq<int>
   {
-    be_int_to_digit_seq(WORD_64, 0, x)
+    be_int_to_digit_seq(WORD_64, x)
   }
 
   //////////////////////////////////////////////////////////////////////////////
