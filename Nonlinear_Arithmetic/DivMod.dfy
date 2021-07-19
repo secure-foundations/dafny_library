@@ -1257,7 +1257,7 @@ module DivMod {
 
   lemma {:timeLimitMultiplier 2} lemma_mod_neg_neg(x: int, d: int)
     requires 0 < d
-    ensures x%d == (x*(1-d))%d
+    ensures x % d == (x * (1 - d)) % d
   {
     forall ensures (x - x * d) % d == x % d
     {
@@ -1398,7 +1398,7 @@ module DivMod {
   }
 
   /* the remainder can increase with a larger divisor */
-  lemma lemma_mod_ordering(x: nat, k: nat, d: nat)
+  lemma lemma_mod_ordering(x: int, k: int, d: int)
     requires 1 < d
     requires 0 < k
     ensures 0 < d * k
@@ -1430,10 +1430,10 @@ module DivMod {
   }
 
   lemma lemma_mod_ordering_auto()
-    ensures forall x: nat, k: nat, d: nat {:trigger x % (d * k)}  
+    ensures forall x: int, k: int, d: int {:trigger x % (d * k)}  
       :: 1 < d && 0 < k ==> 0 < d * k && x % d <= x % (d * k)
   {
-    forall x: nat, k: nat, d: nat | 1 < d && 0 < k
+    forall x: int, k: int, d: int | 1 < d && 0 < k
       ensures d * k > 0 && x % d <= x % (d * k)
     {
       lemma_mod_ordering(x, k, d);
@@ -1463,16 +1463,16 @@ module DivMod {
     lemma_fundamental_div_mod_converse(x, a, b * (x / (a * b)) + x % (a * b) / a, (x % (a * b)) % a);
   }
 
-  // lemma lemma_mod_mod_auto()
-  //   ensures forall x: int, a: int, b: int {:trigger a * b, x % a} 
-  //     :: 0 < a && 0 < b ==> 0 < a * b && (x % (a * b)) % a == x % a
-  // {
-  //   forall x: int, a: int, b: int | 0 < a && 0 < b  
-  //     ensures 0 < a * b && (x % (a * b)) % a == x % a
-  //   {
-  //     lemma_mod_mod(x, a, b);
-  //   }
-  // }
+  lemma lemma_mod_mod_auto()
+    ensures forall x: int, a: int, b: int {:trigger a * b, x % a} 
+      :: 0 < a && 0 < b ==> 0 < a * b && (x % (a * b)) % a == x % a
+  {
+    forall x: int, a: int, b: int | 0 < a && 0 < b  
+      ensures 0 < a * b && (x % (a * b)) % a == x % a
+    {
+      lemma_mod_mod(x, a, b);
+    }
+  }
 
   lemma lemma_part_bound2(x: int, y: int, z: int)
     requires 0 <= x

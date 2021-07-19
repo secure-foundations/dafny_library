@@ -440,7 +440,7 @@ module Mul {
   /* multiplying any positive integer by any integer greater than 1 will result in a product that 
   is greater than the original integer */
   lemma lemma_mul_strictly_increases_auto()
-    ensures forall x: int, y: int {:trigger x * y} :: (1 < x && 0 < y) ==> (y < x * y)
+    ensures forall x: int, y: int {:trigger x * y} :: 1 < x && 0 < y  ==> y < x * y
   {
     forall (x: int, y: int | 1 < x && 0 < y)
       ensures y < x * y
@@ -520,7 +520,11 @@ module Mul {
   lemma lemma_mul_cancels_negatives_auto()
     ensures forall x: int, y: int {:trigger x * y} :: x * y == (-x) * (-y)
   {
-    lemma_mul_cancels_negatives();
+    forall x: int, y: int 
+      ensures x * y == (-x) * (-y)
+    {
+      lemma_mul_cancels_negatives(x, y);
+    }
   }
 
   /* includes all properties of multiplication */

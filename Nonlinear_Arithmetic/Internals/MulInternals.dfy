@@ -11,7 +11,6 @@ module MulInternals {
   import opened GeneralInternals
   import opened MulInternalsNonlinear
 
-  // see if needed ??? + change recursive things to functions
   /* performs multiplication for positive integers using recursive addition */
   function {:opaque} mul_pos(x: int, y: int) : int
     requires x >= 0
