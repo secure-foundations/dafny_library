@@ -95,15 +95,6 @@ module DivMod {
     }
   }
 
-  // lemma lemma_small_div_converse(x: int, d: int)
-  //   requires 0 <= x
-  //   requires 0 < d
-  //   requires x / d == 0
-  //   ensures x < d
-  // {
-    
-  // }
-
   /* if a dividend is a whole number and the divisor is a natural number and their
   quotient is 0, this implies that the dividend is smaller than the divisor */
   lemma lemma_small_div_converse_auto()
@@ -191,16 +182,16 @@ module DivMod {
     }
   }
 
-  // lemma lemma_dividing_sums_auto()
-  //   ensures forall a: int, b: int, d: int, R: int {:trigger d * ((a + b) / d) - R, d*(a/d) + d*(b/d)}
-  //       :: 0 < d &&  R == a%d + b%d - (a+b)%d ==> d*((a+b)/d) - R == d*(a/d) + d*(b/d)
-  // {
-  //   forall (a: int, b: int, d: int, R: int | 0< d &&  R == a%d + b%d - (a+b)%d)
-  //     ensures d*((a+b)/d) - R == d*(a/d) + d*(b/d)
-  //   {
-  //     lemma_dividing_sums(a, b, d, R);
-  //   }
-  // }
+  lemma lemma_dividing_sums_auto()
+    ensures forall a: int, b: int, d: int, R: int {:trigger d * ((a + b) / d) - R, d*(a/d) + d*(b/d)}
+        :: 0 < d &&  R == a%d + b%d - (a+b)%d ==> d*((a+b)/d) - R == d*(a/d) + d*(b/d)
+  {
+    forall (a: int, b: int, d: int, R: int | 0< d &&  R == a%d + b%d - (a+b)%d)
+      ensures d*((a+b)/d) - R == d*(a/d) + d*(b/d)
+    {
+      lemma_dividing_sums(a, b, d, R);
+    }
+  }
 
   /* dividing a whole number by a natural number will result in a quotient that is 
   greater than or equal to 0 */
@@ -1134,16 +1125,16 @@ module DivMod {
     lemma_mod_auto(m);
   }
 
-  // lemma lemma_mod_equivalence_auto()
-  //   ensures forall x: int, y: int, m: int {:trigger  x % m , y % m} 
-  //     :: 0 < m && x % m == y % m <==> (x - y) % m == 0
-  // {
-  //   forall x: int, y: int, m: int | 0 < m && x % m == y % m
-  //     ensures (x - y) % m == 0
-  //   {
-  //     lemma_mod_equivalence(x, y, m);
-  //   }
-  // }
+  lemma lemma_mod_equivalence_auto()
+    ensures forall x: int, y: int, m: int {:trigger  x % m , y % m} 
+      :: 0 < m && x % m == y % m <==> 0 < m && (x - y) % m == 0
+  {
+    forall x: int, y: int, m: int | 0 < m 
+      ensures x % m == y % m <==> 0 < m && (x - y) % m == 0
+    {
+      lemma_mod_equivalence(x, y, m);
+    }
+  }
 
   /* proves equivalent forms of modulus subtraction */
   lemma lemma_mod_subtraction(x: nat, s: nat, d: nat)
@@ -1264,22 +1255,21 @@ module DivMod {
     }
   }
 
-  // /* comment more confusing than reading ensures clause */
-  // lemma {:timeLimitMultiplier 2} lemma_mod_neg_neg(x: int, d: int)
-  //   requires 0 < d
-  //   ensures x%d == (x*(1-d))%d
-  // {
-  //   forall ensures (x - x * d) % d == x % d
-  //   {
-  //     lemma_mod_auto(d);
-  //     var f := i => (x - i * d) % d == x % d;
-  //     assert  mul_auto() ==> && f(0)
-  //                           && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
-  //                           && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1));
-  //     lemma_mul_induction_auto(x, f);
-  //   }
-  //   lemma_mul_auto();
-  // }
+  lemma {:timeLimitMultiplier 2} lemma_mod_neg_neg(x: int, d: int)
+    requires 0 < d
+    ensures x%d == (x*(1-d))%d
+  {
+    forall ensures (x - x * d) % d == x % d
+    {
+      lemma_mod_auto(d);
+      var f := i => (x - i * d) % d == x % d;
+      assert  mul_auto() ==> && f(0)
+                            && (forall i {:trigger is_le(0, i)} :: is_le(0, i) && f(i) ==> f(i + 1))
+                            && (forall i {:trigger is_le(i, 0)} :: is_le(i, 0) && f(i) ==> f(i - 1));
+      lemma_mul_induction_auto(x, f);
+    }
+    lemma_mul_auto();
+  }
   
   /* proves the validity of the quotient and remainder */
   lemma {:timeLimitMultiplier 5} lemma_fundamental_div_mod_converse(x: int, d: int, q: int, r: int)
@@ -1294,9 +1284,16 @@ module DivMod {
     lemma_mul_induction_auto(q, u => r == (u * d + r) % d);
   }
 
-  // /* proves the validity of the quotient and remainder */
-  // lemma {:timeLimitMultiplier 5} lemma_fundamental_div_mod_converse_auto()
-  //   ensures forall x: int, d: int, q: int, r: int {:trigger }
+  lemma {:timeLimitMultiplier 5} lemma_fundamental_div_mod_converse_auto()
+    ensures forall x: int, d: int, q: int, r: int {:trigger q * d + r, x % d}
+      :: d != 0 && 0 <= r < d && x == q * d + r ==> q == x / d && r == x % d
+  {
+    forall x: int, d: int, q: int, r: int | d != 0 && 0 <= r < d && x == q * d + r
+      ensures q == x / d && r == x % d
+    {
+      lemma_fundamental_div_mod_converse(x, d, q, r);
+    }
+  }
 
 
   /* the remainder of any natural number x divided by a positive integer m is always less than m */
@@ -1371,18 +1368,16 @@ module DivMod {
     lemma_mul_mod_noop_right(x % m, y, m);
   }
 
-  // lemma lemma_mul_mod_noop_general_auto()
-  //   ensures forall x: int, y: int, m: int {:trigger (x * y) % m}
-  //     :: 0 < m ==> ((x % m) * y) % m == (x * (y % m)) == ((x % m) * (y % m)) % m == (x * y) % m
-  // {
-  //   forall x: int, y: int, m: int | 0 < m
-  //     ensures ((x % m) * y) % m == (x * y) % m 
-  //     && (x * (y % m)) == (x * y) % m
-  //     && ((x % m) * (y % m)) % m == (x * y) % m
-  //   {
-  //     lemma_mul_mod_noop_general(x, y, m);
-  //   }
-  // }
+  lemma lemma_mul_mod_noop_general_auto()
+    ensures forall x: int, y: int, m: int {:trigger (x * y) % m}
+      :: 0 < m ==> ((x % m) * y) % m == (x * (y % m)) % m == ((x % m) * (y % m)) % m == (x * y) % m
+  {
+    forall x: int, y: int, m: int | 0 < m
+      ensures ((x % m) * y) % m == (x * (y % m)) % m == ((x % m) * (y % m)) % m == (x * y) % m
+    {
+      lemma_mul_mod_noop_general(x, y, m);
+    }
+  }
   
   lemma lemma_mul_mod_noop(x: int, y: int, m: int)
     requires 0 < m
@@ -1406,7 +1401,7 @@ module DivMod {
   lemma lemma_mod_ordering(x: nat, k: nat, d: nat)
     requires 1 < d
     requires 0 < k
-    ensures d * k > 0
+    ensures 0 < d * k
     ensures x % d <= x % (d * k)
   {
     lemma_mul_strictly_increases(d,k);
@@ -1434,16 +1429,16 @@ module DivMod {
     }
   }
 
-  // lemma lemma_mod_ordering_auto()
-  //   ensures forall x: nat, k: nat, d: nat {:trigger }  
-  //     :: 1 < d && 0 < k ==> d * k > 0 && x % d <= x % (d * k)
-  // {
-  //   forall x: nat, k: nat, d: nat | 1 < d && 0 < k
-  //     ensures d * k > 0 && x % d <= x % (d * k)
-  //   {
-  //     lemma_mod_ordering(x, k, d);
-  //   }
-  // }
+  lemma lemma_mod_ordering_auto()
+    ensures forall x: nat, k: nat, d: nat {:trigger x % (d * k)}  
+      :: 1 < d && 0 < k ==> 0 < d * k && x % d <= x % (d * k)
+  {
+    forall x: nat, k: nat, d: nat | 1 < d && 0 < k
+      ensures d * k > 0 && x % d <= x % (d * k)
+    {
+      lemma_mod_ordering(x, k, d);
+    }
+  }
   
   lemma lemma_mod_mod(x: int, a: int, b: int)
     requires 0 < a
