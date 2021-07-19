@@ -1,3 +1,9 @@
+// RUN: %dafny /compile:0 /noNLarith "%s" > "%t"
+// RUN: %diff "%s.expect" "%t"
+
+/* Every lemma comes in 2 forms: 'lemma_property' and 'lemma_property_auto'. The former takes arguments and may 
+be more stable and less reliant on Z3 heuristics. The latter includes automation and its use requires less effort */
+
 include "Internals/GeneralInternals.dfy"
 include "Internals/MulInternals.dfy"
 include "Power.dfy"
