@@ -4,20 +4,16 @@
 /* Every lemma comes in 2 forms: 'lemma_property' and 'lemma_property_auto'. The former takes arguments and may 
 be more stable and less reliant on Z3 heuristics. The latter includes automation and its use requires less effort */
 
-include "Internals/DivInternals.dfy"
 include "DivMod.dfy"
 include "../Mathematics.dfy"
 include "Internals/GeneralInternals.dfy"
-include "Internals/ModInternalsNonlinear.dfy"
 include "Mul.dfy"
 include "Internals/MulInternals.dfy"
 
 module Power {
-  import opened DivInternals
   import opened DivMod
   import opened Mathematics
   import opened GeneralInternals
-  import opened ModInternalsNonlinear
   import opened Mul
   import opened MulInternals
 
@@ -557,7 +553,7 @@ module Power {
       x - x % power(b, e2) >= power(b, e1 - e2) * power(b, e2);
         { lemma_power_adds(b, e1 - e2, e2); }
       x - x % power(b, e2) >= power(b, e1);
-        { lemma_mod_properties(); }
+        { lemma_mod_properties_auto(); }
       x >= power(b, e1);
       false;
     }
@@ -588,7 +584,7 @@ module Power {
     ensures power(b % m, e) % m == power(b, e) % m
   {
     reveal power();
-    lemma_mod_properties();
+    lemma_mod_properties_auto();
     if e > 0 {
       calc {
         power(b % m, e) % m;
