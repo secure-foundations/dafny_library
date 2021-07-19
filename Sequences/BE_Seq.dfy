@@ -3,12 +3,16 @@ endianness in a sequence until it's interpreted. */
 
 include "DataSizes.dfy"
 include "../Nonlinear_Arithmetic/DivMod.dfy"
+include "../Nonlinear_Arithmetic/Internals/ModInternals.dfy"
+include "../Nonlinear_Arithmetic/Mul.dfy"
 include "../Nonlinear_Arithmetic/Power2.dfy"
 
 module BE_Seq {
 
   import opened DataSizes
   import opened DivMod
+  import opened ModInternals
+  import opened Mul
   import opened Power2
 
   //////////////////////////////////////////////////////////////////////////////
@@ -81,41 +85,55 @@ module BE_Seq {
 
   /* Tranforms a sequence of digits into an int. */
   function method {:opaque} be_digit_seq_to_int_private(data_size: int,
-                                                        s: seq<int>): int
+                                                        s: seq<int>): (x: int)
     requires is_digit_seq(data_size, s)
+    ensures x >= 0
   {
     if s == [] then 0
-    else be_digit_seq_to_int_private(data_size, s[0 .. |s|-1])
+    else 
+      lemma_mul_nonnegative_auto();
+      be_digit_seq_to_int_private(data_size, s[0 .. |s|-1])
        * data_size + s[|s|-1]
   }
 
-  function method {:autoReq} be_digit_seq_to_int(data_size: int,
-                                                 s: seq<int>): int
+  function method be_digit_seq_to_int(data_size: int, s: seq<int>): (x: int)
+    requires is_digit_seq(data_size, s)
+    ensures x >= 0
   {
     be_digit_seq_to_int_private(data_size, s)
   }
 
-  function method {:autoReq} be_bit_seq_to_int(s: seq<int>): int
+  function method be_bit_seq_to_int(s: seq<int>): (x: int)
+    requires is_bit_seq(s)
+    ensures x >= 0
   {
     be_digit_seq_to_int(BIT, s)
   }
 
-  function method {:autoReq} be_byte_seq_to_int(s: seq<int>): int
+  function method be_byte_seq_to_int(s: seq<int>): (x: int)
+    requires is_byte_seq(s)
+    ensures x >= 0
   {
     be_digit_seq_to_int(BYTE, s)
   }
 
-  function method {:autoReq} be_word_16_seq_to_int(s: seq<int>): int
+  function method be_word_16_seq_to_int(s: seq<int>): (x: int)
+    requires is_word_16_seq(s)
+    ensures x >= 0
   {
     be_digit_seq_to_int(WORD_16, s)
   }
 
-  function method {:autoReq} be_word_32_seq_to_int(s: seq<int>): int
+  function method be_word_32_seq_to_int(s: seq<int>): (x: int)
+    requires is_word_32_seq(s)
+    ensures x >= 0
   {
     be_digit_seq_to_int(WORD_32, s)
   }
 
-  function method {:autoReq} be_word_64_seq_to_int(s: seq<int>): int
+  function method be_word_64_seq_to_int(s: seq<int>): (x: int)
+    requires is_word_64_seq(s)
+    ensures x >= 0
   {
     be_digit_seq_to_int(WORD_64, s)
   }
@@ -155,37 +173,49 @@ module BE_Seq {
     else []
   }
 
-  function method {:autoReq} be_int_to_digit_seq(data_size: int,
-                                                 x: int): seq<int>
+  function method be_int_to_digit_seq(data_size: int, x: int): (s: seq<int>)
+    requires data_size > 1
+    requires x >= 0
+    ensures is_digit_seq(data_size, s)
   {
     be_int_to_digit_seq_private(data_size, x)
   }
 
-  function method {:autoReq} be_int_to_bit_seq(x: int): (s: seq<int>)
+  function method be_int_to_bit_seq(x: int): (s: seq<int>)
+    requires BIT > 1
+    requires x >= 0
     ensures is_bit_seq(s)
   {
     be_int_to_digit_seq(BIT, x)
   }
 
-  function method {:autoReq} be_int_to_byte_seq(x: int): (s: seq<int>)
+  function method be_int_to_byte_seq(x: int): (s: seq<int>)
+    requires BYTE > 1
+    requires x >= 0
     ensures is_byte_seq(s)
   {
     be_int_to_digit_seq(BYTE, x)
   }
 
-  function method {:autoReq} be_int_to_word_16_seq(x: int): (s: seq<int>)
+  function method be_int_to_word_16_seq(x: int): (s: seq<int>)
+    requires WORD_16 > 1
+    requires x >= 0
     ensures is_word_16_seq(s)
   {
     be_int_to_digit_seq(WORD_16, x)
   }
 
-  function method {:autoReq} be_int_to_word_32_seq(x: int): (s: seq<int>)
+  function method be_int_to_word_32_seq(x: int): (s: seq<int>)
+    requires WORD_32 > 1
+    requires x >= 0
     ensures is_word_32_seq(s)
   {
     be_int_to_digit_seq(WORD_32, x)
   }
 
-  function method {:autoReq} be_int_to_word_64_seq(x: int): (s: seq<int>)
+  function method be_int_to_word_64_seq(x: int): (s: seq<int>)
+    requires WORD_64 > 1
+    requires x >= 0
     ensures is_word_64_seq(s)
   {
     be_int_to_digit_seq(WORD_64, x)
@@ -302,6 +332,8 @@ module BE_Seq {
   //
   //////////////////////////////////////////////////////////////////////////////
 
+  /* Prove that if we start with an int, convert it to a digit sequence,
+  and convert it back, we get the same int we started with. */
   lemma lemma_be_int_digit_seq_int(data_size: int, x: int)
     requires data_size > 1
     requires x >= 0
@@ -313,19 +345,76 @@ module BE_Seq {
     } else {
       calc {
         be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x));
-        { lemma_div_basics_auto(); }
+          { lemma_div_basics_auto(); }
         be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x / data_size) + [x % data_size]);
         be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x / data_size)) * data_size + x % data_size;
-        {
-          lemma_div_basics_auto();
-          lemma_div_is_strictly_ordered_by_denominator_auto();
-          lemma_be_int_digit_seq_int(data_size, x / data_size);
-        }
+          {
+            lemma_div_basics_auto();
+            lemma_div_is_strictly_ordered_by_denominator_auto();
+            lemma_be_int_digit_seq_int(data_size, x / data_size);
+          }
         x / data_size * data_size + x % data_size;
-        { lemma_fundamental_div_mod(x, data_size); }
+          { lemma_fundamental_div_mod(x, data_size); }
         x;
       }
     }
   }
+  
+  // lemma test(data_size: int, x: int, y: int)
+  //   requires data_size > 1
+  //   requires x >= 0
+  //   requires 0 <= y < data_size
+  //   ensures x * data_size + y >= 0
+  //   ensures be_int_to_digit_seq(data_size, x * data_size + y) == be_int_to_digit_seq(data_size, x) + [y];
+  // {
+  //   reveal be_int_to_digit_seq_private();
+  //   lemma_mul_nonnegative_auto();
+  //   if x == 0 {
+  //     lemma_mul_basics_auto();
+  //     assert x * data_size + y == y;
+  //     // be_int_to_digit_seq_private(data_size, x / data_size) + [x % data_size]
+  //     calc {
+  //       be_int_to_digit_seq(data_size, x * data_size + y);
+  //       be_int_to_digit_seq(data_size, y);
+  //         { lemma_div_basics_auto(); } 
+  //       be_int_to_digit_seq(data_size, y / data_size) + [y % data_size];
+  //         { lemma_basic_div_auto(); }
+  //       be_int_to_digit_seq(data_size, 0) + [y];
+  //     }
+  //   } else {
+      
+  //   }
+  // }
+
+  // /* Prove that if we start with a digit sequence, convert it to an int, and
+  // convert it back, we get the same digit sequence we started with. */
+  // lemma lemma_be_digit_seq_int_digit_seq(data_size: int, s: seq<int>)
+  //   requires data_size > 1
+  //   requires is_digit_seq(data_size, s)
+  //   ensures be_int_to_digit_seq(data_size, be_digit_seq_to_int(data_size, s)) == s
+  // {
+  //   reveal be_digit_seq_to_int_private();
+  //   reveal be_int_to_digit_seq_private();
+  //   if |s| == 0 {
+  //   } else {
+  //     calc {
+  //       be_int_to_digit_seq(data_size, be_digit_seq_to_int(data_size, s));
+  //       { lemma_div_basics_auto(); }
+  //       be_int_to_digit_seq(data_size, be_digit_seq_to_int(data_size, s[0 .. |s|-1]) * data_size + s[|s|-1]);
+  //       // be_int_to_digit_seq_private(data_size, x / data_size) + [x % data_size] == be_int_to_digit_seq_private(data_size, x)
+  //       // be_int_to_digit_seq_private(data_size, x) == be_int_to_digit_seq_private(data_size, x * data_size)
+  //       {
+  //         // s[0 .. |s|-1] * data_size + 
+  //         assert 0 <= s[|s|-1] < data_size;
+  //         lemma_mod_basics(data_size);
+  //         assert (s[|s|-1] % data_size) == s[|s|-1];
+  //       }
+  //       be_int_to_digit_seq(data_size, be_digit_seq_to_int(data_size, s[0 .. |s|-1])) + [s[|s|-1]];
+  //       { lemma_be_digit_seq_int_digit_seq(data_size, s[0 .. |s|-1]); }
+  //       s[0 .. |s|-1] + [s[|s|-1]];
+  //       s;
+  //     }
+  //   }
+  // }
 
 }
