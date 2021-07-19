@@ -1,4 +1,4 @@
-// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %dafny /compile:0 /noNLarith "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
 /* Every lemma comes in 2 forms: 'lemma_property' and 'lemma_property_auto'. The former takes arguments and may 

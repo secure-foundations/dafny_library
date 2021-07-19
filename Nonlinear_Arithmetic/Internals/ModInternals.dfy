@@ -1,4 +1,4 @@
-// RUN: %dafny /compile:0 "%s" > "%t"
+// RUN: %dafny /compile:0 /noNLarith "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
 include "GeneralInternals.dfy"
@@ -101,7 +101,7 @@ module ModInternals {
       forall ensures 0 == n * zm + ((x - n) % n) - (x % n) { lemma_mul_auto(); }
       if (zp > 0) { lemma_mul_inequality(1, zp, n); }
       if (zp < 0) { lemma_mul_inequality(zp, -1, n); }
-      if (zp == 0) { lemma_mul_basics(); }
+      if (zp == 0) { lemma_mul_basics_auto(); }
       if (zm > 0) { lemma_mul_inequality(1, zm, n); }
       if (zm < 0) { lemma_mul_inequality(zm, -1, n); }
     }
