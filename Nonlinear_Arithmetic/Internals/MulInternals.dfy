@@ -3,12 +3,12 @@
 
 // in service of mul.dfy ???
 
-include "../../Mathematics.dfy"
+include "GeneralInternals.dfy"
 include "MulInternalsNonlinear.dfy"
 
 module MulInternals {
 
-  import opened Mathematics
+  import opened GeneralInternals
   import opened MulInternalsNonlinear
 
   // see if needed ??? + change recursive things to functions

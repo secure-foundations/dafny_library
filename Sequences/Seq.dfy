@@ -232,6 +232,11 @@ module Seq {
     assert s == s[..pos] + s[pos..];
     s[..pos] + [a] + s[pos..]
   }
+
+  function method {:opaque} reverse<T>(s: seq<T>): seq<T>
+  {
+    if s == [] then [] else [s[|s|-1]] + reverse(s[0 .. |s|-1])
+  }
     
   function method {:opaque} repeat<T>(v: T, length: nat): (s: seq<T>)
     ensures |s| == length

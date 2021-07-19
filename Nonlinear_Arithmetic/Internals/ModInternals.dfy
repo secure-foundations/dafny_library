@@ -1,6 +1,7 @@
 // RUN: %dafny /compile:0 "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
+include "GeneralInternals.dfy"
 include "MulInternals.dfy"
 include "../Mul.dfy"
 include "ModInternalsNonlinear.dfy"
@@ -8,7 +9,7 @@ include "DivInternalsNonlinear.dfy"
 
 module ModInternals {
 
-  import opened Mathematics
+  import opened GeneralInternals
   import opened Mul
   import opened MulInternalsNonlinear
   import opened MulInternals

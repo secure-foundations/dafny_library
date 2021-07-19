@@ -2,38 +2,50 @@
 endianness in a sequence until it's interpreted. */
 
 include "DataSizes.dfy"
+include "../Nonlinear_Arithmetic/DivMod.dfy"
 include "../Nonlinear_Arithmetic/Power2.dfy"
 
 module BE_Seq {
 
   import opened DataSizes
+  import opened DivMod
   import opened Power2
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // Sequence Types
+  // Sequence types (bit, byte, word)
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  predicate is_digit_seq(place_value: int, digits: seq<int>)
+  /* True iff each element of s is between 0 and data_size. */
+  predicate is_digit_seq(data_size: int, s: seq<int>)
   {
-    forall i {:trigger digits[i]} :: 0 <= i < |digits| ==>
-                                     0 <= digits[i] < place_value
+    forall i {:trigger s[i]} :: 0 <= i < |s| ==> 0 <= s[i] < data_size
   }
 
   predicate is_bit_seq(s: seq<int>)
   {
-    is_digit_seq(power2(1), s)
+    is_digit_seq(BIT, s)
   }
 
   predicate is_byte_seq(s: seq<int>)
   {
-    is_digit_seq(power2(8), s)
+    is_digit_seq(BYTE, s)
   }
 
-  predicate is_word_seq(s: seq<int>)
+  predicate is_word_16_seq(s: seq<int>)
   {
-    is_digit_seq(power2(32), s)
+    is_digit_seq(WORD_16, s)
+  }
+
+  predicate is_word_32_seq(s: seq<int>)
+  {
+    is_digit_seq(WORD_32, s)
+  }
+
+  predicate is_word_64_seq(s: seq<int>)
+  {
+    is_digit_seq(WORD_64, s)
   }
 
   predicate is_bit_seq_of_len(s: seq<int>, len: int)
@@ -46,58 +58,81 @@ module BE_Seq {
     is_byte_seq(s) && |s| == len
   }
 
-  predicate is_word_seq_of_len(s: seq<int>, len: int)
+  predicate is_word_16_seq_of_len(s: seq<int>, len: int)
   {
-    is_word_seq(s) && |s| == len
+    is_word_16_seq(s) && |s| == len
+  }
+
+  predicate is_word_32_seq_of_len(s: seq<int>, len: int)
+  {
+    is_word_32_seq(s) && |s| == len
+  }
+
+  predicate is_word_64_seq_of_len(s: seq<int>, len: int)
+  {
+    is_word_64_seq(s) && |s| == len
   }
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // Relationships among sequences of different digit sizes
-  // (bit, byte, word, int)
+  // Conversions from sequences to ints
+  //
+  /////////////////////////////////////////////////////////////////////////////
+
+  /* Tranforms a sequence of digits into an int. */
+  function method {:opaque} be_digit_seq_to_int_private(data_size: int,
+                                                        s: seq<int>): int
+    requires is_digit_seq(data_size, s)
+  {
+    if s == [] then 0
+    else be_digit_seq_to_int_private(data_size, s[0 .. |s|-1])
+       * data_size + s[|s|-1]
+  }
+
+  function method {:autoReq} be_digit_seq_to_int(data_size: int,
+                                                 s: seq<int>): int
+  {
+    be_digit_seq_to_int_private(data_size, s)
+  }
+
+  function method {:autoReq} be_bit_seq_to_int(s: seq<int>): int
+  {
+    be_digit_seq_to_int(BIT, s)
+  }
+
+  function method {:autoReq} be_byte_seq_to_int(s: seq<int>): int
+  {
+    be_digit_seq_to_int(BYTE, s)
+  }
+
+  function method {:autoReq} be_word_16_seq_to_int(s: seq<int>): int
+  {
+    be_digit_seq_to_int(WORD_16, s)
+  }
+
+  function method {:autoReq} be_word_32_seq_to_int(s: seq<int>): int
+  {
+    be_digit_seq_to_int(WORD_32, s)
+  }
+
+  function method {:autoReq} be_word_64_seq_to_int(s: seq<int>): int
+  {
+    be_digit_seq_to_int(WORD_64, s)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // Conversions from ints to sequences
   //
   //////////////////////////////////////////////////////////////////////////////
 
-
-  function method {:opaque} be_digit_to_seq_private(place_value: int,
-                                                    digits: seq<int>): int
+  /* Zero extend a sequence to a specified length. */
+  function method {:opaque} be_extend_seq(s: seq<int>, len: int): seq<int>
+    requires |s| <= len
+    ensures |be_extend_seq(s, len)| == len
+    decreases len - |s|
   {
-    if digits == [] then 0
-    else be_digit_to_seq_private(place_value, digits[0 .. |digits|-1])
-       * place_value + digits[|digits|-1]
-  }
-
-  function method be_digit_to_seq(place_value: int, digits: seq<int>): int
-    requires is_digit_seq(place_value, digits)
-  {
-    be_digit_to_seq_private(place_value, digits)
-  }
-
-  function method {:autoReq} be_bit_seq_to_int(bits: seq<int>): int
-  {
-    be_digit_to_seq(power2(1), bits)
-  }
-
-  function method {:autoReq} be_byte_seq_to_int(bytes: seq<int>): int
-  {
-    be_digit_to_seq(power2(8), bytes)
-  }
-
-  function method {:autoReq} be_word_seq_to_int(words: seq<int>): int
-  {
-    be_digit_to_seq(power2(32), words)
-  }
-
-  function method {:opaque} be_int_to_digit_seq_private(place_value: int,
-                                                        min_places: int,
-                                                        v: int): seq<int>
-    decreases if v > min_places then v else min_places
-  {
-    if place_value > 1 && (v > 0 || min_places > 0) then
-      div_properties_dafny_cannot_see(v, place_value);
-      be_int_to_digit_seq_private(place_value, min_places - 1, v / place_value)
-        + [v % place_value]
-    else []
+    if |s| == len then s else be_extend_seq([0] + s, len)
   }
 
   // Move to DivMod
@@ -106,114 +141,191 @@ module BE_Seq {
     ensures n > 0 ==> n / d < n;
     ensures n <= 0 ==> n / d <= 0;
 
-  function method be_int_to_digit_seq(place_value: int,
-                                      min_places: int,
-                                      v: int): seq<int>
+  /* Tranforms a single value into a sequence of digits. */
+  function method {:opaque} be_int_to_digit_seq_private(data_size: int,
+                                                        x: int): (s: seq<int>)
+    requires data_size > 1
+    requires x >= 0
+    ensures is_digit_seq(data_size, s)
   {
-    be_int_to_digit_seq_private(place_value, min_places, v)
+    if data_size > 1 && x > 0 then
+      div_properties_dafny_cannot_see(x, data_size);
+      lemma_div_basics_auto();
+      be_int_to_digit_seq_private(data_size, x / data_size) + [x % data_size]
+    else []
   }
 
-  predicate be_digit_seq_eq_int(place_value: int, digits: seq<int>, v: int)
+  function method {:autoReq} be_int_to_digit_seq(data_size: int,
+                                                 x: int): seq<int>
   {
-    && is_digit_seq(place_value, digits)
-    && be_digit_to_seq(place_value, digits) == v
+    be_int_to_digit_seq_private(data_size, x)
   }
 
-  predicate be_bit_seq_eq_int(bitseq: seq<int>, v: int)
+  function method {:autoReq} be_int_to_bit_seq(x: int): (s: seq<int>)
+    ensures is_bit_seq(s)
   {
-    be_digit_seq_eq_int(2, bitseq, v)
+    be_int_to_digit_seq(BIT, x)
   }
 
-  predicate be_bit_seq_eq_byte(bitseq: seq<int>, byte: int)
+  function method {:autoReq} be_int_to_byte_seq(x: int): (s: seq<int>)
+    ensures is_byte_seq(s)
   {
-    is_byte(byte) && be_bit_seq_eq_int(bitseq, byte)
+    be_int_to_digit_seq(BYTE, x)
   }
 
-  predicate be_bit_seq_eq_word(bitseq: seq<int>, word: int)
+  function method {:autoReq} be_int_to_word_16_seq(x: int): (s: seq<int>)
+    ensures is_word_16_seq(s)
   {
-    is_word(word) && be_bit_seq_eq_int(bitseq, word)
+    be_int_to_digit_seq(WORD_16, x)
   }
 
-  predicate be_byte_seq_eq_int(byteseq: seq<int>, v: int)
+  function method {:autoReq} be_int_to_word_32_seq(x: int): (s: seq<int>)
+    ensures is_word_32_seq(s)
   {
-    be_digit_seq_eq_int(256, byteseq, v)
+    be_int_to_digit_seq(WORD_32, x)
   }
 
-  predicate be_byte_seq_eq_word(byteseq: seq<int>, word: int)
+  function method {:autoReq} be_int_to_word_64_seq(x: int): (s: seq<int>)
+    ensures is_word_64_seq(s)
   {
-    is_word(word) && be_byte_seq_eq_int(byteseq, word)
-  }
-
-  predicate be_word_seq_eq_int(byteseq: seq<int>, v: int)
-  {
-    be_digit_seq_eq_int(power2(32), byteseq, v)
-  }
-
-  predicate be_bit_seq_eq_byte_seq(bitseq: seq<int>, byteseq: seq<int>)
-  {
-    exists v: int ::
-      be_bit_seq_eq_int(bitseq, v) && be_byte_seq_eq_int(byteseq, v)
-  }
-
-  predicate be_bit_seq_eq_word_seq(bitseq: seq<int>, wordseq: seq<int>)
-  {
-    exists v: int ::
-      be_bit_seq_eq_int(bitseq, v) && be_word_seq_eq_int(wordseq, v)
-  }
-
-  predicate be_byte_seq_eq_word_seq(byteseq: seq<int>, wordseq: seq<int>)
-  {
-    exists v: int ::
-      be_byte_seq_eq_int(byteseq, v) && be_word_seq_eq_int(wordseq, v)
+    be_int_to_digit_seq(WORD_64, x)
   }
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // Generator functions (as opposed to recognizer predicates)
+  // Equality between sequences and values
   //
-  /////////////////////////////////////////////////////////////////////////////
+  //////////////////////////////////////////////////////////////////////////////
 
-  function method be_int_to_byte_seq(x: int): seq<int>
+  predicate be_digit_seq_eq_int(data_size: int, s: seq<int>, x: int)
   {
-    be_int_to_digit_seq(power2(8), 0, x)
+    is_digit_seq(data_size, s) && be_digit_seq_to_int(data_size, s) == x
   }
 
-  function method be_word_to_4_bytes(x: int): seq<int>
-    requires word_32(x);
+  predicate be_bit_seq_eq_int(s: seq<int>, x: int)
   {
-    be_int_to_digit_seq(power2(8), 4, x)
+    be_digit_seq_eq_int(BIT, s, x)
   }
 
-  function method be_word_to_bit_seq(x: int): seq<int>
+  predicate be_byte_seq_eq_int(s: seq<int>, x: int)
   {
-    be_int_to_digit_seq(power2(1), 32, x)
+    be_digit_seq_eq_int(BYTE, s, x)
   }
 
-  function method {:autoReq} be_word_seq_to_bit_seq(wordseq: seq<int>): seq<int>
+  predicate be_word_16_seq_eq_int(s: seq<int>, x: int)
   {
-    be_int_to_digit_seq(power2(1), |wordseq| * 32, be_digit_to_seq(power2(32), wordseq))
+    be_digit_seq_eq_int(WORD_16, s, x)
   }
 
-  function method {:autoReq} be_byte_seq_to_bit_seq(byteseq: seq<int>): seq<int>
+  predicate be_word_32_seq_eq_int(s: seq<int>, x: int)
   {
-    be_int_to_digit_seq(power2(1), |byteseq| * 8, be_digit_to_seq(power2(8), byteseq))
+    be_digit_seq_eq_int(WORD_32, s, x)
   }
 
-  function method {:autoReq} be_word_seq_to_byte_seq(wordseq: seq<int>): seq<int>
+  predicate be_word_64_seq_eq_int(s: seq<int>, x: int)
   {
-    be_int_to_digit_seq(power2(8), |wordseq| * 4, be_digit_to_seq(power2(32), wordseq))
+    be_digit_seq_eq_int(WORD_64, s, x)
   }
 
-  function method repeat_digit(digit: int, count: int): seq<int>
-    decreases count
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // Equality among sequences
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  predicate be_bit_seq_eq_byte_seq(bits: seq<int>, bytes: seq<int>)
   {
-    if count <= 0 then [] else repeat_digit(digit, count - 1) + [digit]
+    exists x: int :: be_bit_seq_eq_int(bits, x)
+                  && be_byte_seq_eq_int(bytes, x)
   }
 
-  // Move to Seq
-  function method {:opaque} reverse(s: seq<int>): seq<int>
+  predicate be_bit_seq_eq_word_16_seq(bits: seq<int>, word_16s: seq<int>)
   {
-    if s == [] then [] else [s[|s|-1]] + reverse(s[0 .. |s|-1])
+    exists x: int :: be_bit_seq_eq_int(bits, x)
+                  && be_word_16_seq_eq_int(word_16s, x)
+  }
+
+  predicate be_bit_seq_eq_word_32_seq(bits: seq<int>, word_32s: seq<int>)
+  {
+    exists x: int :: be_bit_seq_eq_int(bits, x)
+                  && be_word_32_seq_eq_int(word_32s, x)
+  }
+
+  predicate be_bit_seq_eq_word_64_seq(bits: seq<int>, word_64s: seq<int>)
+  {
+    exists x: int :: be_bit_seq_eq_int(bits, x)
+                  && be_word_64_seq_eq_int(word_64s, x)
+  }
+
+  predicate be_byte_seq_eq_word_16_seq(bytes: seq<int>, word_16s: seq<int>)
+  {
+    exists x: int :: be_byte_seq_eq_int(bytes, x)
+                  && be_word_16_seq_eq_int(word_16s, x)
+  }
+
+  predicate be_byte_seq_eq_word_32_seq(bytes: seq<int>, word_32s: seq<int>)
+  {
+    exists x: int :: be_byte_seq_eq_int(bytes, x)
+                  && be_word_32_seq_eq_int(word_32s, x)
+  }
+
+  predicate be_byte_seq_eq_word_64_seq(bytes: seq<int>, word_64s: seq<int>)
+  {
+    exists x: int :: be_byte_seq_eq_int(bytes, x)
+                  && be_word_64_seq_eq_int(word_64s, x)
+  }
+
+  predicate be_word_16_seq_eq_word_32_seq(word_16s: seq<int>,
+                                          word_32s: seq<int>)
+  {
+    exists x: int :: be_word_16_seq_eq_int(word_16s, x)
+                  && be_word_32_seq_eq_int(word_32s, x)
+  }
+
+  predicate be_word_16_seq_eq_word_64_seq(word_16s: seq<int>,
+                                          word_64s: seq<int>)
+  {
+    exists x: int :: be_word_16_seq_eq_int(word_16s, x)
+                  && be_word_64_seq_eq_int(word_64s, x)
+  }
+
+  predicate be_word_32_seq_eq_word_64_seq(word_32s: seq<int>,
+                                          word_64s: seq<int>)
+  {
+    exists x: int :: be_word_32_seq_eq_int(word_32s, x)
+                  && be_word_64_seq_eq_int(word_64s, x)
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // Uniqueness lemmas
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  lemma lemma_be_int_digit_seq_int(data_size: int, x: int)
+    requires data_size > 1
+    requires x >= 0
+    ensures be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x)) == x
+  {
+    reveal be_digit_seq_to_int_private();
+    reveal be_int_to_digit_seq_private();
+    if x == 0 {
+    } else {
+      calc {
+        be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x));
+        { lemma_div_basics_auto(); }
+        be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x / data_size) + [x % data_size]);
+        be_digit_seq_to_int(data_size, be_int_to_digit_seq(data_size, x / data_size)) * data_size + x % data_size;
+        {
+          lemma_div_basics_auto();
+          lemma_div_is_strictly_ordered_by_denominator_auto();
+          lemma_be_int_digit_seq_int(data_size, x / data_size);
+        }
+        x / data_size * data_size + x % data_size;
+        { lemma_fundamental_div_mod(x, data_size); }
+        x;
+      }
+    }
   }
 
 }
