@@ -1,7 +1,7 @@
 // RUN: %dafny /compile:0 /noNLarith "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
-// in service of mul.dfy ???
+/* lemmas and functions in this file are used in the proofs in Mul.dfy */
 
 include "GeneralInternals.dfy"
 include "MulInternalsNonlinear.dfy"

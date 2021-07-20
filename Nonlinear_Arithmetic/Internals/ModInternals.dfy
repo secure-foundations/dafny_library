@@ -1,6 +1,8 @@
 // RUN: %dafny /compile:0 /noNLarith "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
+/* lemmas and functions in this file are used in the proofs in DivMod.dfy */
+
 include "GeneralInternals.dfy"
 include "MulInternals.dfy"
 include "../Mul.dfy"

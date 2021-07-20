@@ -1,6 +1,8 @@
 // RUN: %dafny /compile:0 /noNLarith "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
+/* lemmas and functions in this file are used in the proofs in DivMod.dfy */
+
 /* Specs/implements mathematical div and mod, not the C version.
 This may produce "surprising" results for negative values
 For example, -3 div 5 is -1 and -3 mod 5 is 2.
