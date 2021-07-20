@@ -168,25 +168,141 @@ module IntSeq {
   }
 
   lemma lemma_to_nat_zero_extend(xs': seq<BaseType>, xs: seq<BaseType>) 
-      requires |xs'| < |xs|
-      requires var len' := |xs'|;
-          && xs[..len'] == xs'
-          && xs[len'.. ] == seq(|xs| - len', i => 0)
-      ensures to_nat(xs') == to_nat(xs)
+    requires |xs'| < |xs|
+    requires var len' := |xs'|;
+      && drop_last(xs) == xs'
+      && xs[len'.. ] == seq(|xs| - len', i => 0)
+    ensures to_nat(xs') == to_nat(xs)
   {
     var len, len' := |xs|, |xs'|;
     reveal to_nat();
     if len != len' + 1 {
-      var len'' := len-1;
       calc == {
         to_nat(xs);
-        to_nat(xs[..len'']) + xs[len''] * power(BASE, len'');
-        to_nat(xs[..len'']);
-        { lemma_to_nat_zero_extend(xs', xs[..len'']); }
+        to_nat(drop_last(xs)) + last(xs) * power(BASE, len - 1);
+        to_nat(drop_last(xs));
+        { lemma_to_nat_zero_extend(xs', drop_last(xs)); }
         to_nat(xs');
       }
     }
   }
 
+  function method {:opaque} seq_addc(xs: seq<BaseType>,
+                                     ys: seq<BaseType>): (seq<BaseType>, nat)
+    requires |xs| == |ys|
+    ensures var (zs, cout) := seq_addc(xs, ys); |zs| == |xs|
+  {
+    reveal seq_addc();
+    if |xs| == 0 then ([], 0)
+    else
+      var (zs', cin) := seq_addc(drop_last(xs), drop_last(ys));
+      var sum: int := last(xs) + last(ys) + cin;
+      var (sum_out, cout) := if sum < BASE then (sum, 0)
+                             else assert 0 <= sum - BASE; (sum - BASE, 1);
+      (zs' + [sum_out], cout)
+  }
+
+  lemma lemma_seq_addc_nat(xs: seq<BaseType>,
+                           ys: seq<BaseType>,
+                           zs: seq<BaseType>,
+                           cout: nat)
+    requires |xs| == |ys|
+    requires seq_addc(xs, ys) == (zs, cout)
+    ensures to_nat(xs) + to_nat(ys) == to_nat(zs) + cout * power(BASE, |xs|)
+  {
+    reveal seq_addc();
+    reveal to_nat();
+    if |xs| == 0 {
+      reveal power();
+    } else {
+      var len' := |xs| - 1;
+      var (zs', cin) := seq_addc(drop_last(xs), drop_last(ys));
+      var sum: int := last(xs) + last(ys) + cin;
+      var z := if sum < BASE then sum
+               else assert 0 <= sum - BASE; sum - BASE;
+      assert sum == z + cout * BASE;
+
+      calc {
+        to_nat(zs);
+        to_nat(zs') + z * power(BASE, len');
+          { lemma_seq_addc_nat(drop_last(xs), drop_last(ys), zs', cin); }
+        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) - cin * power(BASE, len') + z * power(BASE, len');
+          {
+            lemma_mul_equality_auto();
+            assert (last(xs) + last(ys) + cin) * power(BASE, len') == (z + cout * BASE) * power(BASE, len');
+            lemma_mul_is_distributive_add_other_way_auto();
+          } 
+        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) + last(xs) * power(BASE, len') + last(ys) * power(BASE, len') - cout * BASE * power(BASE, len');
+        to_nat(xs) + to_nat(ys) - cout * BASE * power(BASE, len');
+          {
+            lemma_mul_is_associative(cout, BASE, power(BASE, len'));
+            reveal power();
+          }
+        to_nat(xs) + to_nat(ys) - cout * power(BASE, |xs|);
+      }
+      assert to_nat(zs) + cout * power(BASE, |xs|) == to_nat(xs) + to_nat(ys);
+    }
+  }
+
+  function method {:opaque} seq_subb(xs: seq<BaseType>,
+                                     ys: seq<BaseType>): (seq<BaseType>, nat)
+    requires |xs| == |ys|
+    ensures var (zs, bout) := seq_subb(xs, ys); |zs| == |xs|
+  {
+    reveal seq_subb();
+    if |xs| == 0 then ([], 0)
+    else 
+      var (zs, bin) := seq_subb(drop_last(xs), drop_last(ys));
+      var (diff_out, bout) := if last(xs) >= last(ys) + bin
+                              then (last(xs) - last(ys) - bin, 0)
+                              else (BASE + last(xs) - last(ys) - bin, 1);
+      (zs + [diff_out], bout)
+  }
+
+  lemma lemma_seq_subb_nat(xs: seq<BaseType>,
+                           ys: seq<BaseType>,
+                           zs: seq<BaseType>,
+                           bout: nat)
+    requires |xs| == |ys|
+    requires seq_subb(xs, ys) == (zs, bout)
+    ensures to_nat(xs) - to_nat(ys) + bout * power(BASE, |xs|) == to_nat(zs)
+  {
+    reveal seq_subb();
+    reveal to_nat();
+    if |xs| == 0 {
+      reveal power();
+    } else {
+      var len' := |xs| - 1;
+      var (zs', bin) := seq_subb(drop_last(xs), drop_last(ys));
+      var z := if last(xs) >= last(ys) + bin
+               then last(xs) - last(ys) - bin
+               else BASE + last(xs) - last(ys) - bin;
+      assert bout * BASE + last(xs) - bin - last(ys) == z;
+      
+      calc {
+        to_nat(zs);
+        to_nat(zs') + z * power(BASE, len');
+          { lemma_seq_subb_nat(drop_last(xs), drop_last(ys), zs', bin); }
+        to_nat(drop_last(xs)) - to_nat(drop_last(ys)) + bin * power(BASE, len')
+          + z * power(BASE, len');
+          {
+            lemma_mul_equality_auto();
+            assert power(BASE, len') * (bout * BASE + last(xs) - bin - last(ys)) == power(BASE, len') * z;
+            lemma_mul_is_distributive_sub_auto();
+            lemma_mul_is_distributive_add_auto();
+            lemma_mul_is_commutative_auto();
+          }
+        to_nat(drop_last(xs)) - to_nat(drop_last(ys)) + last(xs) 
+          * power(BASE, len') - last(ys) * power(BASE, len') + bout * BASE
+          * power(BASE, len');
+        to_nat(xs) - to_nat(ys) + bout * BASE * power(BASE, len');
+          {
+            lemma_mul_is_associative(bout, BASE, power(BASE, len'));
+            reveal power();
+          }
+        to_nat(xs) - to_nat(ys) + bout * power(BASE, |xs|);
+      }
+    }
+  }
 
 }
