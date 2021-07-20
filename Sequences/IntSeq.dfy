@@ -68,7 +68,9 @@ module IntSeq {
         calc ==> {
           true;
             { reveal to_nat(); }
-          is_mod_equivalent(to_nat(xs), to_nat(xs') + xs[len'] * power(BASE, len'), BASE);
+          is_mod_equivalent(to_nat(xs),
+                            to_nat(xs') + xs[len'] * power(BASE, len'),
+                            BASE);
             {
               lemma_power_mod_auto();
               lemma_mul_basics_auto();
@@ -226,13 +228,16 @@ module IntSeq {
         to_nat(zs);
         to_nat(zs') + z * power(BASE, len');
           { lemma_seq_addc_nat(drop_last(xs), drop_last(ys), zs', cin); }
-        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) - cin * power(BASE, len') + z * power(BASE, len');
+        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) - cin * power(BASE, len')
+          + z * power(BASE, len');
           {
             lemma_mul_equality_auto();
             assert (last(xs) + last(ys) + cin) * power(BASE, len') == (z + cout * BASE) * power(BASE, len');
             lemma_mul_is_distributive_add_other_way_auto();
           } 
-        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) + last(xs) * power(BASE, len') + last(ys) * power(BASE, len') - cout * BASE * power(BASE, len');
+        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) + last(xs)
+          * power(BASE,len') + last(ys) * power(BASE, len') - cout * BASE
+          * power(BASE, len');
         to_nat(xs) + to_nat(ys) - cout * BASE * power(BASE, len');
           {
             lemma_mul_is_associative(cout, BASE, power(BASE, len'));
@@ -287,7 +292,8 @@ module IntSeq {
           + z * power(BASE, len');
           {
             lemma_mul_equality_auto();
-            assert power(BASE, len') * (bout * BASE + last(xs) - bin - last(ys)) == power(BASE, len') * z;
+            assert power(BASE, len') * (bout * BASE + last(xs) - bin - last(ys))
+                == power(BASE, len') * z;
             lemma_mul_is_distributive_sub_auto();
             lemma_mul_is_distributive_add_auto();
             lemma_mul_is_commutative_auto();
