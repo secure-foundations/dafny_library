@@ -577,6 +577,37 @@ module Power {
     }
   }
 
+  /* b^e % b = 0 */
+  lemma lemma_power_mod(b: nat, e: nat) 
+    requires b > 0 && e > 0
+    ensures power(b, e) % b == 0;
+  {
+    reveal power();
+    calc {
+      power(b, e) % b;
+      (b * power(b, e - 1)) % b;
+        { lemma_mul_is_associative_auto(); }
+      (power(b, e - 1) * b) % b;
+        {
+          lemma_power_positive_auto();
+          lemma_mod_multiples_basic(power(b, e-1) , b);
+        }
+      0;
+    }
+  }
+
+  lemma lemma_power_mod_auto()
+    ensures forall b: nat, e: nat {:trigger power(b, e)}
+      :: b > 0 && e > 0 ==> power(b, e) % b == 0
+  {
+    reveal_power();
+    forall b: nat, e: nat {:trigger power(b, e)} | b > 0 && e > 0
+      ensures power(b, e) % b == 0
+    {
+      lemma_power_mod(b, e);
+    }
+  }
+
   /* ((b % e)^e) % m = b^e % m */
   lemma lemma_power_mod_noop(b: int, e: nat, m: int)
     decreases e
