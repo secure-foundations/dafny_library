@@ -19,7 +19,19 @@ module Seq {
   Last in Sequences
   *
   ***********************************************************/
-  
+  /* finds the first element in the sequence */
+  function method first<T>(s: seq<T>): T
+    requires |s| > 0
+  {
+    s[0]
+  }
+
+  function method drop_first<T>(s: seq<T>): seq<T>
+    requires |s| > 0
+  {
+    s[1..]
+  }
+
   /* finds the last element in the sequence */
   function method last<T>(s: seq<T>): T
     requires |s| > 0;
