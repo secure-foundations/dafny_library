@@ -1,3 +1,5 @@
+/* Little endian representation */
+
 include "../Nonlinear_Arithmetic/DivMod.dfy"
 include "../Nonlinear_Arithmetic/Mul.dfy"
 include "../NativeTypes.dfy"
@@ -17,10 +19,11 @@ module IntSeq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // to_nat definitions and lemmas
+  // to_nat definition and lemmas
   //
   //////////////////////////////////////////////////////////////////////////////
 
+  /* Converts a sequence to nat. */
   function method {:opaque} to_nat(xs: seq<BaseType>): nat
   {
     if |xs| == 0 then 0
@@ -30,6 +33,7 @@ module IntSeq {
       to_nat(drop_last(xs)) + last(xs) * power(BASE, |xs| - 1)
   }
 
+  /* Proves the nat representation of a sequence of length 1. */
   lemma lemma_to_nat_len_1(xs: seq<BaseType>)
     requires |xs| == 1
     ensures to_nat(xs) == xs[0]
@@ -38,6 +42,7 @@ module IntSeq {
     reveal power();
   }
 
+  /* Proves the nat representation of a sequence of length 2. */
   lemma lemma_to_nat_len_2(xs: seq<BaseType>)
     requires |xs| == 2
     ensures to_nat(xs) == xs[0] + xs[1] * BASE
@@ -47,7 +52,45 @@ module IntSeq {
     reveal power();
   }
 
+  /* Proves the nat representation of a sequence is bounded by BASE to the
+  power of the sequence length. */
+  lemma lemma_to_nat_bound(xs: seq<BaseType>)
+    ensures to_nat(xs) < power(BASE, |xs|)
+  {
+    reveal to_nat();
+    reveal power();
+    if |xs| != 0 {
+      var len' := |xs| - 1;
+      var pow := power(BASE, len');
+      calc {
+        to_nat(xs);
+        to_nat(drop_last(xs)) + last(xs) * pow;
+        < { lemma_to_nat_bound(drop_last(xs)); }
+        pow + last(xs) * pow;
+        <=
+          {
+            assert last(xs) <= BASE - 1;
+            lemma_power_positive_auto();
+            lemma_mul_inequality_auto();
+          }
+        pow + (BASE - 1) * pow;
+        power(BASE, len' + 1);
+      }
+    }
+  }
+
+  /* Proves the nat representation of a prefix based on a smmaller prefix. */
+  lemma lemma_to_nat_prefix(xs: seq<BaseType>, i: nat)
+    requires 1 <= i < |xs|
+    ensures to_nat(xs[..i]) == to_nat(xs[..i-1]) + xs[i-1] * power(BASE, i - 1)
+  {
+    assert xs[..i][..i-1] == xs[..i-1];
+    reveal to_nat();
+  }
+
   // unstable
+  /* Proves mod equivalence between the nat representation of a sequence and
+  the lsw of the sequence.*/
   lemma lemma_lsw_mod_equivalence(xs: seq<BaseType>)
     requires |xs| >= 1;
     ensures is_mod_equivalent(to_nat(xs), xs[0], BASE);
@@ -57,18 +100,17 @@ module IntSeq {
     } else {
       assert is_mod_equivalent(to_nat(xs), xs[0], BASE) by {
         var len' := |xs| - 1;
+        var pow := power(BASE, len');
         var xs' := drop_last(xs);
 
         calc ==> {
           true;
             { reveal to_nat(); }
-          is_mod_equivalent(to_nat(xs),
-                            to_nat(xs') + last(xs) * power(BASE, len'),
-                            BASE);
+          is_mod_equivalent(to_nat(xs), to_nat(xs') + last(xs) * pow, BASE);
             {
               lemma_power_mod_auto();
               lemma_mul_mod_noop_general_auto();
-              assert is_mod_equivalent(last(xs) * power(BASE, len'), 0, BASE);
+              assert is_mod_equivalent(last(xs) * pow, 0, BASE);
             }
           is_mod_equivalent(to_nat(xs), to_nat(xs'), BASE);
             { lemma_lsw_mod_equivalence(xs'); }
@@ -78,12 +120,20 @@ module IntSeq {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // Sequences with zeros
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  /* Generates a sequence of zeros with length len. */
   function method {:opaque} seq_zero(len: nat): (zs: seq<BaseType>)
     ensures |zs| == len
   {
     if len == 0 then [] else seq_zero(len - 1) + [0]
   }
 
+  /* nat representation of an all zero sequence is 0. */
   lemma lemma_seq_zero_to_nat(len: nat)
     ensures to_nat(seq_zero(len)) == 0
   {
@@ -103,30 +153,8 @@ module IntSeq {
     }
   }
 
-  lemma lemma_to_nat_bound(xs: seq<BaseType>)
-    ensures to_nat(xs) < power(BASE, |xs|)
-  {
-    reveal to_nat();
-    reveal power();
-    if |xs| != 0 {
-      var len' := |xs| - 1;
-      calc {
-        to_nat(xs);
-        to_nat(drop_last(xs)) + last(xs) * power(BASE, len');
-        < { lemma_to_nat_bound(drop_last(xs)); }
-        power(BASE, len') + last(xs) * power(BASE, len');
-        <=
-          {
-            assert last(xs) <= BASE - 1;
-            lemma_power_positive_auto();
-            lemma_mul_inequality_auto();
-          }
-        power(BASE, len') + (BASE - 1) * power(BASE, len');
-        power(BASE, len' + 1);
-      }
-    }
-  }
-
+  /* Adding a zero as the least significant bit is equal to multiplying the
+  number by BASE. */
   lemma lemma_to_nat_zero_prepend(xs: seq<BaseType>)
     ensures to_nat([0] + xs) == to_nat(xs) * BASE
   {
@@ -150,14 +178,8 @@ module IntSeq {
     }
   }
 
-  lemma lemma_to_nat_prefix(xs: seq<BaseType>, i: nat)
-    requires 1 <= i < |xs|
-    ensures to_nat(xs[..i]) == to_nat(xs[..i-1]) + xs[i-1] * power(BASE, i - 1)
-  {
-    assert xs[..i][..i-1] == xs[..i-1];
-    reveal to_nat();
-  }
-
+  /* Adding zero(s) as the most significant bit(s) does not change the value of
+  the number. */
   lemma lemma_to_nat_zero_extend(xs': seq<BaseType>, xs: seq<BaseType>) 
     requires |xs'| < |xs|
     requires var len' := |xs'|;
@@ -178,6 +200,13 @@ module IntSeq {
     }
   }
 
+  //////////////////////////////////////////////////////////////////////////////
+  //
+  // Addition and subtraction
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  /* Adds two sequences. */
   function method {:opaque} seq_addc(xs: seq<BaseType>,
                                      ys: seq<BaseType>): (seq<BaseType>, nat)
     requires |xs| == |ys|
@@ -192,6 +221,8 @@ module IntSeq {
       (zs' + [sum_out], cout)
   }
 
+  /* Proves seq_addc yields the same value as converting the sequences to nats,
+  then adding them. */
   lemma lemma_seq_addc_nat(xs: seq<BaseType>,
                            ys: seq<BaseType>,
                            zs: seq<BaseType>,
@@ -232,6 +263,7 @@ module IntSeq {
     }
   }
 
+  /* Subtracts two sequences. */
   function method {:opaque} seq_subb(xs: seq<BaseType>,
                                      ys: seq<BaseType>): (seq<BaseType>, nat)
     requires |xs| == |ys|
@@ -247,6 +279,8 @@ module IntSeq {
       (zs + [diff_out], bout)
   }
 
+  /* Proves seq_subb yields the same value as converting the sequences to nats,
+  then subtracting them. */
   lemma lemma_seq_subb_nat(xs: seq<BaseType>,
                            ys: seq<BaseType>,
                            zs: seq<BaseType>,
