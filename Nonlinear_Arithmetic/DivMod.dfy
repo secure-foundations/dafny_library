@@ -31,8 +31,6 @@ module DivMod {
     lemma_div_induction_auto(d, x, u => div_recursive(u, d) == u / d);
   }
 
-  /* the common syntax of division gives the same quotient as performing division through recursion for all
-  integer division */
   lemma lemma_div_is_div_recursive_auto()
     ensures forall x: int, d: int {:trigger x / d} :: d > 0 ==> div_recursive(x, d) == x / d
   {
@@ -73,7 +71,6 @@ module DivMod {
     }
   }
     
-  /* ensures the basic propoerties of division for all integers */
   lemma lemma_div_basics_auto()
     ensures forall x {:trigger 0 / x} :: x != 0 ==> 0 / x == 0
     ensures forall x {:trigger x / 1} :: x / 1 == x
@@ -473,7 +470,7 @@ module DivMod {
     }
   }
 
-  /* divding a fraction by a divisor is equivalent to multiplying the fraction's 
+  /* dividing a fraction by a divisor is equivalent to multiplying the fraction's 
   denominator with the divisor */
   lemma lemma_div_denominator(x: int,c: nat,d: nat)
     requires 0 <= x
@@ -566,8 +563,6 @@ module DivMod {
     }
   }
   
-  /* divding a fraction by a divisor is always equivalent to multiplying the fraction's 
-  denominator with the divisor */
   lemma lemma_div_denominator_auto()
     ensures forall c: nat, d: nat {:trigger c * d} :: 0 < c && 0 < d ==> c * d != 0
     ensures forall x: int, c: nat, d: nat {:trigger (x / c) / d} 
@@ -966,8 +961,6 @@ module DivMod {
     }
   }
 
-  /* the common syntax of the modulus operation results in the same remainder as recursively
-  calculating the modulus for all integers */
   lemma lemma_mod_is_mod_recursive_auto()
     ensures forall x: int, d: int {:trigger x % d}:: d > 0 ==> mod_recursive(x, d) == x % d
   {
