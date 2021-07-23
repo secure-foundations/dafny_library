@@ -81,7 +81,7 @@ abstract module NatSeq {
 
   /* If there is an inequality between msw of two sequences, then there is an
   inequality between the nat representations of those sequences. */
-  lemma lemma_seq_inequality(xs: seq<uint>, ys: seq<uint>)
+  lemma lemma_seq_msw_inequality(xs: seq<uint>, ys: seq<uint>)
     requires |xs| == |ys| > 0
     requires last(xs) < last(ys)
     ensures to_nat(xs) < to_nat(ys)
@@ -103,7 +103,7 @@ abstract module NatSeq {
   }
 
   /* If two sequence prefixes do not have the same nat representations, then the two sequences do not have the same nat representations. */
-  lemma lemma_seq_neq_append(xs: seq<uint>, ys: seq<uint>, i: nat)
+  lemma lemma_seq_prefix_neq(xs: seq<uint>, ys: seq<uint>, i: nat)
     requires 0 <= i <= |xs| == |ys|
     requires to_nat(xs[..i]) != to_nat(ys[..i])
     ensures to_nat(xs) != to_nat(ys)
@@ -118,10 +118,10 @@ abstract module NatSeq {
         assert drop_last(xs[..i+1]) == xs[..i];
         assert drop_last(ys[..i+1]) == ys[..i];
       } else {
-        if xs[i] < ys[i]  { lemma_seq_inequality(xs[..i+1], ys[..i+1]); }
-        else              { lemma_seq_inequality(ys[..i+1], xs[..i+1]); }
+        if xs[i] < ys[i]  { lemma_seq_msw_inequality(xs[..i+1], ys[..i+1]); }
+        else              { lemma_seq_msw_inequality(ys[..i+1], xs[..i+1]); }
       }
-      lemma_seq_neq_append(xs, ys, i + 1);
+      lemma_seq_prefix_neq(xs, ys, i + 1);
     }
   }
 
@@ -142,6 +142,7 @@ abstract module NatSeq {
       }
       i := i + 1;
     }
+    assert to_nat(xs[..i]) == to_nat(ys[..i]);
 
     reveal to_nat();
     assert xs[..i+1][..i] == xs[..i];
@@ -150,7 +151,7 @@ abstract module NatSeq {
     lemma_mul_strict_inequality_auto();
     assert to_nat(xs[..i+1]) != to_nat(ys[..i+1]);
 
-    lemma_seq_neq_append(xs, ys, i+1);
+    lemma_seq_prefix_neq(xs, ys, i+1);
   }
 
   /* Proves mod equivalence between the nat representation of a sequence and
