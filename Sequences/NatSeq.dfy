@@ -51,13 +51,6 @@ abstract module NatSeq {
     reveal power();
   }
 
-  lemma lemma_seq_equivalence(xs: seq<uint>, ys: seq<uint>)
-    requires xs == ys
-    ensures to_nat(xs) == to_nat(ys)
-  {
-    reveal to_nat();
-  }
-
   /* Proves the nat representation of a sequence is bounded by BASE() to the
   power of the sequence length. */
   lemma lemma_seq_nat_bound(xs: seq<uint>)
@@ -86,27 +79,30 @@ abstract module NatSeq {
     }
   }
 
-  lemma lemma_seq_inequality(xs: seq<uint>, ys: seq<uint>, i: nat)
-    requires 0 <= i < |xs| == |ys|
-    requires xs[i] < ys[i]
-    ensures to_nat(xs[..i+1]) < to_nat(ys[..i+1])
+  /* If there is an inequality between msw of two sequences, then there is an
+  inequality between the nat representations of those sequences. */
+  lemma lemma_seq_inequality(xs: seq<uint>, ys: seq<uint>)
+    requires |xs| == |ys| > 0
+    requires last(xs) < last(ys)
+    ensures to_nat(xs) < to_nat(ys)
   {
     reveal to_nat();
+    var len' := |xs| - 1;
     calc {
-      to_nat(xs[..i+1]);
-      == { assert drop_last(xs[..i+1]) == xs[..i+1][..i] == xs[..i]; }
-      to_nat(xs[..i]) + xs[i] * power(BASE(), i);
-      < { lemma_seq_nat_bound(xs[..i]); }
-      power(BASE(), i) + xs[i] * power(BASE(), i);
+      to_nat(xs);
+      to_nat(drop_last(xs)) + last(xs) * power(BASE(), len');
+      <  { lemma_seq_nat_bound(drop_last(xs)); }
+      power(BASE(), len') + last(xs) * power(BASE(), len');
       == { lemma_mul_is_distributive_auto(); }
-      (1 + xs[i]) * power(BASE(), i);
-      <= { lemma_power_positive(BASE(), i); lemma_mul_inequality_auto(); }
-      ys[i] * power(BASE(), i);
+      (1 + last(xs)) * power(BASE(), len');
+      <= { lemma_power_positive(BASE(), len'); lemma_mul_inequality_auto(); }
+      last(ys) * power(BASE(), len');
       <=
-      to_nat(ys[..i+1]);
+      to_nat(ys);
     }
   }
 
+  /* If two sequence prefixes do not have the same nat representations, then the two sequences do not have the same nat representations. */
   lemma lemma_seq_neq_append(xs: seq<uint>, ys: seq<uint>, i: nat)
     requires 0 <= i <= |xs| == |ys|
     requires to_nat(xs[..i]) != to_nat(ys[..i])
@@ -122,14 +118,15 @@ abstract module NatSeq {
         assert drop_last(xs[..i+1]) == xs[..i];
         assert drop_last(ys[..i+1]) == ys[..i];
       } else {
-        if xs[i] < ys[i]  { lemma_seq_inequality(xs, ys, i); }
-        else              { lemma_seq_inequality(ys, xs, i); }
+        if xs[i] < ys[i]  { lemma_seq_inequality(xs[..i+1], ys[..i+1]); }
+        else              { lemma_seq_inequality(ys[..i+1], xs[..i+1]); }
       }
       lemma_seq_neq_append(xs, ys, i + 1);
     }
   }
 
-  lemma {:induction n} lemma_seq_neq(xs: seq<uint>, ys: seq<uint>, n: nat)
+  /* If two sequences are not equal, their nat representations are not equal. */
+  lemma lemma_seq_neq(xs: seq<uint>, ys: seq<uint>, n: nat)
     requires |xs| == |ys| == n
     requires xs != ys
     ensures to_nat(xs) != to_nat(ys)
@@ -148,7 +145,7 @@ abstract module NatSeq {
 
     reveal to_nat();
     assert xs[..i+1][..i] == xs[..i];
-    lemma_seq_equivalence(drop_last(xs[..i+1]), drop_last(ys[..i+1]));
+    assert ys[..i+1][..i] == ys[..i];
     lemma_power_positive_auto();
     lemma_mul_strict_inequality_auto();
     assert to_nat(xs[..i+1]) != to_nat(ys[..i+1]);
