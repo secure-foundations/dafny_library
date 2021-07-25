@@ -270,26 +270,14 @@ abstract module NatSeq {
       lemma_mod_equivalence_auto();
     } else {
       assert is_mod_equivalent(to_nat(xs), first(xs), BASE()) by {
-        var pow := power(BASE(), |xs| - 1);
-        var xs' := drop_last(xs);
-
         reveal to_nat();
         calc ==> {
           true;
             { lemma_mod_equivalence_auto(); }
-          is_mod_equivalent(to_nat(xs), to_nat(xs') + last(xs) * pow, BASE());
-            {
-              lemma_mul_mod_noop_right_auto();
-              lemma_power_mod_auto();
-              lemma_mul_basics_auto();
-            }
-          is_mod_equivalent(to_nat(xs), to_nat(xs'), BASE());
-            {
-              lemma_seq_lsw_mod_equivalence(xs');
-              lemma_mod_equivalence(to_nat(xs), to_nat(xs'), BASE());
-              lemma_mod_equivalence(to_nat(xs'), first(xs'), BASE());
-              lemma_mod_equivalence(to_nat(xs), first(xs), BASE());
-            }
+          is_mod_equivalent(to_nat(xs),
+                            to_nat(drop_first(xs)) * BASE() + first(xs),
+                            BASE());
+            { lemma_mod_multiples_basic_auto(); }
           is_mod_equivalent(to_nat(xs), first(xs), BASE());
         }
       }
@@ -306,7 +294,7 @@ abstract module NatSeq {
   function method {:opaque} seq_zero(len: nat): (zs: seq<uint>)
     ensures |zs| == len
   {
-    if len == 0 then [] else seq_zero(len - 1) + [0]
+    if len == 0 then [] else [0] + seq_zero(len - 1)
   }
 
   /* nat representation of an all zero sequence is 0. */
@@ -314,12 +302,12 @@ abstract module NatSeq {
     ensures to_nat(seq_zero(len)) == 0
   {
     reveal to_nat();
-    if len > 0{
+    if len > 0 {
       calc {
         to_nat(seq_zero(len));
           { reveal seq_zero(); }
-        to_nat(seq_zero(len - 1) + [0]);
-        to_nat(seq_zero(len - 1)) + 0 * power(BASE(), len - 1);
+        to_nat([0] + seq_zero(len - 1));
+        to_nat(seq_zero(len - 1)) * BASE() + 0;
           {
             lemma_seq_zero_nat(len - 1);
             lemma_mul_basics_auto();
@@ -329,50 +317,27 @@ abstract module NatSeq {
     }
   }
 
-  /* Adding a zero as the least significant bit is equal to multiplying the
-  number by BASE(). */
+  /* Prepending a zero is equal to multiplying the nat representation of the
+  sequence by BASE(). */
   lemma lemma_seq_prepend_zero(xs: seq<uint>)
     ensures to_nat([0] + xs) == to_nat(xs) * BASE()
   {
     reveal to_nat();
-    if |xs| == 0 {
-      lemma_mul_basics_auto();
-    } else {
-      calc {
-        to_nat([0] + xs);
-          { assert drop_last([0] + xs) == [0] + drop_last(xs); }
-        to_nat([0] + drop_last(xs)) + last(xs) * power(BASE(), |xs|);
-          { lemma_seq_prepend_zero(drop_last(xs)); }
-        to_nat(drop_last(xs)) * BASE() + last(xs) * power(BASE(), |xs|);
-          {
-            reveal power();
-            lemma_mul_properties();
-          }
-        (to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)) * BASE();
-        to_nat(xs) * BASE();
-      }
-    }
   }
 
-  /* Adding zero(s) as the most significant bit(s) does not change the value of
-  the number. */
-  lemma lemma_seq_append_zero(xs': seq<uint>, xs: seq<uint>) 
-    requires |xs'| < |xs|
-    requires var len' := |xs'|;
-      && drop_last(xs) == xs'
-      && xs[len'..] == seq(|xs| - len', i => 0)
-    ensures to_nat(xs') == to_nat(xs)
+  /* Appending a zero does not change the nat representation of the sequence. */
+  lemma lemma_seq_append_zero(xs: seq<uint>) 
+    ensures to_nat(xs + [0]) == to_nat(xs)
   {
-    var len, len' := |xs|, |xs'|;
-    reveal to_nat();
-    if len != len' + 1 {
-      calc == {
-        to_nat(xs);
-        to_nat(drop_last(xs)) + last(xs) * power(BASE(), len - 1);
-        to_nat(drop_last(xs));
-          { lemma_seq_append_zero(xs', drop_last(xs)); }
-        to_nat(xs');
-      }
+    reveal to_nat_rev();
+    lemma_to_nat_eq_to_nat_rev_auto();
+    calc == {
+      to_nat(xs + [0]);
+      to_nat_rev(xs + [0]);
+      to_nat_rev(xs) + 0 * power(BASE(), |xs|);
+        { lemma_mul_basics_auto(); }
+      to_nat_rev(xs);
+      to_nat(xs);
     }
   }
 
@@ -408,32 +373,34 @@ abstract module NatSeq {
     ensures to_nat(xs) + to_nat(ys) == to_nat(zs) + cout * power(BASE(), |xs|)
   {
     reveal seq_add();
-    reveal to_nat();
     if |xs| == 0 {
-      reveal power();
+      reveal to_nat();
     } else {
-      var len' := |xs| - 1;
-      var pow := power(BASE(), len');
+      var pow := power(BASE(), |xs| - 1);
       var (zs', cin) := seq_add(drop_last(xs), drop_last(ys));
       var sum: int := last(xs) + last(ys) + cin;
       var z := if sum < BASE() then sum else sum - BASE();
       assert sum == z + cout * BASE();
 
+      reveal to_nat_rev();
+      lemma_to_nat_eq_to_nat_rev_auto();
       calc {
         to_nat(zs);
-        to_nat(zs') + z * pow;
+        to_nat_rev(zs);
+        to_nat_rev(zs') + z * pow;
           { lemma_seq_add_nat(drop_last(xs), drop_last(ys), zs', cin); }
-        to_nat(drop_last(xs)) + to_nat(drop_last(ys)) - cin * pow + z * pow;
+        to_nat_rev(drop_last(xs)) + to_nat_rev(drop_last(ys)) - cin * pow + z * pow;
           {
             lemma_mul_equality_auto();
             assert sum * pow == (z + cout * BASE()) * pow;
             lemma_mul_is_distributive_auto();
           } 
-        to_nat(xs) + to_nat(ys) - cout * BASE() * pow;
+        to_nat_rev(xs) + to_nat_rev(ys) - cout * BASE() * pow;
           {
             lemma_mul_is_associative(cout, BASE(), pow);
             reveal power();
           }
+        to_nat_rev(xs) + to_nat_rev(ys) - cout * power(BASE(), |xs|);
         to_nat(xs) + to_nat(ys) - cout * power(BASE(), |xs|);
       }
     }
@@ -466,33 +433,35 @@ abstract module NatSeq {
     ensures to_nat(xs) - to_nat(ys) + cout * power(BASE(), |xs|) == to_nat(zs)
   {
     reveal seq_sub();
-    reveal to_nat();
     if |xs| == 0 {
-      reveal power();
+      reveal to_nat();
     } else {
-      var len' := |xs| - 1;
-      var pow := power(BASE(), len');
+      var pow := power(BASE(), |xs| - 1);
       var (zs', cin) := seq_sub(drop_last(xs), drop_last(ys));
       var z := if last(xs) >= last(ys) + cin
                then last(xs) - last(ys) - cin
                else BASE() + last(xs) - last(ys) - cin;
       assert cout * BASE() + last(xs) - cin - last(ys) == z;
-      
+
+      reveal to_nat_rev();
+      lemma_to_nat_eq_to_nat_rev_auto();
       calc {
         to_nat(zs);
-        to_nat(zs') + z * pow;
+        to_nat_rev(zs);
+        to_nat_rev(zs') + z * pow;
           { lemma_seq_sub_nat(drop_last(xs), drop_last(ys), zs', cin); }
-        to_nat(drop_last(xs)) - to_nat(drop_last(ys)) + cin * pow + z * pow;
+        to_nat_rev(drop_last(xs)) - to_nat_rev(drop_last(ys)) + cin * pow + z * pow;
           {
             lemma_mul_equality_auto();
             assert pow * (cout * BASE() + last(xs) - cin - last(ys)) == pow * z;
             lemma_mul_is_distributive_auto();
           }
-        to_nat(xs) - to_nat(ys) + cout * BASE() * pow;
+        to_nat_rev(xs) - to_nat_rev(ys) + cout * BASE() * pow;
           {
             lemma_mul_is_associative(cout, BASE(), pow);
             reveal power();
           }
+        to_nat_rev(xs) - to_nat_rev(ys) + cout * power(BASE(), |xs|);
         to_nat(xs) - to_nat(ys) + cout * power(BASE(), |xs|);
       }
     }
