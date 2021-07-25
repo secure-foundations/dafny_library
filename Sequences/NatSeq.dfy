@@ -116,39 +116,58 @@ abstract module NatSeq {
     lemma_seq_len_1_nat(drop_last(xs));
   }
 
+  /* Proves the nat representation of a sequence is bounded by BASE() to the
+  power of the sequence length. */
+  lemma lemma_seq_nat_bound(xs: seq<uint>)
+    ensures to_nat(xs) < power(BASE(), |xs|)
+  {
+    reveal to_nat();
+    reveal power();
+    if |xs| != 0 {
+      var len' := |xs| - 1;
+      var pow := power(BASE(), len');
+      calc {
+        to_nat(xs);
+          {
+            lemma_to_nat_eq_to_nat_rev(xs);
+            reveal to_nat_rev();
+          }
+        to_nat_rev(drop_last(xs)) + last(xs) * pow;
+        < {
+            lemma_to_nat_eq_to_nat_rev(drop_last(xs));
+            lemma_seq_nat_bound(drop_last(xs));
+          }
+        pow + last(xs) * pow;
+        <= {
+            lemma_power_positive_auto();
+            lemma_mul_inequality_auto();
+          }
+        pow + (BASE() - 1) * pow;
+          { lemma_mul_is_distributive_auto(); }
+        power(BASE(), len' + 1);
+      }
+    }
+  }
+
   lemma lemma_nat_seq_nat(n: nat)
     ensures to_nat(to_seq(n)) == n
     decreases n
   {
     reveal to_nat();
     reveal to_seq();
-    if n == 0 {
-    } else {
+    if n > 0 {
       calc {
         to_nat(to_seq(n));
-        to_nat(drop_last(to_seq(n))) + last(to_seq(n)) * power(BASE(), |to_seq(n)| - 1);
-        { lemma_div_basics_auto(); }
-        //to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
-        to_nat(to_seq(n / BASE())) + n % BASE() * power(BASE(), |to_seq(n)| - 1);
-        {
-          lemma_div_is_strictly_ordered_by_denominator_auto();
-          lemma_nat_seq_nat(n / BASE());
-        }
-        n / BASE() + n % BASE() * power(BASE(), |to_seq(n / BASE())|);
+          { lemma_div_basics_auto(); }
+        to_nat([n % BASE()] + to_seq(n / BASE()));
+        n % BASE() + to_nat(to_seq(n / BASE())) * BASE();
+          {
+            lemma_div_decreases_auto();
+            lemma_nat_seq_nat(n / BASE());
+          }
+        n % BASE() + n / BASE() * BASE();
+          { lemma_fundamental_div_mod(n, BASE()); }
         n;
-
-        // to_nat([n % BASE()] + to_seq(n / BASE()));
-        // n % BASE() + to_nat(to_seq(n / BASE())) * power(BASE(), |to_seq(n - n / BASE())|);
-        // n / BASE() + n % BASE() * power(BASE(), |to_seq(n / BASE())|);
-        // n;
-        //to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
-
-        //to_seq(n / BASE()) + [n % BASE()]
-        //(n / BASE() * 1 / power(BASE(), |to_seq(n)| - 1) + n % BASE()) * power(BASE(), |to_seq(n)| - 1);
-        //x == d * (x / d) + (x % d)
-        // to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
-        // to_nat(to_seq(n / BASE()) + [n % BASE()]);
-        // to_nat(to_seq(n / BASE())) + [n % BASE()] * power(BASE(), n);
       }
     }
   }
