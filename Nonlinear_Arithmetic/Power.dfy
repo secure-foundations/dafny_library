@@ -590,7 +590,7 @@ module Power {
       (power(b, e - 1) * b) % b;
         {
           lemma_power_positive_auto();
-          lemma_mod_multiples_basic(power(b, e-1) , b);
+          lemma_mod_multiples_basic(power(b, e - 1) , b);
         }
       0;
     }

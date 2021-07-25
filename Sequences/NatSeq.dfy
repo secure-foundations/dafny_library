@@ -18,18 +18,85 @@ abstract module NatSeq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
+  // to_seq definition and lemmas
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  /* Converts a nat to a sequence. */
+  function method {:opaque} to_seq(n: nat): seq<uint>
+  {
+    if n == 0 then []
+    else
+      lemma_div_basics_auto();
+      lemma_div_decreases_auto();
+      [n % BASE()] + to_seq(n / BASE())
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
   // to_nat definition and lemmas
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  /* Converts a sequence to nat. */
+  /* Converts a sequence to nat beginning from the lsw. */
   function method {:opaque} to_nat(xs: seq<uint>): nat
+  {
+    if |xs| == 0 then 0
+    else
+      lemma_mul_nonnegative_auto();
+      to_nat(drop_first(xs)) * BASE() + first(xs)
+  }
+
+  /* Converts a sequence to nat beginning from the msw. */
+  function method {:opaque} to_nat_rev(xs: seq<uint>): nat
   {
     if |xs| == 0 then 0
     else
       lemma_power_positive_auto();
       lemma_mul_nonnegative_auto();
-      to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
+      to_nat_rev(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
+  }
+
+  /* Given the same sequence, to_nat and to_nat_rev return the same value. */
+  lemma lemma_to_nat_eq_to_nat_rev(xs: seq<uint>)
+    ensures to_nat(xs) == to_nat_rev(xs)
+  {
+    reveal to_nat();
+    reveal to_nat_rev();
+    if xs == [] {
+    } else {
+      if drop_last(xs) == [] {
+        calc {
+          to_nat_rev(xs);
+          last(xs) * power(BASE(), |xs| - 1);
+          { lemma_power_0_auto(); }
+          to_nat(xs);
+        }
+      } else {
+        calc {
+          to_nat_rev(xs);
+          to_nat_rev(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1);
+          { lemma_to_nat_eq_to_nat_rev(drop_last(xs)); }
+          to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1);
+          to_nat(drop_first(drop_last(xs))) * BASE() + first(xs) + last(xs)
+            * power(BASE(), |xs| - 1);
+          { lemma_to_nat_eq_to_nat_rev(drop_first(drop_last(xs))); }
+          to_nat_rev(drop_first(drop_last(xs))) * BASE() + first(xs) + last(xs)
+            * power(BASE(), |xs| - 1);
+          {
+            assert drop_first(drop_last(xs)) == drop_last(drop_first(xs));
+            reveal power();
+            lemma_mul_properties();
+          }
+          to_nat_rev(drop_last(drop_first(xs))) * BASE() + first(xs) + last(xs)
+            * power(BASE(), |xs| - 2) * BASE();
+          { lemma_mul_is_distributive_add_other_way_auto(); }
+          to_nat_rev(drop_first(xs)) * BASE() + first(xs);
+          { lemma_to_nat_eq_to_nat_rev(drop_first(xs)); }
+          to_nat(xs);
+        }
+      }
+    }
   }
 
   /* Proves the nat representation of a sequence of length 1. */
@@ -38,7 +105,6 @@ abstract module NatSeq {
     ensures to_nat(xs) == first(xs)
   {
     reveal to_nat();
-    reveal power();
   }
 
   /* Proves the nat representation of a sequence of length 2. */
@@ -48,33 +114,41 @@ abstract module NatSeq {
   {
     reveal to_nat();
     lemma_seq_len_1_nat(drop_last(xs));
-    reveal power();
   }
 
-  /* Proves the nat representation of a sequence is bounded by BASE() to the
-  power of the sequence length. */
-  lemma lemma_seq_nat_bound(xs: seq<uint>)
-    ensures to_nat(xs) < power(BASE(), |xs|)
+  lemma lemma_nat_seq_nat(n: nat)
+    ensures to_nat(to_seq(n)) == n
+    decreases n
   {
     reveal to_nat();
-    reveal power();
-    if |xs| != 0 {
-      var len' := |xs| - 1;
-      var pow := power(BASE(), len');
+    reveal to_seq();
+    if n == 0 {
+    } else {
       calc {
-        to_nat(xs);
-        to_nat(drop_last(xs)) + last(xs) * pow;
-        < { lemma_seq_nat_bound(drop_last(xs)); }
-        pow + last(xs) * pow;
-        <=
-          {
-            assert last(xs) <= BASE() - 1;
-            lemma_power_positive_auto();
-            lemma_mul_inequality_auto();
-          }
-        pow + (BASE() - 1) * pow;
-          { lemma_mul_is_distributive_auto(); }
-        power(BASE(), len' + 1);
+        to_nat(to_seq(n));
+        to_nat(drop_last(to_seq(n))) + last(to_seq(n)) * power(BASE(), |to_seq(n)| - 1);
+        { lemma_div_basics_auto(); }
+        //to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
+        to_nat(to_seq(n / BASE())) + n % BASE() * power(BASE(), |to_seq(n)| - 1);
+        {
+          lemma_div_is_strictly_ordered_by_denominator_auto();
+          lemma_nat_seq_nat(n / BASE());
+        }
+        n / BASE() + n % BASE() * power(BASE(), |to_seq(n / BASE())|);
+        n;
+
+        // to_nat([n % BASE()] + to_seq(n / BASE()));
+        // n % BASE() + to_nat(to_seq(n / BASE())) * power(BASE(), |to_seq(n - n / BASE())|);
+        // n / BASE() + n % BASE() * power(BASE(), |to_seq(n / BASE())|);
+        // n;
+        //to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
+
+        //to_seq(n / BASE()) + [n % BASE()]
+        //(n / BASE() * 1 / power(BASE(), |to_seq(n)| - 1) + n % BASE()) * power(BASE(), |to_seq(n)| - 1);
+        //x == d * (x / d) + (x % d)
+        // to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
+        // to_nat(to_seq(n / BASE()) + [n % BASE()]);
+        // to_nat(to_seq(n / BASE())) + [n % BASE()] * power(BASE(), n);
       }
     }
   }
@@ -190,23 +264,6 @@ abstract module NatSeq {
       }
     }
   }
-
-  //////////////////////////////////////////////////////////////////////////////
-  //
-  // to_seq definition and lemmas
-  //
-  //////////////////////////////////////////////////////////////////////////////
-
-  /* Converts a nat to a sequence. */
-  function method {:opaque} to_seq(x: nat): seq<uint>
-  {
-    if x == 0 then []
-    else
-      lemma_div_basics_auto();
-      lemma_div_decreases_auto();
-      to_seq(x / BASE()) + [x % BASE()]
-  }
-
 
   //////////////////////////////////////////////////////////////////////////////
   //
