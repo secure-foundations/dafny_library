@@ -463,3 +463,24 @@ abstract module NatSeq {
   }
 
 }
+
+abstract module NatSeq1 refines NatSeq {
+
+  function method BASE1(): nat
+		ensures BASE1() > 1
+
+  function method BASE(): nat { BASE1() }
+
+}
+
+abstract module NatSeq2 refines NatSeq {
+
+  import NatSeq1
+
+  function method BASE2(): nat
+		ensures BASE2() > 1
+      && exists n :: (NatSeq1.BASE() == power(BASE2(), n) && n > 1)
+
+  function method BASE(): nat { BASE2() }
+
+}
