@@ -1,6 +1,5 @@
 include "../Nonlinear_Arithmetic/DivMod.dfy"
 include "../Nonlinear_Arithmetic/Mul.dfy"
-include "../NativeTypes.dfy"
 include "../Nonlinear_Arithmetic/Power.dfy"
 include "Seq.dfy"
 
@@ -8,7 +7,6 @@ abstract module NatSeq {
 
   import opened DivMod
   import opened Mul
-  import opened NativeTypes
   import opened Power
   import opened Seq
 
@@ -18,7 +16,7 @@ abstract module NatSeq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // to_seq definition and lemmas
+  // to_seq and to_nat definition and lemmas
   //
   //////////////////////////////////////////////////////////////////////////////
 
@@ -31,12 +29,6 @@ abstract module NatSeq {
       lemma_div_decreases_auto();
       [n % BASE()] + to_seq(n / BASE())
   }
-
-  //////////////////////////////////////////////////////////////////////////////
-  //
-  // to_nat definition and lemmas
-  //
-  //////////////////////////////////////////////////////////////////////////////
 
   /* Converts a sequence to nat beginning from the lsw. */
   function method {:opaque} to_nat(xs: seq<uint>): nat
@@ -157,6 +149,8 @@ abstract module NatSeq {
     }
   }
 
+  /* Prove that if we start with a nat, convert it to a sequence, and convert
+  it back, we get the same nat we started with. */
   lemma lemma_nat_seq_nat(n: nat)
     ensures to_nat(to_seq(n)) == n
     decreases n
@@ -180,8 +174,9 @@ abstract module NatSeq {
     }
   }
 
-  /* If there is an inequality between msw of two sequences, then there is an
-  inequality between the nat representations of those sequences. */
+  /* If there is an inequality between the most signficant words of two
+  sequences, then there is an inequality between the nat representations of
+  those sequences. */
   lemma lemma_seq_msw_inequality(xs: seq<uint>, ys: seq<uint>)
     requires |xs| == |ys| > 0
     requires last(xs) < last(ys)
