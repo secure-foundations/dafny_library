@@ -30,6 +30,24 @@ abstract module NatSeq {
       [n % BASE()] + to_seq(n / BASE())
   }
 
+  /* Converts a nat to a sequence of a specified length. */
+  function method {:opaque} to_seq_with_len(n: nat, len: nat): (xs: seq<uint>)
+    requires power(BASE(), len) > n
+    ensures |xs| == len
+  {
+    reveal power();
+    if n == 0 then
+      (if len == 0 then []
+       else
+        lemma_power_positive(BASE(), len - 1);
+        [0] + to_seq_with_len(n, len - 1))
+    else
+      lemma_div_basics_auto();
+      lemma_div_decreases_auto();
+      lemma_multiply_divide_lt_auto();
+      [n % BASE()] + to_seq_with_len(n / BASE(), len - 1)
+  }
+
   /* Converts a sequence to nat beginning from the lsw. */
   function method {:opaque} to_nat(xs: seq<uint>): nat
   {
@@ -176,7 +194,7 @@ abstract module NatSeq {
 
   /* Nat representation of a sequence based on its prefix. */
   lemma lemma_seq_prefix(xs: seq<uint>, i: nat)
-    requires 0 < i < |xs|
+    requires 0 <= i <= |xs|
     ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i) == to_nat(xs)
   {
     reveal to_nat();
@@ -186,11 +204,13 @@ abstract module NatSeq {
     } else if i > 1 {
       calc {
         to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i);
-        to_nat(drop_first(xs[..i])) * BASE() + first(xs) + to_nat(xs[i..]) * (BASE() * power(BASE(), i - 1));
+        to_nat(drop_first(xs[..i])) * BASE() + first(xs) + to_nat(xs[i..]) * power(BASE(), i);
           {
             assert drop_first(xs[..i]) == drop_first(xs)[..i-1];
             lemma_mul_properties();
           }
+        to_nat(drop_first(xs)[..i-1]) * BASE() + first(xs) + (to_nat(xs[i..]) * power(BASE(), i - 1)) * BASE();
+          { lemma_mul_is_distributive_add_other_way_auto(); }
         (to_nat(drop_first(xs)[..i-1]) + to_nat(drop_first(xs)[i-1..]) * power(BASE(), i - 1)) * BASE() + first(xs);
           { lemma_seq_prefix(drop_first(xs), i - 1); }
         to_nat(xs);
@@ -358,6 +378,15 @@ abstract module NatSeq {
       to_nat_rev(xs);
       to_nat(xs);
     }
+  }
+
+  /* Extend a sequence to a specified length. */
+  function method {:opaque} seq_extend(xs: seq<uint>, n: nat): (ys: seq<uint>)
+    ensures |xs| <= n ==> |ys| == n
+    ensures |xs| > n ==> |ys| > n
+    decreases n - |xs|
+  {
+    if |xs| >= n then xs else seq_extend(xs + [0], n)
   }
 
   //////////////////////////////////////////////////////////////////////////////
