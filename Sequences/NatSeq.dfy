@@ -149,7 +149,7 @@ abstract module NatSeq {
     }
   }
 
-  /* Prove that if we start with a nat, convert it to a sequence, and convert
+  /* Proves that if we start with a nat, convert it to a sequence, and convert
   it back, we get the same nat we started with. */
   lemma lemma_nat_seq_nat(n: nat)
     ensures to_nat(to_seq(n)) == n
@@ -170,6 +170,30 @@ abstract module NatSeq {
         n % BASE() + n / BASE() * BASE();
           { lemma_fundamental_div_mod(n, BASE()); }
         n;
+      }
+    }
+  }
+
+  /* Nat representation of a sequence based on its prefix. */
+  lemma lemma_seq_prefix(xs: seq<uint>, i: nat)
+    requires 0 < i < |xs|
+    ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i) == to_nat(xs)
+  {
+    reveal to_nat();
+    reveal power();
+    if i == 1 {
+      assert to_nat(xs[..1]) == first(xs);
+    } else if i > 1 {
+      calc {
+        to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i);
+        to_nat(drop_first(xs[..i])) * BASE() + first(xs) + to_nat(xs[i..]) * (BASE() * power(BASE(), i - 1));
+          {
+            assert drop_first(xs[..i]) == drop_first(xs)[..i-1];
+            lemma_mul_properties();
+          }
+        (to_nat(drop_first(xs)[..i-1]) + to_nat(drop_first(xs)[i-1..]) * power(BASE(), i - 1)) * BASE() + first(xs);
+          { lemma_seq_prefix(drop_first(xs), i - 1); }
+        to_nat(xs);
       }
     }
   }
