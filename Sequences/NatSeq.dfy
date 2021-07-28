@@ -303,28 +303,6 @@ abstract module NatSeq {
       [n % BASE()] + to_seq_with_len(n / BASE(), len - 1)
   }
 
-  /* nat representation of an all zero sequence is 0. */
-  lemma lemma_to_seq_with_len_zero(len: nat)
-    ensures power(BASE(), len) > 0
-    ensures to_nat(to_seq_with_len(0, len)) == 0
-  {
-    reveal to_nat();
-    reveal to_seq_with_len();
-    lemma_power_positive(BASE(), len);
-    if len > 0 {
-      calc {
-        to_nat(to_seq_with_len(0, len));
-        to_nat([0] + to_seq_with_len(0, len - 1));
-        to_nat(to_seq_with_len(0, len - 1)) * BASE();
-          {
-            lemma_to_seq_with_len_zero(len - 1);
-            lemma_mul_basics_auto();
-          }
-        0;
-      }
-    }
-  }
-
   /* Proves that if we start with a nat, convert it to a sequence using to_seq
   and to_seq_with_len, and convert it back, the resulting numbers are
   equivalent. */
@@ -336,7 +314,8 @@ abstract module NatSeq {
     reveal to_seq_with_len();
     reveal to_seq();
     if n == 0 && len != 0 {
-      lemma_to_seq_with_len_zero(len);
+      reveal seq_zero();
+      lemma_seq_zero_nat(len);
     } else if n > 0 {
       calc {
         to_nat(to_seq_with_len(n, len));
@@ -391,20 +370,25 @@ abstract module NatSeq {
   function method {:opaque} seq_zero(len: nat): (zs: seq<uint>)
     ensures |zs| == len
   {
-    if len == 0 then [] else [0] + seq_zero(len - 1)
+    lemma_power_positive(BASE(), len);
+    to_seq_with_len(0, len)
   }
 
   /* nat representation of an all zero sequence is 0. */
   lemma lemma_seq_zero_nat(len: nat)
+    ensures power(BASE(), len) > 0
     ensures to_nat(seq_zero(len)) == 0
   {
     reveal to_nat();
+    reveal seq_zero();
+    reveal to_seq_with_len();
+    lemma_power_positive(BASE(), len);
     if len > 0 {
       calc {
         to_nat(seq_zero(len));
-          { reveal seq_zero(); }
-        to_nat([0] + seq_zero(len - 1));
-        to_nat(seq_zero(len - 1)) * BASE() + 0;
+        to_nat(to_seq_with_len(0, len));
+        to_nat([0] + to_seq_with_len(0, len - 1));
+        to_nat(to_seq_with_len(0, len - 1)) * BASE();
           {
             lemma_seq_zero_nat(len - 1);
             lemma_mul_basics_auto();
