@@ -13,13 +13,13 @@ abstract module NatSeqConversions refines NatSeq {
 
   function {:opaque} to_lower_base(xs: seq<NatSeq1.uint>): seq<NatSeq2.uint>
   {
-    if xs == [] then []
+    if |xs| == 0 then []
     else NatSeq2.to_seq_with_len(first(xs), N()) + to_lower_base(drop_first(xs))
   }
 
   function {:opaque} to_higher_base(xs: seq<NatSeq2.uint>): seq<NatSeq1.uint>
   {
-    if xs == [] then []
+    if |xs| == 0 then []
     else
       if |xs| < N() then
         NatSeq2.lemma_seq_nat_bound(xs);
@@ -37,11 +37,12 @@ abstract module NatSeqConversions refines NatSeq {
     reveal NatSeq1.to_nat();
     reveal NatSeq2.to_nat();
     reveal to_lower_base();
-    if xs != [] {
+    if |xs| > 0 {
       calc {
         NatSeq2.to_nat(to_lower_base(xs));
         NatSeq2.to_nat(NatSeq2.to_seq_with_len(first(xs), N()) + to_lower_base(drop_first(xs)));
-          { NatSeq2.lemma_seq_prefix(NatSeq2.to_seq_with_len(first(xs), N()) + to_lower_base(drop_first(xs)), N()); }
+          { NatSeq2.lemma_seq_prefix(NatSeq2.to_seq_with_len(first(xs), N())
+            + to_lower_base(drop_first(xs)), N()); }
         NatSeq2.to_nat(NatSeq2.to_seq_with_len(first(xs), N())) + NatSeq2.to_nat(to_lower_base(drop_first(xs))) * power(NatSeq2.BASE(), N());
           {
             NatSeq2.lemma_to_seq_with_len_eq_to_seq(first(xs), N());
@@ -51,6 +52,26 @@ abstract module NatSeqConversions refines NatSeq {
         first(xs) + NatSeq1.to_nat(drop_first(xs)) * power(NatSeq2.BASE(), N());
           { assert power(NatSeq2.BASE(), N()) == NatSeq1.BASE(); }
         NatSeq1.to_nat(xs);
+      }
+    }
+  }
+
+  lemma lemma_to_higher_base(xs: seq<NatSeq2.uint>)
+    ensures NatSeq1.to_nat(to_higher_base(xs)) == NatSeq2.to_nat(xs)
+  {
+    reveal NatSeq1.to_nat();
+    reveal NatSeq2.to_nat();
+    reveal to_higher_base();
+    if |xs| >= N() {
+      calc {
+        NatSeq1.to_nat(to_higher_base(xs));
+          { NatSeq2.lemma_seq_nat_bound(xs[..N()]); }
+        NatSeq1.to_nat([NatSeq2.to_nat(xs[..N()]) as NatSeq1.uint] + to_higher_base(xs[N()..]));
+        NatSeq2.to_nat(xs[..N()]) as NatSeq1.uint + NatSeq1.to_nat(to_higher_base(xs[N()..])) * NatSeq1.BASE();
+          { lemma_to_higher_base(xs[N()..]); }
+        NatSeq2.to_nat(xs[..N()]) + NatSeq2.to_nat(xs[N()..]) * power(NatSeq2.BASE(), N());
+          { NatSeq2.lemma_seq_prefix(xs, N()); }
+        NatSeq2.to_nat(xs);
       }
     }
   }
