@@ -10,8 +10,10 @@ abstract module NatSeq {
   import opened Power
   import opened Seq
 
+  /* Upper bound of an element. */
   function method BASE(): nat
 		ensures BASE() > 1
+
   type uint = i: int | 0 <= i < BASE()
 
   //////////////////////////////////////////////////////////////////////////////
@@ -20,7 +22,7 @@ abstract module NatSeq {
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  /* Converts a sequence to nat beginning from the lsw. */
+  /* Converts a sequence to nat beginning from the least significant word. */
   function method {:opaque} to_nat(xs: seq<uint>): nat
   {
     if |xs| == 0 then 0
@@ -29,7 +31,7 @@ abstract module NatSeq {
       to_nat(drop_first(xs)) * BASE() + first(xs)
   }
 
-  /* Converts a sequence to nat beginning from the msw. */
+  /* Converts a sequence to nat beginning from the most significant word. */
   function method {:opaque} to_nat_rev(xs: seq<uint>): nat
   {
     if |xs| == 0 then 0
@@ -39,7 +41,7 @@ abstract module NatSeq {
       to_nat_rev(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
   }
 
-  /* Given the same sequence, to_nat and to_nat_rev return the same value. */
+  /* Given the same sequence, to_nat and to_nat_rev return the same nat. */
   lemma lemma_to_nat_eq_to_nat_rev(xs: seq<uint>)
     ensures to_nat(xs) == to_nat_rev(xs)
   {
@@ -110,8 +112,8 @@ abstract module NatSeq {
     lemma_seq_len_1(drop_last(xs));
   }
 
-  /* Proves the nat representation of a sequence is bounded by BASE() to the
-  power of the sequence length. */
+  /* Proves that the nat representation of a sequence is bounded by BASE() to
+  the power of the sequence length. */
   lemma lemma_seq_nat_bound(xs: seq<uint>)
     ensures to_nat(xs) == to_nat_rev(xs) < power(BASE(), |xs|)
   {
@@ -138,7 +140,8 @@ abstract module NatSeq {
     }
   }
 
-  /* Nat representation of a sequence based on its prefix. */
+  /* Proves the nat representation of a sequence based on the nat
+  representation of its prefix. */
   lemma lemma_seq_prefix(xs: seq<uint>, i: nat)
     requires 0 <= i <= |xs|
     ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i) == to_nat(xs)
@@ -188,7 +191,8 @@ abstract module NatSeq {
     }
   }
 
-  /* If two sequence prefixes do not have the same nat representations, then the two sequences do not have the same nat representations. */
+  /* Two sequences do not have the same nat representations if their prefixes
+  do not have the same nat representations. */
   lemma lemma_seq_prefix_neq(xs: seq<uint>, ys: seq<uint>, i: nat)
     requires 0 <= i <= |xs| == |ys|
     requires to_nat(xs[..i]) != to_nat(ys[..i])
@@ -214,13 +218,14 @@ abstract module NatSeq {
     }
   }
 
-  /* If two sequences are not equal, their nat representations are not equal. */
-  lemma lemma_seq_neq(xs: seq<uint>, ys: seq<uint>, n: nat)
-    requires |xs| == |ys| == n
+  /* If two sequences of the same length are not equal, their nat
+  representations are not equal. */
+  lemma lemma_seq_neq(xs: seq<uint>, ys: seq<uint>)
+    requires |xs| == |ys|
     requires xs != ys
     ensures to_nat(xs) != to_nat(ys)
   {
-    ghost var i: nat := 0;
+    ghost var i: nat, n: nat := 0, |xs|;
 
     while i < n
       invariant 0 <= i < n
@@ -244,8 +249,23 @@ abstract module NatSeq {
     lemma_seq_prefix_neq(xs, ys, i+1);
   }
 
+  /* If the nat representations of two sequences of the same length are equal
+  to each other, the sequences are the same. */
+  lemma lemma_seq_eq(xs: seq<uint>, ys: seq<uint>)
+    requires |xs| == |ys|
+    requires to_nat(xs) == to_nat(ys)
+    ensures xs == ys
+  {
+    calc ==> {
+      xs != ys;
+        { lemma_seq_neq(xs, ys); }
+      to_nat(xs) != to_nat(ys);
+      false;
+    }
+  }
+
   /* Proves mod equivalence between the nat representation of a sequence and
-  the lsw of the sequence.*/
+  the least significant word of the sequence. */
   lemma lemma_seq_lsw_mod_equivalence(xs: seq<uint>)
     requires |xs| >= 1;
     ensures is_mod_equivalent(to_nat(xs), first(xs), BASE());
@@ -304,7 +324,7 @@ abstract module NatSeq {
   }
 
   /* Proves that if we start with a nat, convert it to a sequence using to_seq
-  and to_seq_with_len, and convert it back, the resulting numbers are
+  and to_seq_with_len, and convert it back, the resulting nats are
   equivalent. */
   lemma lemma_to_seq_with_len_eq_to_seq(n: nat, len: nat)
     requires power(BASE(), len) > n
@@ -366,7 +386,7 @@ abstract module NatSeq {
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  /* Generates a sequence of zeros with length len. */
+  /* Generates a sequence of zeros of a specified length. */
   function method {:opaque} seq_zero(len: nat): (zs: seq<uint>)
     ensures |zs| == len
   {
@@ -374,7 +394,7 @@ abstract module NatSeq {
     to_seq_with_len(0, len)
   }
 
-  /* nat representation of an all zero sequence is 0. */
+  /* Proves that the nat representation of a sequence of zeros is zero. */
   lemma lemma_seq_zero_nat(len: nat)
     ensures power(BASE(), len) > 0
     ensures to_nat(seq_zero(len)) == 0
@@ -422,7 +442,7 @@ abstract module NatSeq {
     }
   }
 
-  /* Extend a sequence to a specified length. */
+  /* Extends a sequence to a specified length. */
   function method {:opaque} seq_extend(xs: seq<uint>, n: nat): (ys: seq<uint>)
     requires |xs| <= n
     ensures |ys| == n
@@ -452,8 +472,8 @@ abstract module NatSeq {
       (zs' + [sum_out], cout)
   }
 
-  /* Proves seq_add yields the same value as converting the sequences to nats,
-  then adding them. */
+  /* Proves that seq_add yields the same value as converting the sequences to
+  nats, then adding them. */
   lemma lemma_seq_add_nat(xs: seq<uint>,
                           ys: seq<uint>,
                           zs: seq<uint>,
@@ -512,8 +532,8 @@ abstract module NatSeq {
       (zs + [diff_out], cout)
   }
 
-  /* Proves seq_sub yields the same value as converting the sequences to nats,
-  then subtracting them. */
+  /* Proves that seq_sub yields the same value as converting the sequences to
+  nats, then subtracting them. */
   lemma lemma_seq_sub_nat(xs: seq<uint>,
                           ys: seq<uint>,
                           zs: seq<uint>,
@@ -559,6 +579,7 @@ abstract module NatSeq {
 
 }
 
+/* NatSeq1 and NatSeq2 are for conversions between bases. */
 abstract module NatSeq1 refines NatSeq {
 
   function method BASE1(): nat
@@ -572,6 +593,7 @@ abstract module NatSeq2 refines NatSeq {
 
   import NatSeq1
 
+  /* BASE1() must be a power of BASE2(). */
   function method BASE2(): nat
 		ensures BASE2() > 1
       && exists n :: (NatSeq1.BASE() == power(BASE2(), n) && n > 1)
