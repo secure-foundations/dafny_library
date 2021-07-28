@@ -10,7 +10,7 @@ abstract module NatSeq {
   import opened Power
   import opened Seq
 
-  /* Upper bound of an element. */
+  /* Upper bound of an element */
   function method BASE(): nat
 		ensures BASE() > 1
 
@@ -22,7 +22,7 @@ abstract module NatSeq {
   //
   //////////////////////////////////////////////////////////////////////////////
 
-  /* Converts a sequence to nat beginning from the least significant word. */
+  /* Converts a sequence to a nat beginning from the least significant word. */
   function method {:opaque} to_nat(xs: seq<uint>): nat
   {
     if |xs| == 0 then 0
@@ -31,7 +31,7 @@ abstract module NatSeq {
       to_nat(drop_first(xs)) * BASE() + first(xs)
   }
 
-  /* Converts a sequence to nat beginning from the most significant word. */
+  /* Converts a sequence to a nat beginning from the most significant word. */
   function method {:opaque} to_nat_rev(xs: seq<uint>): nat
   {
     if |xs| == 0 then 0
@@ -52,30 +52,30 @@ abstract module NatSeq {
         calc {
           to_nat_rev(xs);
           last(xs) * power(BASE(), |xs| - 1);
-          { lemma_power_0_auto(); }
+            { lemma_power_0_auto(); }
           to_nat(xs);
         }
       } else {
         calc {
           to_nat_rev(xs);
           to_nat_rev(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1);
-          { lemma_to_nat_eq_to_nat_rev(drop_last(xs)); }
+            { lemma_to_nat_eq_to_nat_rev(drop_last(xs)); }
           to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1);
           to_nat(drop_first(drop_last(xs))) * BASE() + first(xs) + last(xs)
             * power(BASE(), |xs| - 1);
-          { lemma_to_nat_eq_to_nat_rev(drop_first(drop_last(xs))); }
+            { lemma_to_nat_eq_to_nat_rev(drop_first(drop_last(xs))); }
           to_nat_rev(drop_first(drop_last(xs))) * BASE() + first(xs) + last(xs)
             * power(BASE(), |xs| - 1);
-          {
-            assert drop_first(drop_last(xs)) == drop_last(drop_first(xs));
-            reveal power();
-            lemma_mul_properties();
-          }
+            {
+              assert drop_first(drop_last(xs)) == drop_last(drop_first(xs));
+              reveal power();
+              lemma_mul_properties();
+            }
           to_nat_rev(drop_last(drop_first(xs))) * BASE() + first(xs) + last(xs)
             * power(BASE(), |xs| - 2) * BASE();
-          { lemma_mul_is_distributive_add_other_way_auto(); }
+            { lemma_mul_is_distributive_add_other_way_auto(); }
           to_nat_rev(drop_first(xs)) * BASE() + first(xs);
-          { lemma_to_nat_eq_to_nat_rev(drop_first(xs)); }
+            { lemma_to_nat_eq_to_nat_rev(drop_first(xs)); }
           to_nat(xs);
         }
       }
@@ -95,7 +95,8 @@ abstract module NatSeq {
     }
   }
 
-  /* Proves the nat representation of a sequence of length 1. */
+  /* The nat representation of a sequence of length 1 is its first (and only)
+  element. */
   lemma lemma_seq_len_1(xs: seq<uint>)
     requires |xs| == 1
     ensures to_nat(xs) == first(xs)
@@ -103,7 +104,8 @@ abstract module NatSeq {
     reveal to_nat();
   }
 
-  /* Proves the nat representation of a sequence of length 2. */
+  /* The nat representation of a sequence of length 2 is sum of its first
+  element and the product of its second element and BASE(). */
   lemma lemma_seq_len_2(xs: seq<uint>)
     requires |xs| == 2
     ensures to_nat(xs) == first(xs) + xs[1] * BASE()
@@ -112,8 +114,8 @@ abstract module NatSeq {
     lemma_seq_len_1(drop_last(xs));
   }
 
-  /* Proves that the nat representation of a sequence is bounded by BASE() to
-  the power of the sequence length. */
+  /* The nat representation of a sequence is bounded by BASE() to the power of
+  the sequence length. */
   lemma lemma_seq_nat_bound(xs: seq<uint>)
     ensures to_nat(xs) == to_nat_rev(xs) < power(BASE(), |xs|)
   {
@@ -140,8 +142,7 @@ abstract module NatSeq {
     }
   }
 
-  /* Proves the nat representation of a sequence based on the nat
-  representation of its prefix. */
+  /* The nat representation of a sequence can be calculated using its prefix. */
   lemma lemma_seq_prefix(xs: seq<uint>, i: nat)
     requires 0 <= i <= |xs|
     ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i) == to_nat(xs)
@@ -167,7 +168,7 @@ abstract module NatSeq {
     }
   }
 
-  /* If there is an inequality between the most signficant words of two
+  /* If there is an inequality between the most significant words of two
   sequences, then there is an inequality between the nat representations of
   those sequences. */
   lemma lemma_seq_msw_inequality(xs: seq<uint>, ys: seq<uint>)
@@ -264,8 +265,8 @@ abstract module NatSeq {
     }
   }
 
-  /* Proves mod equivalence between the nat representation of a sequence and
-  the least significant word of the sequence. */
+  /* The nat representation of a sequence and its least significant word are
+  congruent. */
   lemma lemma_seq_lsw_mod_equivalence(xs: seq<uint>)
     requires |xs| >= 1;
     ensures is_mod_equivalent(to_nat(xs), first(xs), BASE());
@@ -323,9 +324,8 @@ abstract module NatSeq {
       [n % BASE()] + to_seq_with_len(n / BASE(), len - 1)
   }
 
-  /* Proves that if we start with a nat, convert it to a sequence using to_seq
-  and to_seq_with_len, and convert it back, the resulting nats are
-  equivalent. */
+  /* If we start with a nat, convert it to a sequence using to_seq and
+  to_seq_with_len, and convert it back, the resulting nats are equivalent. */
   lemma lemma_to_seq_with_len_eq_to_seq(n: nat, len: nat)
     requires power(BASE(), len) > n
     ensures to_nat(to_seq_with_len(n, len)) == to_nat(to_seq(n))
@@ -355,8 +355,8 @@ abstract module NatSeq {
     }
   }
 
-  /* Proves that if we start with a nat, convert it to a sequence, and convert
-  it back, we get the same nat we started with. */
+  /* If we start with a nat, convert it to a sequence, and convert it back, we
+  get the same nat we started with. */
   lemma lemma_nat_seq_nat(n: nat)
     ensures to_nat(to_seq(n)) == n
     decreases n
@@ -394,7 +394,7 @@ abstract module NatSeq {
     to_seq_with_len(0, len)
   }
 
-  /* Proves that the nat representation of a sequence of zeros is zero. */
+  /* The nat representation of a sequence of zeros is zero. */
   lemma lemma_seq_zero_nat(len: nat)
     ensures power(BASE(), len) > 0
     ensures to_nat(seq_zero(len)) == 0
@@ -472,8 +472,8 @@ abstract module NatSeq {
       (zs' + [sum_out], cout)
   }
 
-  /* Proves that seq_add yields the same value as converting the sequences to
-  nats, then adding them. */
+  /* seq_add returns the same value as converting the sequences to nats, then
+  adding them. */
   lemma lemma_seq_add_nat(xs: seq<uint>,
                           ys: seq<uint>,
                           zs: seq<uint>,
@@ -532,8 +532,8 @@ abstract module NatSeq {
       (zs + [diff_out], cout)
   }
 
-  /* Proves that seq_sub yields the same value as converting the sequences to
-  nats, then subtracting them. */
+  /* seq_sub returns the same value as converting the sequences to nats, then
+  subtracting them. */
   lemma lemma_seq_sub_nat(xs: seq<uint>,
                           ys: seq<uint>,
                           zs: seq<uint>,

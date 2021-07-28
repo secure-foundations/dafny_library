@@ -34,8 +34,8 @@ abstract module NatSeqConversions refines NatSeq {
         [NatSeq2.to_nat(xs[..P()]) as NatSeq1.uint] + to_higher_base(xs[P()..])
   }
 
-  /* Proves conversion from BASE1() to BASE2() does not change the nat
-  representation of the sequence. */
+  /* Sequence conversion from BASE1() to BASE2() does not change its nat
+  representation. */
   lemma lemma_lower_base_to_nat(xs: seq<NatSeq1.uint>)
     ensures NatSeq2.to_nat(to_lower_base(xs)) == NatSeq1.to_nat(xs)
   {
@@ -61,8 +61,8 @@ abstract module NatSeqConversions refines NatSeq {
     }
   }
 
-  /* Proves conversion from BASE2() to BASE1() does not change the nat
-  representation of the sequence. */
+  /* Sequence conversion from BASE2() to BASE1() does not change its nat
+  representation. */
   lemma lemma_higher_base_to_nat(xs: seq<NatSeq2.uint>)
     ensures NatSeq1.to_nat(to_higher_base(xs)) == NatSeq2.to_nat(xs)
   {
@@ -83,7 +83,7 @@ abstract module NatSeqConversions refines NatSeq {
     }
   }
 
-  /* Proves to_lower_base is injective. */
+  /* to_lower_base is injective. */
   lemma lemma_to_lower_base_is_injective(xs: seq<NatSeq1.uint>,
                                          ys: seq<NatSeq1.uint>)
     requires to_lower_base(xs) == to_lower_base(ys)
@@ -96,7 +96,7 @@ abstract module NatSeqConversions refines NatSeq {
     NatSeq1.lemma_seq_eq(xs, ys);
   }
 
-  /* Proves to_higher_base is injective. */
+  /* to_higher_base is injective. */
   lemma lemma_to_higher_base_is_injective(xs: seq<NatSeq2.uint>,
                                           ys: seq<NatSeq2.uint>)
     requires to_higher_base(xs) == to_higher_base(ys)
