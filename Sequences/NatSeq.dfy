@@ -251,7 +251,7 @@ abstract module NatSeq {
     ensures is_mod_equivalent(to_nat(xs), first(xs), BASE());
   {
     if |xs| == 1 {
-      lemma_seq_len_1_nat(xs);
+      lemma_seq_len_1(xs);
       lemma_mod_equivalence_auto();
     } else {
       assert is_mod_equivalent(to_nat(xs), first(xs), BASE()) by {
