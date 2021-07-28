@@ -16,37 +16,9 @@ abstract module NatSeq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // to_seq and to_nat definition and lemmas
+  // to_nat definition and lemmas
   //
   //////////////////////////////////////////////////////////////////////////////
-
-  /* Converts a nat to a sequence. */
-  function method {:opaque} to_seq(n: nat): seq<uint>
-  {
-    if n == 0 then []
-    else
-      lemma_div_basics_auto();
-      lemma_div_decreases_auto();
-      [n % BASE()] + to_seq(n / BASE())
-  }
-
-  /* Converts a nat to a sequence of a specified length. */
-  function method {:opaque} to_seq_with_len(n: nat, len: nat): (xs: seq<uint>)
-    requires power(BASE(), len) > n
-    ensures |xs| == len
-  {
-    reveal power();
-    if n == 0 then
-      (if len == 0 then []
-       else
-        lemma_power_positive(BASE(), len - 1);
-        [0] + to_seq_with_len(n, len - 1))
-    else
-      lemma_div_basics_auto();
-      lemma_div_decreases_auto();
-      lemma_multiply_divide_lt_auto();
-      [n % BASE()] + to_seq_with_len(n / BASE(), len - 1)
-  }
 
   /* Converts a sequence to nat beginning from the lsw. */
   function method {:opaque} to_nat(xs: seq<uint>): nat
@@ -73,8 +45,7 @@ abstract module NatSeq {
   {
     reveal to_nat();
     reveal to_nat_rev();
-    if xs == [] {
-    } else {
+    if xs != [] {
       if drop_last(xs) == [] {
         calc {
           to_nat_rev(xs);
@@ -123,7 +94,7 @@ abstract module NatSeq {
   }
 
   /* Proves the nat representation of a sequence of length 1. */
-  lemma lemma_seq_len_1_nat(xs: seq<uint>)
+  lemma lemma_seq_len_1(xs: seq<uint>)
     requires |xs| == 1
     ensures to_nat(xs) == first(xs)
   {
@@ -131,12 +102,12 @@ abstract module NatSeq {
   }
 
   /* Proves the nat representation of a sequence of length 2. */
-  lemma lemma_seq_len_2_nat(xs: seq<uint>)
+  lemma lemma_seq_len_2(xs: seq<uint>)
     requires |xs| == 2
     ensures to_nat(xs) == first(xs) + xs[1] * BASE()
   {
     reveal to_nat();
-    lemma_seq_len_1_nat(drop_last(xs));
+    lemma_seq_len_1(drop_last(xs));
   }
 
   /* Proves the nat representation of a sequence is bounded by BASE() to the
@@ -163,31 +134,6 @@ abstract module NatSeq {
         pow + (BASE() - 1) * pow;
            { lemma_mul_is_distributive_auto(); }
         power(BASE(), len' + 1);
-      }
-    }
-  }
-
-  /* Proves that if we start with a nat, convert it to a sequence, and convert
-  it back, we get the same nat we started with. */
-  lemma lemma_nat_seq_nat(n: nat)
-    ensures to_nat(to_seq(n)) == n
-    decreases n
-  {
-    reveal to_nat();
-    reveal to_seq();
-    if n > 0 {
-      calc {
-        to_nat(to_seq(n));
-          { lemma_div_basics_auto(); }
-        to_nat([n % BASE()] + to_seq(n / BASE()));
-        n % BASE() + to_nat(to_seq(n / BASE())) * BASE();
-          {
-            lemma_div_decreases_auto();
-            lemma_nat_seq_nat(n / BASE());
-          }
-        n % BASE() + n / BASE() * BASE();
-          { lemma_fundamental_div_mod(n, BASE()); }
-        n;
       }
     }
   }
@@ -325,6 +271,118 @@ abstract module NatSeq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
+  // to_seq definition and lemmas
+  //
+  //////////////////////////////////////////////////////////////////////////////
+
+  /* Converts a nat to a sequence. */
+  function method {:opaque} to_seq(n: nat): seq<uint>
+  {
+    if n == 0 then []
+    else
+      lemma_div_basics_auto();
+      lemma_div_decreases_auto();
+      [n % BASE()] + to_seq(n / BASE())
+  }
+
+  /* Converts a nat to a sequence of a specified length. */
+  function method {:opaque} to_seq_with_len(n: nat, len: nat): (xs: seq<uint>)
+    requires power(BASE(), len) > n
+    ensures |xs| == len
+  {
+    reveal power();
+    if n == 0 then
+      (if len == 0 then []
+       else
+        lemma_power_positive(BASE(), len - 1);
+        [0] + to_seq_with_len(n, len - 1))
+    else
+      lemma_div_basics_auto();
+      lemma_div_decreases_auto();
+      lemma_multiply_divide_lt_auto();
+      [n % BASE()] + to_seq_with_len(n / BASE(), len - 1)
+  }
+
+  /* nat representation of an all zero sequence is 0. */
+  lemma lemma_to_seq_with_len_zero(len: nat)
+    ensures power(BASE(), len) > 0
+    ensures to_nat(to_seq_with_len(0, len)) == 0
+  {
+    reveal to_nat();
+    reveal to_seq_with_len();
+    lemma_power_positive(BASE(), len);
+    if len > 0 {
+      calc {
+        to_nat(to_seq_with_len(0, len));
+        to_nat([0] + to_seq_with_len(0, len - 1));
+        to_nat(to_seq_with_len(0, len - 1)) * BASE();
+          {
+            lemma_to_seq_with_len_zero(len - 1);
+            lemma_mul_basics_auto();
+          }
+        0;
+      }
+    }
+  }
+
+  /* Proves that if we start with a nat, convert it to a sequence using to_seq
+  and to_seq_with_len, and convert it back, the resulting numbers are
+  equivalent. */
+  lemma lemma_to_seq_with_len_eq_to_seq(n: nat, len: nat)
+    requires power(BASE(), len) > n
+    ensures to_nat(to_seq_with_len(n, len)) == to_nat(to_seq(n))
+  {
+    reveal to_nat();
+    reveal to_seq_with_len();
+    reveal to_seq();
+    if n == 0 && len != 0 {
+      lemma_to_seq_with_len_zero(len);
+    } else if n > 0 {
+      calc {
+        to_nat(to_seq_with_len(n, len));
+          {
+            lemma_div_basics_auto();
+            lemma_multiply_divide_lt_auto();
+          }
+        to_nat([n % BASE()] + to_seq_with_len(n / BASE(), len - 1));
+        to_nat([n % BASE()]) + to_nat(to_seq_with_len(n / BASE(), len - 1)) * BASE();
+          {
+            lemma_div_decreases_auto();
+            lemma_to_seq_with_len_eq_to_seq(n / BASE(), len - 1);
+          }
+        to_nat([n % BASE()]) + to_nat(to_seq(n / BASE())) * BASE();
+        to_nat(to_seq(n));
+      }
+    }
+  }
+
+  /* Proves that if we start with a nat, convert it to a sequence, and convert
+  it back, we get the same nat we started with. */
+  lemma lemma_nat_seq_nat(n: nat)
+    ensures to_nat(to_seq(n)) == n
+    decreases n
+  {
+    reveal to_nat();
+    reveal to_seq();
+    if n > 0 {
+      calc {
+        to_nat(to_seq(n));
+          { lemma_div_basics_auto(); }
+        to_nat([n % BASE()] + to_seq(n / BASE()));
+        n % BASE() + to_nat(to_seq(n / BASE())) * BASE();
+          {
+            lemma_div_decreases_auto();
+            lemma_nat_seq_nat(n / BASE());
+          }
+        n % BASE() + n / BASE() * BASE();
+          { lemma_fundamental_div_mod(n, BASE()); }
+        n;
+      }
+    }
+  }
+
+  //////////////////////////////////////////////////////////////////////////////
+  //
   // Sequences with zeros
   //
   //////////////////////////////////////////////////////////////////////////////
@@ -382,8 +440,8 @@ abstract module NatSeq {
 
   /* Extend a sequence to a specified length. */
   function method {:opaque} seq_extend(xs: seq<uint>, n: nat): (ys: seq<uint>)
-    ensures |xs| <= n ==> |ys| == n
-    ensures |xs| > n ==> |ys| > n
+    requires |xs| <= n
+    ensures |ys| == n
     decreases n - |xs|
   {
     if |xs| >= n then xs else seq_extend(xs + [0], n)
