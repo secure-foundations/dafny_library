@@ -1,6 +1,9 @@
+/* The first element of a sequence is the least significant word; the last element is the most significant word. */
+
 include "../Nonlinear_Arithmetic/DivMod.dfy"
 include "../Nonlinear_Arithmetic/Mul.dfy"
 include "../Nonlinear_Arithmetic/Power.dfy"
+include "../Nonlinear_Arithmetic/Power2.dfy"
 include "Seq.dfy"
 
 abstract module NatSeq {
@@ -8,13 +11,14 @@ abstract module NatSeq {
   import opened DivMod
   import opened Mul
   import opened Power
+  import opened Power2
   import opened Seq
 
-  /* Upper bound of an element */
-  function method BASE(): nat
-		ensures BASE() > 1
+  /* Upper bound of a word */
+  function method BOUND(): nat
+		ensures BOUND() > 1
 
-  type uint = i: int | 0 <= i < BASE()
+  type uint = i: int | 0 <= i < BOUND()
 
   //////////////////////////////////////////////////////////////////////////////
   //
@@ -28,7 +32,7 @@ abstract module NatSeq {
     if |xs| == 0 then 0
     else
       lemma_mul_nonnegative_auto();
-      to_nat(drop_first(xs)) * BASE() + first(xs)
+      to_nat(drop_first(xs)) * BOUND() + first(xs)
   }
 
   /* Converts a sequence to a nat beginning from the most significant word. */
@@ -38,7 +42,7 @@ abstract module NatSeq {
     else
       lemma_power_positive_auto();
       lemma_mul_nonnegative_auto();
-      to_nat_rev(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1)
+      to_nat_rev(drop_last(xs)) + last(xs) * power(BOUND(), |xs| - 1)
   }
 
   /* Given the same sequence, to_nat and to_nat_rev return the same nat. */
@@ -51,30 +55,30 @@ abstract module NatSeq {
       if drop_last(xs) == [] {
         calc {
           to_nat_rev(xs);
-          last(xs) * power(BASE(), |xs| - 1);
+          last(xs) * power(BOUND(), |xs| - 1);
             { lemma_power_0_auto(); }
           to_nat(xs);
         }
       } else {
         calc {
           to_nat_rev(xs);
-          to_nat_rev(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1);
+          to_nat_rev(drop_last(xs)) + last(xs) * power(BOUND(), |xs| - 1);
             { lemma_to_nat_eq_to_nat_rev(drop_last(xs)); }
-          to_nat(drop_last(xs)) + last(xs) * power(BASE(), |xs| - 1);
-          to_nat(drop_first(drop_last(xs))) * BASE() + first(xs) + last(xs)
-            * power(BASE(), |xs| - 1);
+          to_nat(drop_last(xs)) + last(xs) * power(BOUND(), |xs| - 1);
+          to_nat(drop_first(drop_last(xs))) * BOUND() + first(xs) + last(xs)
+            * power(BOUND(), |xs| - 1);
             { lemma_to_nat_eq_to_nat_rev(drop_first(drop_last(xs))); }
-          to_nat_rev(drop_first(drop_last(xs))) * BASE() + first(xs) + last(xs)
-            * power(BASE(), |xs| - 1);
+          to_nat_rev(drop_first(drop_last(xs))) * BOUND() + first(xs) + last(xs)
+            * power(BOUND(), |xs| - 1);
             {
               assert drop_first(drop_last(xs)) == drop_last(drop_first(xs));
               reveal power();
               lemma_mul_properties();
             }
-          to_nat_rev(drop_last(drop_first(xs))) * BASE() + first(xs) + last(xs)
-            * power(BASE(), |xs| - 2) * BASE();
+          to_nat_rev(drop_last(drop_first(xs))) * BOUND() + first(xs) + last(xs)
+            * power(BOUND(), |xs| - 2) * BOUND();
             { lemma_mul_is_distributive_add_other_way_auto(); }
-          to_nat_rev(drop_first(xs)) * BASE() + first(xs);
+          to_nat_rev(drop_first(xs)) * BOUND() + first(xs);
             { lemma_to_nat_eq_to_nat_rev(drop_first(xs)); }
           to_nat(xs);
         }
@@ -96,7 +100,7 @@ abstract module NatSeq {
   }
 
   /* The nat representation of a sequence of length 1 is its first (and only)
-  element. */
+  word. */
   lemma lemma_seq_len_1(xs: seq<uint>)
     requires |xs| == 1
     ensures to_nat(xs) == first(xs)
@@ -105,26 +109,26 @@ abstract module NatSeq {
   }
 
   /* The nat representation of a sequence of length 2 is sum of its first
-  element and the product of its second element and BASE(). */
+  word and the product of its second word and BOUND(). */
   lemma lemma_seq_len_2(xs: seq<uint>)
     requires |xs| == 2
-    ensures to_nat(xs) == first(xs) + xs[1] * BASE()
+    ensures to_nat(xs) == first(xs) + xs[1] * BOUND()
   {
     reveal to_nat();
     lemma_seq_len_1(drop_last(xs));
   }
 
-  /* The nat representation of a sequence is bounded by BASE() to the power of
+  /* The nat representation of a sequence is bounded by BOUND() to the power of
   the sequence length. */
   lemma lemma_seq_nat_bound(xs: seq<uint>)
-    ensures to_nat(xs) < power(BASE(), |xs|)
+    ensures to_nat(xs) < power(BOUND(), |xs|)
   {
     reveal power();
     if |xs| == 0 {
       reveal to_nat();
     } else {
       var len' := |xs| - 1;
-      var pow := power(BASE(), len');
+      var pow := power(BOUND(), len');
       calc {
         to_nat(xs);
            { lemma_to_nat_eq_to_nat_rev(xs); }
@@ -140,18 +144,18 @@ abstract module NatSeq {
             lemma_power_positive_auto();
             lemma_mul_inequality_auto();
            }
-        pow + (BASE() - 1) * pow;
+        pow + (BOUND() - 1) * pow;
            { lemma_mul_is_distributive_auto(); }
-        power(BASE(), len' + 1);
+        power(BOUND(), len' + 1);
       }
     }
   }
 
   /* The nat representation of a sequence can be calculated using the nat
-  representation prefix. */
+  representation of its prefix. */
   lemma lemma_seq_prefix(xs: seq<uint>, i: nat)
     requires 0 <= i <= |xs|
-    ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i) == to_nat(xs)
+    ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BOUND(), i) == to_nat(xs)
   {
     reveal to_nat();
     reveal power();
@@ -159,15 +163,15 @@ abstract module NatSeq {
       assert to_nat(xs[..1]) == first(xs);
     } else if i > 1 {
       calc {
-        to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i);
-        to_nat(drop_first(xs[..i])) * BASE() + first(xs) + to_nat(xs[i..]) * power(BASE(), i);
+        to_nat(xs[..i]) + to_nat(xs[i..]) * power(BOUND(), i);
+        to_nat(drop_first(xs[..i])) * BOUND() + first(xs) + to_nat(xs[i..]) * power(BOUND(), i);
           {
             assert drop_first(xs[..i]) == drop_first(xs)[..i-1];
             lemma_mul_properties();
           }
-        to_nat(drop_first(xs)[..i-1]) * BASE() + first(xs) + (to_nat(xs[i..]) * power(BASE(), i - 1)) * BASE();
+        to_nat(drop_first(xs)[..i-1]) * BOUND() + first(xs) + (to_nat(xs[i..]) * power(BOUND(), i - 1)) * BOUND();
           { lemma_mul_is_distributive_add_other_way_auto(); }
-        (to_nat(drop_first(xs)[..i-1]) + to_nat(drop_first(xs)[i-1..]) * power(BASE(), i - 1)) * BASE() + first(xs);
+        (to_nat(drop_first(xs)[..i-1]) + to_nat(drop_first(xs)[i-1..]) * power(BOUND(), i - 1)) * BOUND() + first(xs);
           { lemma_seq_prefix(drop_first(xs), i - 1); }
         to_nat(xs);
       }
@@ -176,7 +180,7 @@ abstract module NatSeq {
 
   /* If there is an inequality between the most significant words of two
   sequences, then there is an inequality between the nat representations of
-  those sequences. */
+  those sequences. Helper lemma for lemma_seq_neq. */
   lemma lemma_seq_msw_inequality(xs: seq<uint>, ys: seq<uint>)
     requires |xs| == |ys| > 0
     requires last(xs) < last(ys)
@@ -189,9 +193,9 @@ abstract module NatSeq {
       to_nat(xs);
       to_nat_rev(xs);
       <  { lemma_seq_nat_bound(drop_last(xs)); }
-      power(BASE(), len') + last(xs) * power(BASE(), len');
+      power(BOUND(), len') + last(xs) * power(BOUND(), len');
       == { lemma_mul_is_distributive_auto(); }
-      (1 + last(xs)) * power(BASE(), len');
+      (1 + last(xs)) * power(BOUND(), len');
       <= { lemma_power_positive_auto(); lemma_mul_inequality_auto(); }
       to_nat_rev(ys);
       to_nat(ys);
@@ -199,7 +203,7 @@ abstract module NatSeq {
   }
 
   /* Two sequences do not have the same nat representations if their prefixes
-  do not have the same nat representations. */
+  do not have the same nat representations. Helper lemma for lemma_seq_neq. */
   lemma lemma_seq_prefix_neq(xs: seq<uint>, ys: seq<uint>, i: nat)
     requires 0 <= i <= |xs| == |ys|
     requires to_nat(xs[..i]) != to_nat(ys[..i])
@@ -275,20 +279,20 @@ abstract module NatSeq {
   congruent. */
   lemma lemma_seq_lsw_mod_equivalence(xs: seq<uint>)
     requires |xs| >= 1;
-    ensures is_mod_equivalent(to_nat(xs), first(xs), BASE());
+    ensures is_mod_equivalent(to_nat(xs), first(xs), BOUND());
   {
     if |xs| == 1 {
       lemma_seq_len_1(xs);
       lemma_mod_equivalence_auto();
     } else {
-      assert is_mod_equivalent(to_nat(xs), first(xs), BASE()) by {
+      assert is_mod_equivalent(to_nat(xs), first(xs), BOUND()) by {
         reveal to_nat();
         calc ==> {
           true;
             { lemma_mod_equivalence_auto(); }
-          is_mod_equivalent(to_nat(xs), to_nat(drop_first(xs)) * BASE() + first(xs), BASE());
+          is_mod_equivalent(to_nat(xs), to_nat(drop_first(xs)) * BOUND() + first(xs), BOUND());
             { lemma_mod_multiples_basic_auto(); }
-          is_mod_equivalent(to_nat(xs), first(xs), BASE());
+          is_mod_equivalent(to_nat(xs), first(xs), BOUND());
         }
       }
     }
@@ -296,65 +300,65 @@ abstract module NatSeq {
 
   //////////////////////////////////////////////////////////////////////////////
   //
-  // to_seq definition and lemmas
+  // from_nat definition and lemmas
   //
   //////////////////////////////////////////////////////////////////////////////
 
   /* Converts a nat to a sequence. */
-  function method {:opaque} to_seq(n: nat): seq<uint>
+  function method {:opaque} from_nat(n: nat): seq<uint>
   {
     if n == 0 then []
     else
       lemma_div_basics_auto();
       lemma_div_decreases_auto();
-      [n % BASE()] + to_seq(n / BASE())
+      [n % BOUND()] + from_nat(n / BOUND())
   }
 
   /* Converts a nat to a sequence of a specified length. */
-  function method {:opaque} to_seq_with_len(n: nat, len: nat): (xs: seq<uint>)
-    requires power(BASE(), len) > n
+  function method {:opaque} from_nat_with_len(n: nat, len: nat): (xs: seq<uint>)
+    requires power(BOUND(), len) > n
     ensures |xs| == len
   {
     reveal power();
     if n == 0 then
       (if len == 0 then []
        else
-        lemma_power_positive(BASE(), len - 1);
-        [0] + to_seq_with_len(n, len - 1))
+        lemma_power_positive(BOUND(), len - 1);
+        [0] + from_nat_with_len(n, len - 1))
     else
       lemma_div_basics_auto();
       lemma_div_decreases_auto();
       lemma_multiply_divide_lt_auto();
-      [n % BASE()] + to_seq_with_len(n / BASE(), len - 1)
+      [n % BOUND()] + from_nat_with_len(n / BOUND(), len - 1)
   }
 
-  /* If we start with a nat, convert it to a sequence using to_seq and
-  to_seq_with_len, and convert it back, the resulting nats are equivalent. */
-  lemma lemma_to_seq_with_len_eq_to_seq(n: nat, len: nat)
-    requires power(BASE(), len) > n
-    ensures to_nat(to_seq_with_len(n, len)) == to_nat(to_seq(n))
+  /* If we start with a nat, convert it to a sequence using from_nat and
+  from_nat_with_len, and convert it back, the resulting nats are equivalent. */
+  lemma lemma_from_nat_with_len_eq_from_nat(n: nat, len: nat)
+    requires power(BOUND(), len) > n
+    ensures to_nat(from_nat_with_len(n, len)) == to_nat(from_nat(n))
   {
     reveal to_nat();
-    reveal to_seq_with_len();
-    reveal to_seq();
+    reveal from_nat_with_len();
+    reveal from_nat();
     if n == 0 && len != 0 {
       reveal seq_zero();
       lemma_seq_zero_nat(len);
     } else if n > 0 {
       calc {
-        to_nat(to_seq_with_len(n, len));
+        to_nat(from_nat_with_len(n, len));
           {
             lemma_div_basics_auto();
             lemma_multiply_divide_lt_auto();
           }
-        to_nat([n % BASE()] + to_seq_with_len(n / BASE(), len - 1));
-        to_nat([n % BASE()]) + to_nat(to_seq_with_len(n / BASE(), len - 1)) * BASE();
+        to_nat([n % BOUND()] + from_nat_with_len(n / BOUND(), len - 1));
+        to_nat([n % BOUND()]) + to_nat(from_nat_with_len(n / BOUND(), len - 1)) * BOUND();
           {
             lemma_div_decreases_auto();
-            lemma_to_seq_with_len_eq_to_seq(n / BASE(), len - 1);
+            lemma_from_nat_with_len_eq_from_nat(n / BOUND(), len - 1);
           }
-        to_nat([n % BASE()]) + to_nat(to_seq(n / BASE())) * BASE();
-        to_nat(to_seq(n));
+        to_nat([n % BOUND()]) + to_nat(from_nat(n / BOUND())) * BOUND();
+        to_nat(from_nat(n));
       }
     }
   }
@@ -362,23 +366,23 @@ abstract module NatSeq {
   /* If we start with a nat, convert it to a sequence, and convert it back, we
   get the same nat we started with. */
   lemma lemma_nat_seq_nat(n: nat)
-    ensures to_nat(to_seq(n)) == n
+    ensures to_nat(from_nat(n)) == n
     decreases n
   {
     reveal to_nat();
-    reveal to_seq();
+    reveal from_nat();
     if n > 0 {
       calc {
-        to_nat(to_seq(n));
+        to_nat(from_nat(n));
           { lemma_div_basics_auto(); }
-        to_nat([n % BASE()] + to_seq(n / BASE()));
-        n % BASE() + to_nat(to_seq(n / BASE())) * BASE();
+        to_nat([n % BOUND()] + from_nat(n / BOUND()));
+        n % BOUND() + to_nat(from_nat(n / BOUND())) * BOUND();
           {
             lemma_div_decreases_auto();
-            lemma_nat_seq_nat(n / BASE());
+            lemma_nat_seq_nat(n / BOUND());
           }
-        n % BASE() + n / BASE() * BASE();
-          { lemma_fundamental_div_mod(n, BASE()); }
+        n % BOUND() + n / BOUND() * BOUND();
+          { lemma_fundamental_div_mod(n, BOUND()); }
         n;
       }
     }
@@ -394,25 +398,25 @@ abstract module NatSeq {
   function method {:opaque} seq_zero(len: nat): (zs: seq<uint>)
     ensures |zs| == len
   {
-    lemma_power_positive(BASE(), len);
-    to_seq_with_len(0, len)
+    lemma_power_positive(BOUND(), len);
+    from_nat_with_len(0, len)
   }
 
   /* The nat representation of a sequence of zeros is zero. */
   lemma lemma_seq_zero_nat(len: nat)
-    ensures power(BASE(), len) > 0
+    ensures power(BOUND(), len) > 0
     ensures to_nat(seq_zero(len)) == 0
   {
     reveal to_nat();
     reveal seq_zero();
-    reveal to_seq_with_len();
-    lemma_power_positive(BASE(), len);
+    reveal from_nat_with_len();
+    lemma_power_positive(BOUND(), len);
     if len > 0 {
       calc {
         to_nat(seq_zero(len));
-        to_nat(to_seq_with_len(0, len));
-        to_nat([0] + to_seq_with_len(0, len - 1));
-        to_nat(to_seq_with_len(0, len - 1)) * BASE();
+        to_nat(from_nat_with_len(0, len));
+        to_nat([0] + from_nat_with_len(0, len - 1));
+        to_nat(from_nat_with_len(0, len - 1)) * BOUND();
           {
             lemma_seq_zero_nat(len - 1);
             lemma_mul_basics_auto();
@@ -423,9 +427,9 @@ abstract module NatSeq {
   }
 
   /* Prepending a zero is equal to multiplying the nat representation of the
-  sequence by BASE(). */
+  sequence by BOUND(). */
   lemma lemma_seq_prepend_zero(xs: seq<uint>)
-    ensures to_nat([0] + xs) == to_nat(xs) * BASE()
+    ensures to_nat([0] + xs) == to_nat(xs) * BOUND()
   {
     reveal to_nat();
   }
@@ -439,7 +443,7 @@ abstract module NatSeq {
     calc == {
       to_nat(xs + [0]);
       to_nat_rev(xs + [0]);
-      to_nat_rev(xs) + 0 * power(BASE(), |xs|);
+      to_nat_rev(xs) + 0 * power(BOUND(), |xs|);
         { lemma_mul_basics_auto(); }
       to_nat_rev(xs);
       to_nat(xs);
@@ -450,9 +454,10 @@ abstract module NatSeq {
   function method {:opaque} seq_extend(xs: seq<uint>, n: nat): (ys: seq<uint>)
     requires |xs| <= n
     ensures |ys| == n
+    ensures to_nat(ys) == to_nat(xs)
     decreases n - |xs|
   {
-    if |xs| >= n then xs else seq_extend(xs + [0], n)
+    if |xs| >= n then xs else lemma_seq_append_zero(xs); seq_extend(xs + [0], n)
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -472,30 +477,30 @@ abstract module NatSeq {
     else
       var (zs', cin) := seq_add(drop_last(xs), drop_last(ys));
       var sum: int := last(xs) + last(ys) + cin;
-      var (sum_out, cout) := if sum < BASE() then (sum, 0)
-                             else (sum - BASE(), 1);
+      var (sum_out, cout) := if sum < BOUND() then (sum, 0)
+                             else (sum - BOUND(), 1);
       (zs' + [sum_out], cout)
   }
 
   /* seq_add returns the same value as converting the sequences to nats, then
   adding them. */
-  lemma lemma_seq_add_nat(xs: seq<uint>,
+  lemma lemma_seq_add(xs: seq<uint>,
                           ys: seq<uint>,
                           zs: seq<uint>,
                           cout: nat)
     requires |xs| == |ys|
     requires seq_add(xs, ys) == (zs, cout)
-    ensures to_nat(xs) + to_nat(ys) == to_nat(zs) + cout * power(BASE(), |xs|)
+    ensures to_nat(xs) + to_nat(ys) == to_nat(zs) + cout * power(BOUND(), |xs|)
   {
     reveal seq_add();
     if |xs| == 0 {
       reveal to_nat();
     } else {
-      var pow := power(BASE(), |xs| - 1);
+      var pow := power(BOUND(), |xs| - 1);
       var (zs', cin) := seq_add(drop_last(xs), drop_last(ys));
       var sum: int := last(xs) + last(ys) + cin;
-      var z := if sum < BASE() then sum else sum - BASE();
-      assert sum == z + cout * BASE();
+      var z := if sum < BOUND() then sum else sum - BOUND();
+      assert sum == z + cout * BOUND();
 
       reveal to_nat_rev();
       lemma_to_nat_eq_to_nat_rev_auto();
@@ -503,20 +508,20 @@ abstract module NatSeq {
         to_nat(zs);
         to_nat_rev(zs);
         to_nat_rev(zs') + z * pow;
-          { lemma_seq_add_nat(drop_last(xs), drop_last(ys), zs', cin); }
+          { lemma_seq_add(drop_last(xs), drop_last(ys), zs', cin); }
         to_nat_rev(drop_last(xs)) + to_nat_rev(drop_last(ys)) - cin * pow + z * pow;
           {
             lemma_mul_equality_auto();
-            assert sum * pow == (z + cout * BASE()) * pow;
+            assert sum * pow == (z + cout * BOUND()) * pow;
             lemma_mul_is_distributive_auto();
           } 
-        to_nat_rev(xs) + to_nat_rev(ys) - cout * BASE() * pow;
+        to_nat_rev(xs) + to_nat_rev(ys) - cout * BOUND() * pow;
           {
-            lemma_mul_is_associative(cout, BASE(), pow);
+            lemma_mul_is_associative(cout, BOUND(), pow);
             reveal power();
           }
-        to_nat_rev(xs) + to_nat_rev(ys) - cout * power(BASE(), |xs|);
-        to_nat(xs) + to_nat(ys) - cout * power(BASE(), |xs|);
+        to_nat_rev(xs) + to_nat_rev(ys) - cout * power(BOUND(), |xs|);
+        to_nat(xs) + to_nat(ys) - cout * power(BOUND(), |xs|);
       }
     }
   }
@@ -533,30 +538,30 @@ abstract module NatSeq {
       var (zs, cin) := seq_sub(drop_last(xs), drop_last(ys));
       var (diff_out, cout) := if last(xs) >= last(ys) + cin
                               then (last(xs) - last(ys) - cin, 0)
-                              else (BASE() + last(xs) - last(ys) - cin, 1);
+                              else (BOUND() + last(xs) - last(ys) - cin, 1);
       (zs + [diff_out], cout)
   }
 
   /* seq_sub returns the same value as converting the sequences to nats, then
   subtracting them. */
-  lemma lemma_seq_sub_nat(xs: seq<uint>,
+  lemma lemma_seq_sub(xs: seq<uint>,
                           ys: seq<uint>,
                           zs: seq<uint>,
                           cout: nat)
     requires |xs| == |ys|
     requires seq_sub(xs, ys) == (zs, cout)
-    ensures to_nat(xs) - to_nat(ys) + cout * power(BASE(), |xs|) == to_nat(zs)
+    ensures to_nat(xs) - to_nat(ys) + cout * power(BOUND(), |xs|) == to_nat(zs)
   {
     reveal seq_sub();
     if |xs| == 0 {
       reveal to_nat();
     } else {
-      var pow := power(BASE(), |xs| - 1);
+      var pow := power(BOUND(), |xs| - 1);
       var (zs', cin) := seq_sub(drop_last(xs), drop_last(ys));
       var z := if last(xs) >= last(ys) + cin
                then last(xs) - last(ys) - cin
-               else BASE() + last(xs) - last(ys) - cin;
-      assert cout * BASE() + last(xs) - cin - last(ys) == z;
+               else BOUND() + last(xs) - last(ys) - cin;
+      assert cout * BOUND() + last(xs) - cin - last(ys) == z;
 
       reveal to_nat_rev();
       lemma_to_nat_eq_to_nat_rev_auto();
@@ -564,34 +569,55 @@ abstract module NatSeq {
         to_nat(zs);
         to_nat_rev(zs);
         to_nat_rev(zs') + z * pow;
-          { lemma_seq_sub_nat(drop_last(xs), drop_last(ys), zs', cin); }
+          { lemma_seq_sub(drop_last(xs), drop_last(ys), zs', cin); }
         to_nat_rev(drop_last(xs)) - to_nat_rev(drop_last(ys)) + cin * pow + z * pow;
           {
             lemma_mul_equality_auto();
-            assert pow * (cout * BASE() + last(xs) - cin - last(ys)) == pow * z;
+            assert pow * (cout * BOUND() + last(xs) - cin - last(ys)) == pow * z;
             lemma_mul_is_distributive_auto();
           }
-        to_nat_rev(xs) - to_nat_rev(ys) + cout * BASE() * pow;
+        to_nat_rev(xs) - to_nat_rev(ys) + cout * BOUND() * pow;
           {
-            lemma_mul_is_associative(cout, BASE(), pow);
+            lemma_mul_is_associative(cout, BOUND(), pow);
             reveal power();
           }
-        to_nat_rev(xs) - to_nat_rev(ys) + cout * power(BASE(), |xs|);
-        to_nat(xs) - to_nat(ys) + cout * power(BASE(), |xs|);
+        to_nat_rev(xs) - to_nat_rev(ys) + cout * power(BOUND(), |xs|);
+        to_nat(xs) - to_nat(ys) + cout * power(BOUND(), |xs|);
       }
     }
   }
 
 }
 
-/* NatSeq1 and NatSeq2 are used for conversions between bases. */
-abstract module NatSeq1 refines NatSeq {}
-abstract module NatSeq2 refines NatSeq {
+/* SmallBoundSeq and LargeBoundSeq are used for sequence conversions. */
+abstract module SmallBoundSeq refines NatSeq {
 
-  import NatSeq1
+  function method BITS(): nat
+    ensures BITS() > 1
 
-  /* BASE() must be a power of NatSeq1.BASE(). */
-  function method BASE(): nat
-    ensures exists n :: (NatSeq1.BASE() == power(BASE(), n) && n > 1)
+  function method BOUND(): nat
+  {
+    reveal power2();
+    lemma_power_positive_auto();
+    lemma_power_strictly_increases_auto();
+    power2(BITS())
+  }
+
+}
+
+abstract module LargeBoundSeq refines NatSeq {
+
+  import SmallBoundSeq
+
+  function method BITS(): nat
+    ensures BITS() > SmallBoundSeq.BITS()
+
+  function method BOUND(): nat
+  {
+    reveal power2();
+    lemma_power_positive_auto();
+    lemma_power_strictly_increases_auto();
+    power2(BITS())
+  }
 
 }
