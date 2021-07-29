@@ -117,19 +117,24 @@ abstract module NatSeq {
   /* The nat representation of a sequence is bounded by BASE() to the power of
   the sequence length. */
   lemma lemma_seq_nat_bound(xs: seq<uint>)
-    ensures to_nat(xs) == to_nat_rev(xs) < power(BASE(), |xs|)
+    ensures to_nat(xs) < power(BASE(), |xs|)
   {
-    reveal to_nat_rev();
-    lemma_to_nat_eq_to_nat_rev_auto();
     reveal power();
-    if |xs| != 0 {
+    if |xs| == 0 {
+      reveal to_nat();
+    } else {
       var len' := |xs| - 1;
       var pow := power(BASE(), len');
       calc {
         to_nat(xs);
+           { lemma_to_nat_eq_to_nat_rev(xs); }
         to_nat_rev(xs);
+           { reveal to_nat_rev(); }
         to_nat_rev(drop_last(xs)) + last(xs) * pow;
-        <  { lemma_seq_nat_bound(drop_last(xs)); }
+        <  {
+             lemma_to_nat_eq_to_nat_rev(drop_last(xs));
+             lemma_seq_nat_bound(drop_last(xs));
+           }
         pow + last(xs) * pow;
         <= {
             lemma_power_positive_auto();
@@ -142,7 +147,8 @@ abstract module NatSeq {
     }
   }
 
-  /* The nat representation of a sequence can be calculated using its prefix. */
+  /* The nat representation of a sequence can be calculated using the nat
+  representation prefix. */
   lemma lemma_seq_prefix(xs: seq<uint>, i: nat)
     requires 0 <= i <= |xs|
     ensures to_nat(xs[..i]) + to_nat(xs[i..]) * power(BASE(), i) == to_nat(xs)
@@ -280,9 +286,7 @@ abstract module NatSeq {
         calc ==> {
           true;
             { lemma_mod_equivalence_auto(); }
-          is_mod_equivalent(to_nat(xs),
-                            to_nat(drop_first(xs)) * BASE() + first(xs),
-                            BASE());
+          is_mod_equivalent(to_nat(xs), to_nat(drop_first(xs)) * BASE() + first(xs), BASE());
             { lemma_mod_multiples_basic_auto(); }
           is_mod_equivalent(to_nat(xs), first(xs), BASE());
         }
@@ -468,7 +472,8 @@ abstract module NatSeq {
     else
       var (zs', cin) := seq_add(drop_last(xs), drop_last(ys));
       var sum: int := last(xs) + last(ys) + cin;
-      var (sum_out, cout) := if sum < BASE() then (sum, 0) else (sum - BASE(), 1);
+      var (sum_out, cout) := if sum < BASE() then (sum, 0)
+                             else (sum - BASE(), 1);
       (zs' + [sum_out], cout)
   }
 
@@ -579,25 +584,14 @@ abstract module NatSeq {
 
 }
 
-/* NatSeq1 and NatSeq2 are for conversions between bases. */
-abstract module NatSeq1 refines NatSeq {
-
-  function method BASE1(): nat
-		ensures BASE1() > 1
-
-  function method BASE(): nat { BASE1() }
-
-}
-
+/* NatSeq1 and NatSeq2 are used for conversions between bases. */
+abstract module NatSeq1 refines NatSeq {}
 abstract module NatSeq2 refines NatSeq {
 
   import NatSeq1
 
-  /* BASE1() must be a power of BASE2(). */
-  function method BASE2(): nat
-		ensures BASE2() > 1
-      && exists n :: (NatSeq1.BASE() == power(BASE2(), n) && n > 1)
-
-  function method BASE(): nat { BASE2() }
+  /* BASE() must be a power of NatSeq1.BASE(). */
+  function method BASE(): nat
+    ensures exists n :: (NatSeq1.BASE() == power(BASE(), n) && n > 1)
 
 }
