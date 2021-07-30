@@ -231,6 +231,7 @@ abstract module NatSeq {
 
   /* If two sequences of the same length are not equal, their nat
   representations are not equal. */
+  // Simplify?
   lemma lemma_seq_neq(xs: seq<uint>, ys: seq<uint>)
     requires |xs| == |ys|
     requires xs != ys
@@ -589,8 +590,8 @@ abstract module NatSeq {
 
 }
 
-/* SmallBoundSeq and LargeBoundSeq are used for sequence conversions. */
-abstract module SmallBoundSeq refines NatSeq {
+/* SmallBound and LargeBound are used for sequence conversions. */
+abstract module SmallBound refines NatSeq {
 
   function method BITS(): nat
     ensures BITS() > 1
@@ -605,14 +606,15 @@ abstract module SmallBoundSeq refines NatSeq {
 
 }
 
-abstract module LargeBoundSeq refines NatSeq {
+abstract module LargeBound refines NatSeq {
 
-  import SmallBoundSeq
+  import SmallBound
 
   function method BITS(): nat
-    ensures BITS() > SmallBoundSeq.BITS()
+    ensures BITS() > SmallBound.BITS() && BITS() % SmallBound.BITS() == 0
 
   function method BOUND(): nat
+    ensures BOUND() > SmallBound.BOUND()
   {
     reveal power2();
     lemma_power_positive_auto();
