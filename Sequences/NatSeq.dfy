@@ -486,9 +486,9 @@ abstract module NatSeq {
   /* seq_add returns the same value as converting the sequences to nats, then
   adding them. */
   lemma lemma_seq_add(xs: seq<uint>,
-                          ys: seq<uint>,
-                          zs: seq<uint>,
-                          cout: nat)
+                      ys: seq<uint>,
+                      zs: seq<uint>,
+                      cout: nat)
     requires |xs| == |ys|
     requires seq_add(xs, ys) == (zs, cout)
     ensures to_nat(xs) + to_nat(ys) == to_nat(zs) + cout * power(BOUND(), |xs|)
@@ -546,9 +546,9 @@ abstract module NatSeq {
   /* seq_sub returns the same value as converting the sequences to nats, then
   subtracting them. */
   lemma lemma_seq_sub(xs: seq<uint>,
-                          ys: seq<uint>,
-                          zs: seq<uint>,
-                          cout: nat)
+                      ys: seq<uint>,
+                      zs: seq<uint>,
+                      cout: nat)
     requires |xs| == |ys|
     requires seq_sub(xs, ys) == (zs, cout)
     ensures to_nat(xs) - to_nat(ys) + cout * power(BOUND(), |xs|) == to_nat(zs)
