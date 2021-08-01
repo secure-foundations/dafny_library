@@ -1,4 +1,5 @@
-/* The first element of a sequence is the least significant word; the last element is the most significant word. */
+/* The first element of a sequence is the least significant word; the last
+element is the most significant word. */
 
 include "../Nonlinear_Arithmetic/DivMod.dfy"
 include "../Nonlinear_Arithmetic/Mul.dfy"
@@ -231,7 +232,6 @@ abstract module NatSeq {
 
   /* If two sequences of the same length are not equal, their nat
   representations are not equal. */
-  // Simplify?
   lemma lemma_seq_neq(xs: seq<uint>, ys: seq<uint>)
     requires |xs| == |ys|
     requires xs != ys
@@ -306,7 +306,7 @@ abstract module NatSeq {
   //////////////////////////////////////////////////////////////////////////////
 
   /* Converts a nat to a sequence. */
-  function method {:opaque} from_nat(n: nat): seq<uint>
+  function method {:opaque} from_nat(n: nat): (xs: seq<uint>)
   {
     if n == 0 then []
     else
@@ -315,53 +315,47 @@ abstract module NatSeq {
       [n % BOUND()] + from_nat(n / BOUND())
   }
 
+  /* Extends a sequence to a specified length. */
+  function method {:opaque} seq_extend(xs: seq<uint>, n: nat): (ys: seq<uint>)
+    requires |xs| <= n
+    ensures |ys| == n
+    ensures to_nat(ys) == to_nat(xs)
+    decreases n - |xs|
+  {
+    if |xs| >= n then xs else lemma_seq_append_zero(xs); seq_extend(xs + [0], n)
+  }
+
+  lemma lemma_from_nat_prefix(n: nat, len: nat)
+    requires power(BOUND(), len) > n
+    ensures |from_nat(n)| <= len
+    decreases n
+  {
+    reveal from_nat();
+    if n > 0 {
+      calc {
+        |from_nat(n)|;
+        == { lemma_div_basics_auto(); }
+        1 + |from_nat(n / BOUND())|;
+        <= {
+             lemma_multiply_divide_lt_auto();
+             lemma_div_decreases_auto();
+             reveal power();
+             lemma_from_nat_prefix(n / BOUND(), len - 1);
+           }
+        len;
+      }
+    }
+  }
+
   /* Converts a nat to a sequence of a specified length. */
   function method {:opaque} from_nat_with_len(n: nat, len: nat): (xs: seq<uint>)
     requires power(BOUND(), len) > n
     ensures |xs| == len
+    ensures to_nat(xs) == n
   {
-    reveal power();
-    if n == 0 then
-      (if len == 0 then []
-       else
-        lemma_power_positive(BOUND(), len - 1);
-        [0] + from_nat_with_len(n, len - 1))
-    else
-      lemma_div_basics_auto();
-      lemma_div_decreases_auto();
-      lemma_multiply_divide_lt_auto();
-      [n % BOUND()] + from_nat_with_len(n / BOUND(), len - 1)
-  }
-
-  /* If we start with a nat, convert it to a sequence using from_nat and
-  from_nat_with_len, and convert it back, the resulting nats are equivalent. */
-  lemma lemma_from_nat_with_len_eq_from_nat(n: nat, len: nat)
-    requires power(BOUND(), len) > n
-    ensures to_nat(from_nat_with_len(n, len)) == to_nat(from_nat(n))
-  {
-    reveal to_nat();
-    reveal from_nat_with_len();
-    reveal from_nat();
-    if n == 0 && len != 0 {
-      reveal seq_zero();
-      lemma_seq_zero_nat(len);
-    } else if n > 0 {
-      calc {
-        to_nat(from_nat_with_len(n, len));
-          {
-            lemma_div_basics_auto();
-            lemma_multiply_divide_lt_auto();
-          }
-        to_nat([n % BOUND()] + from_nat_with_len(n / BOUND(), len - 1));
-        to_nat([n % BOUND()]) + to_nat(from_nat_with_len(n / BOUND(), len - 1)) * BOUND();
-          {
-            lemma_div_decreases_auto();
-            lemma_from_nat_with_len_eq_from_nat(n / BOUND(), len - 1);
-          }
-        to_nat([n % BOUND()]) + to_nat(from_nat(n / BOUND())) * BOUND();
-        to_nat(from_nat(n));
-      }
-    }
+    lemma_from_nat_prefix(n, len);
+    lemma_nat_seq_nat(n);
+    seq_extend(from_nat(n), len)
   }
 
   /* If we start with a nat, convert it to a sequence, and convert it back, we
@@ -389,6 +383,26 @@ abstract module NatSeq {
     }
   }
 
+  /* If we start with a sequence with no leading zeros, convert it to a nat,
+  and convert it back, we get the same sequence we started with. */
+  lemma lemma_seq_nat_seq(xs: seq<uint>)
+    ensures power(BOUND(), |xs|) > to_nat(xs)
+    ensures from_nat_with_len(to_nat(xs), |xs|) == xs
+  {
+    reveal from_nat();
+    reveal to_nat();
+    lemma_seq_nat_bound(xs);
+    if |xs| > 0 {
+      calc {
+        from_nat_with_len(to_nat(xs), |xs|) != xs;
+          { lemma_seq_neq(from_nat_with_len(to_nat(xs), |xs|), xs); }
+        to_nat(from_nat_with_len(to_nat(xs), |xs|)) != to_nat(xs);
+        to_nat(xs) != to_nat(xs);
+        false;
+      }
+    }
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   //
   // Sequences with zeros
@@ -398,33 +412,10 @@ abstract module NatSeq {
   /* Generates a sequence of zeros of a specified length. */
   function method {:opaque} seq_zero(len: nat): (zs: seq<uint>)
     ensures |zs| == len
+    ensures to_nat(zs) == 0
   {
     lemma_power_positive(BOUND(), len);
     from_nat_with_len(0, len)
-  }
-
-  /* The nat representation of a sequence of zeros is zero. */
-  lemma lemma_seq_zero_nat(len: nat)
-    ensures power(BOUND(), len) > 0
-    ensures to_nat(seq_zero(len)) == 0
-  {
-    reveal to_nat();
-    reveal seq_zero();
-    reveal from_nat_with_len();
-    lemma_power_positive(BOUND(), len);
-    if len > 0 {
-      calc {
-        to_nat(seq_zero(len));
-        to_nat(from_nat_with_len(0, len));
-        to_nat([0] + from_nat_with_len(0, len - 1));
-        to_nat(from_nat_with_len(0, len - 1)) * BOUND();
-          {
-            lemma_seq_zero_nat(len - 1);
-            lemma_mul_basics_auto();
-          }
-        0;
-      }
-    }
   }
 
   /* Prepending a zero is equal to multiplying the nat representation of the
@@ -449,16 +440,6 @@ abstract module NatSeq {
       to_nat_rev(xs);
       to_nat(xs);
     }
-  }
-
-  /* Extends a sequence to a specified length. */
-  function method {:opaque} seq_extend(xs: seq<uint>, n: nat): (ys: seq<uint>)
-    requires |xs| <= n
-    ensures |ys| == n
-    ensures to_nat(ys) == to_nat(xs)
-    decreases n - |xs|
-  {
-    if |xs| >= n then xs else lemma_seq_append_zero(xs); seq_extend(xs + [0], n)
   }
 
   //////////////////////////////////////////////////////////////////////////////
@@ -590,8 +571,8 @@ abstract module NatSeq {
 
 }
 
-/* SmallBound and LargeBound are used for sequence conversions. */
-abstract module SmallBound refines NatSeq {
+/* Small and Large are used for sequence conversions. */
+abstract module Small refines NatSeq {
 
   function method BITS(): nat
     ensures BITS() > 1
@@ -606,15 +587,15 @@ abstract module SmallBound refines NatSeq {
 
 }
 
-abstract module LargeBound refines NatSeq {
+abstract module Large refines NatSeq {
 
-  import SmallBound
+  import Small
 
   function method BITS(): nat
-    ensures BITS() > SmallBound.BITS() && BITS() % SmallBound.BITS() == 0
+    ensures BITS() > Small.BITS() && BITS() % Small.BITS() == 0
 
   function method BOUND(): nat
-    ensures BOUND() > SmallBound.BOUND()
+    ensures BOUND() > Small.BOUND()
   {
     reveal power2();
     lemma_power_positive_auto();
