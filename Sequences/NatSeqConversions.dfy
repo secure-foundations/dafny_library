@@ -19,6 +19,7 @@ abstract module NatSeqConversions refines NatSeq {
     Large.BITS() / Small.BITS()
   }
 
+  /* If x % y is zero and x is greater than zero, x is greater than y. */
   lemma lemma_mod_eq_zero(x: nat, y: nat)
     requires x > 0 && y > 0
     requires x % y == 0
@@ -132,6 +133,8 @@ abstract module NatSeqConversions refines NatSeq {
     Small.lemma_seq_eq(xs, ys);
   }
 
+  /* If we start with a Small sequence, convert it to a Large sequence,
+  and convert it back, we get the same sequence we started with. */
   lemma lemma_small_large_small(xs: seq<Small.uint>)
     requires |xs| % E() == 0
     ensures to_small(to_large(xs)) == xs
@@ -157,6 +160,8 @@ abstract module NatSeqConversions refines NatSeq {
     }
   }
 
+  /* If we start with a Large sequence, convert it to a Sequence sequence,
+  and convert it back, we get the same sequence we started with. */
   lemma lemma_large_small_large(xs: seq<Large.uint>)
     ensures |to_small(xs)| % E() == 0
     ensures to_large(to_small(xs)) == xs
