@@ -449,9 +449,10 @@ abstract module NatSeq {
   function method {:opaque} seq_add(xs: seq<uint>,
                                     ys: seq<uint>): (seq<uint>, nat)
     requires |xs| == |ys|
-    ensures var (zs, cout) := seq_add(xs, ys); |zs| == |xs|
+    ensures var (zs, cout) := seq_add(xs, ys);
+      |zs| == |xs| && (cout == 0 || cout == 1)
+    decreases xs
   {
-    reveal seq_add();
     if |xs| == 0 then ([], 0)
     else
       var (zs', cin) := seq_add(drop_last(xs), drop_last(ys));
@@ -509,9 +510,11 @@ abstract module NatSeq {
   function method {:opaque} seq_sub(xs: seq<uint>,
                                     ys: seq<uint>): (seq<uint>, nat)
     requires |xs| == |ys|
-    ensures var (zs, cout) := seq_sub(xs, ys); |zs| == |xs|
+    ensures var (zs, cout) := seq_sub(xs, ys);
+      |zs| == |xs| && (cout == 0 || cout == 1)
+    decreases xs
   {
-    reveal seq_sub();
+    //reveal seq_sub();
     if |xs| == 0 then ([], 0)
     else 
       var (zs, cin) := seq_sub(drop_last(xs), drop_last(ys));
@@ -564,39 +567,6 @@ abstract module NatSeq {
         to_nat(xs) - to_nat(ys) + cout * power(BOUND(), |xs|);
       }
     }
-  }
-
-}
-
-/* Small and Large are used for sequence conversions. */
-abstract module Small refines NatSeq {
-
-  function method BITS(): nat
-    ensures BITS() > 1
-
-  function method BOUND(): nat
-  {
-    reveal power2();
-    lemma_power_positive_auto();
-    lemma_power_strictly_increases_auto();
-    power2(BITS())
-  }
-
-}
-
-abstract module Large refines NatSeq {
-
-  import Small
-
-  function method BITS(): nat
-    ensures BITS() > Small.BITS() && BITS() % Small.BITS() == 0
-
-  function method BOUND(): nat
-  {
-    reveal power2();
-    lemma_power_positive_auto();
-    lemma_power_strictly_increases_auto();
-    power2(BITS())
   }
 
 }
