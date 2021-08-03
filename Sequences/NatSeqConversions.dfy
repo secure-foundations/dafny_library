@@ -4,6 +4,7 @@ include "../Nonlinear_Arithmetic/Power.dfy"
 include "Seq.dfy"
 include "NatSeq.dfy"
 
+/* Sequence with smaller bound. */
 abstract module SmallSeq refines NatSeq {
 
   function method BITS(): nat
@@ -19,6 +20,7 @@ abstract module SmallSeq refines NatSeq {
 
 }
 
+/* Sequence with larger bound. */
 abstract module LargeSeq refines NatSeq {
 
   import Small : SmallSeq
