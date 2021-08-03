@@ -43,13 +43,10 @@ abstract module LargeSeq refines NatSeq {
 abstract module NatSeqConversions {
 
   import opened DivMod
-  import opened LargeSeq
+  import opened Large : LargeSeq
   import opened Mul
   import opened Power
   import opened Seq
-
-  //import Small
-  //import Large
 
   /* Small.BOUND() to the power of E() is Large.BOUND(). */
   function method E(): nat
@@ -234,8 +231,9 @@ module uint8_32 refines NatSeqConversions {
 
   module uint32Seq refines LargeSeq {
     import Small = uint8Seq
-
     function method BITS(): nat { 32 }
   }
+
+  import opened Large = uint32Seq
 
 }

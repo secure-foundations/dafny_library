@@ -514,7 +514,6 @@ abstract module NatSeq {
       |zs| == |xs| && (cout == 0 || cout == 1)
     decreases xs
   {
-    //reveal seq_sub();
     if |xs| == 0 then ([], 0)
     else 
       var (zs, cin) := seq_sub(drop_last(xs), drop_last(ys));

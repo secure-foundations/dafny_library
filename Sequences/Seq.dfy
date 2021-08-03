@@ -1,6 +1,33 @@
 // RUN: %dafny "%s" > "%t"
 // RUN: %diff "%s.expect" "%t"
 
+// abstract module A {
+//   function method fun(): nat
+//     ensures fun() > 0
+// }
+// abstract module B {
+//   import A' : A
+//   function method fun(): nat
+//     ensures fun() > A'.fun()
+// }
+// abstract module C {
+//   import B' : B
+//   function method test(): nat {
+//     B'.fun()
+//   }
+// }
+
+// module ConcreteA refines A {
+//   function method fun(): nat { 1 }
+// }
+// module ConcreteB refines B {
+//   import A' = ConcreteA
+//   function method fun(): nat { 2 }
+// }
+// module ConcreteC refines C {
+//   import B' = ConcreteB
+// }
+
 /*********************************************************************************************************************
 Copyright 2018-2021 VMware, Inc., Microsoft Inc., Carnegie Mellon University, ETH Zurich, and University of Washington
 SPDX-License-Identifier: BSD-2-Clause
