@@ -222,6 +222,7 @@ abstract module NatSeqConversions {
 
 }
 
+/* Conversions between sequences of uint8 and uint16. */
 module uint8_16 refines NatSeqConversions {
 
   module uint8Seq refines SmallSeq {
@@ -238,6 +239,7 @@ module uint8_16 refines NatSeqConversions {
 
 }
 
+/* Conversions between sequences of uint8 and uint32. */
 module uint8_32 refines NatSeqConversions {
 
   module uint8Seq refines SmallSeq {
@@ -254,6 +256,7 @@ module uint8_32 refines NatSeqConversions {
 
 }
 
+/* Conversions between sequences of uint16 and uint32. */
 module uint16_32 refines NatSeqConversions {
 
   module uint16Seq refines SmallSeq {

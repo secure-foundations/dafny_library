@@ -398,6 +398,22 @@ abstract module NatSeq {
     if |xs| >= n then xs else lemma_seq_append_zero(xs); seq_extend(xs + [0], n)
   }
 
+  /* Extends a sequence to a length that is a multiple of n. */
+  function method {:opaque} seq_extend_multiple(xs: seq<uint>, n: nat): (ys: seq<uint>)
+    requires n > 0
+    ensures |ys| % n == 0
+    ensures to_nat(ys) == to_nat(xs)
+  {
+    var newLen := |xs| + n - (|xs| % n);
+    lemma_sub_mod_noop_right(|xs| + n, |xs|, n);
+    lemma_mod_basics_auto();
+    assert newLen % n == 0;
+
+    lemma_seq_nat_bound(xs);
+    lemma_power_increases_auto();
+    seq_extend(xs, newLen)
+  }
+
   /* Converts a nat to a sequence of a specified length. */
   function method {:opaque} from_nat_with_len(n: nat, len: nat): (xs: seq<uint>)
     requires power(BOUND(), len) > n

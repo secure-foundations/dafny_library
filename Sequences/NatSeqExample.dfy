@@ -1,15 +1,8 @@
-include "NatSeq.dfy"
 include "NatSeqConversions.dfy"
-
-include "../Nonlinear_Arithmetic/DivMod.dfy"
-include "../Nonlinear_Arithmetic/Power.dfy"
 
 module uint8_32Example {
 
   import opened uint8_32
-
-  import opened DivMod
-  import opened Power
 
   method Main() {
     var n := 49602234234;
@@ -22,25 +15,18 @@ module uint8_32Example {
     assert Small.to_nat(smallSeq) == Large.to_nat(largeSeq) == n;
 
     // Extend smallSeq
-    var smallExtendedLen := |smallSeq| + E() - (|smallSeq| % E());
-    lemma_sub_mod_noop_right(|smallSeq| + E(), |smallSeq|, E());
-    lemma_mod_basics_auto();
-    assert smallExtendedLen % E() == 0;
-
-    Small.lemma_seq_nat_bound(smallSeq);
-    lemma_power_increases_auto();
-    var smallSeqExtended := Small.seq_extend(smallSeq, smallExtendedLen);
-    assert Small.to_nat(smallSeqExtended) == n;
+    smallSeq := Small.seq_extend_multiple(smallSeq, E());
+    assert Small.to_nat(smallSeq) == n;
 
     // Conversions between smallSeqExtended and largeSeq
     lemma_to_small(largeSeq);
-    lemma_to_large(smallSeqExtended);
+    lemma_to_large(smallSeq);
     assert Small.to_nat(to_small(largeSeq)) == n;
-    assert Large.to_nat(to_large(smallSeqExtended)) == n;
+    assert Large.to_nat(to_large(smallSeq)) == n;
 
-    lemma_small_large_small(smallSeqExtended);
+    lemma_small_large_small(smallSeq);
     lemma_large_small_large(largeSeq);
-    assert to_small(to_large(smallSeqExtended)) == smallSeqExtended;
+    assert to_small(to_large(smallSeq)) == smallSeq;
     assert to_large(to_small(largeSeq)) == largeSeq;
   }
 
