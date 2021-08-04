@@ -1,6 +1,6 @@
 include "NatSeqConversions.dfy"
 
-module uint8_32Example {
+module NatSeqExample {
 
   import opened uint8_32
 
