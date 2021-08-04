@@ -465,10 +465,10 @@ abstract module NatSeq {
   function method {:opaque} seq_add(xs: seq<uint>,
                                     ys: seq<uint>): (seq<uint>, nat)
     requires |xs| == |ys|
-    ensures var (zs, cout) := seq_add(xs, ys); |zs| == |xs|
+    ensures var (zs, cout) := seq_add(xs, ys);
+      |zs| == |xs| && 0 <= cout <= 1
     decreases xs
   {
-    reveal seq_add();
     if |xs| == 0 then ([], 0)
     else
       var (zs', cin) := seq_add(drop_last(xs), drop_last(ys));
@@ -526,10 +526,10 @@ abstract module NatSeq {
   function method {:opaque} seq_sub(xs: seq<uint>,
                                     ys: seq<uint>): (seq<uint>, nat)
     requires |xs| == |ys|
-    ensures var (zs, cout) := seq_sub(xs, ys); |zs| == |xs|
+    ensures var (zs, cout) := seq_sub(xs, ys);
+      |zs| == |xs| && 0 <= cout <= 1
     decreases xs
   {
-    reveal seq_sub();
     if |xs| == 0 then ([], 0)
     else 
       var (zs, cin) := seq_sub(drop_last(xs), drop_last(ys));
