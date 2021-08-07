@@ -12,10 +12,9 @@ abstract module SmallSeq refines NatSeq {
 
   function method BOUND(): nat
   {
-    reveal power2();
-    lemma_power_positive_auto();
-    lemma_power_strictly_increases_auto();
-    power2(BITS())
+    lemma_power_positive(2, BITS() - 1);
+    lemma_power_strictly_increases(2, BITS() - 1, BITS());
+    power(2, BITS())
   }
 
 }
@@ -30,10 +29,9 @@ abstract module LargeSeq refines NatSeq {
 
   function method BOUND(): nat
   {
-    reveal power2();
-    lemma_power_positive_auto();
-    lemma_power_strictly_increases_auto();
-    power2(BITS())
+    lemma_power_positive(2, BITS() - 1);
+    lemma_power_strictly_increases(2, BITS() - 1, BITS());
+    power(2, BITS())
   }
 
 }
@@ -47,9 +45,10 @@ abstract module NatSeqConversions {
 
   import opened Large : LargeSeq
 
-  /* Small.BOUND() to the power of E() is Large.BOUND(). */
-  function method E(): nat
-    ensures power(Small.BOUND(), E()) == Large.BOUND()
+  /* Small.BOUND() to the power of E is Large.BOUND(). */
+  function method E(): (E: nat)
+    ensures power(Small.BOUND(), E) == Large.BOUND()
+    ensures E > 0
   {
     lemma_div_basics_auto();
     lemma_power_multiplies_auto();
@@ -256,6 +255,23 @@ module uint8_32 refines NatSeqConversions {
 
 }
 
+/* Conversions between sequences of uint8 and uint64. */
+module uint8_64 refines NatSeqConversions {
+
+  module uint8Seq refines SmallSeq {
+    function method BITS(): nat { 8 }
+  }
+
+  module uint64Seq refines LargeSeq {
+    import Small = uint8Seq
+    function method BITS(): nat { 64 }
+  }
+
+  import opened Large = uint64Seq
+  import Small = Large.Small
+
+}
+
 /* Conversions between sequences of uint16 and uint32. */
 module uint16_32 refines NatSeqConversions {
 
@@ -269,6 +285,23 @@ module uint16_32 refines NatSeqConversions {
   }
 
   import opened Large = uint32Seq
+  import Small = Large.Small
+
+}
+
+/* Conversions between sequences of uint32 and uint64. */
+module uint32_64 refines NatSeqConversions {
+
+  module uint32Seq refines SmallSeq {
+    function method BITS(): nat { 32 }
+  }
+
+  module uint64Seq refines LargeSeq {
+    import Small = uint32Seq
+    function method BITS(): nat { 64 }
+  }
+
+  import opened Large = uint64Seq
   import Small = Large.Small
 
 }

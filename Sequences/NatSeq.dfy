@@ -4,7 +4,6 @@ element is the most significant word. */
 include "../Nonlinear_Arithmetic/DivMod.dfy"
 include "../Nonlinear_Arithmetic/Mul.dfy"
 include "../Nonlinear_Arithmetic/Power.dfy"
-include "../Nonlinear_Arithmetic/Power2.dfy"
 include "Seq.dfy"
 
 abstract module NatSeq {
@@ -12,7 +11,6 @@ abstract module NatSeq {
   import opened DivMod
   import opened Mul
   import opened Power
-  import opened Power2
   import opened Seq
 
   /* Upper bound of a word */

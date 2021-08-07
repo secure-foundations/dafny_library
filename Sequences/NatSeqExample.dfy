@@ -18,11 +18,13 @@ module NatSeqExample {
     smallSeq := Small.seq_extend_multiple(smallSeq, E());
     assert Small.to_nat(smallSeq) == n;
 
-    // Conversions between smallSeqExtended and largeSeq
+    // Convert between smallSeqExtended and largeSeq
     lemma_to_small(largeSeq);
     lemma_to_large(smallSeq);
     assert Small.to_nat(to_small(largeSeq)) == n;
     assert Large.to_nat(to_large(smallSeq)) == n;
+    assert |to_small(largeSeq)|  == |largeSeq| * E();
+    assert |to_large(smallSeq)|  == |smallSeq| / E();
 
     lemma_small_large_small(smallSeq);
     lemma_large_small_large(largeSeq);
