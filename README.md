@@ -1,3 +1,5 @@
+Preliminary work on what became the [Dafny Standard Libraries](https://github.com/dafny-lang/libraries).  However, this repo is now out of date with the official libraries.
+
 # libraries
 
 Libraries useful for Dafny programs
